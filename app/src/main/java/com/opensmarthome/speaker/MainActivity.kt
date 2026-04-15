@@ -9,19 +9,29 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.WindowManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
+import com.opensmarthome.speaker.assistant.provider.embedded.ModelDownloadState
+import com.opensmarthome.speaker.assistant.provider.embedded.ModelDownloader
 import com.opensmarthome.speaker.service.VoiceService
 import com.opensmarthome.speaker.ui.common.ModeScaffold
+import com.opensmarthome.speaker.ui.setup.ModelSetupScreen
 import com.opensmarthome.speaker.ui.theme.OpenSmartSpeakerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private var voiceServiceStarted = false
+    private lateinit var modelDownloader: ModelDownloader
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -30,7 +40,7 @@ class MainActivity : ComponentActivity() {
         if (audioGranted) {
             startVoiceService()
         } else {
-            Timber.w("RECORD_AUDIO permission denied - voice features unavailable")
+            Timber.w("RECORD_AUDIO permission denied")
         }
     }
 
@@ -39,17 +49,34 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setupImmersiveMode()
+
+        modelDownloader = ModelDownloader(this)
+
         setContent {
             OpenSmartSpeakerTheme {
-                ModeScaffold()
+                val downloadState by modelDownloader.state.collectAsState()
+
+                when (downloadState) {
+                    is ModelDownloadState.Ready -> {
+                        ModeScaffold()
+                    }
+                    else -> {
+                        ModelSetupScreen(
+                            downloadState = modelDownloader.state,
+                            onRetry = { scope.launch { modelDownloader.ensureModelAvailable() } }
+                        )
+                    }
+                }
             }
         }
+
         requestPermissionsAndStart()
+        // Start model download
+        scope.launch { modelDownloader.ensureModelAvailable() }
     }
 
     override fun onResume() {
         super.onResume()
-        // Re-check permissions on resume (user may have granted in system settings)
         if (!voiceServiceStarted && hasAudioPermission()) {
             startVoiceService()
         }
