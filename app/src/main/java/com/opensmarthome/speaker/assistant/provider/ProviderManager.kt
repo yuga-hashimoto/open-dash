@@ -50,7 +50,6 @@ class ProviderManager @Inject constructor(
             if (models.isNotEmpty()) {
                 val modelPath = models.first().path
                 val provider = EmbeddedLlmProvider(
-                    context = context,
                     config = EmbeddedLlmConfig(modelPath = modelPath)
                 )
                 router.registerProvider(provider)

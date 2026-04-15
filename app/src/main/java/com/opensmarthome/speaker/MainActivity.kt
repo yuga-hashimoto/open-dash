@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import com.opensmarthome.speaker.assistant.provider.ProviderManager
 import com.opensmarthome.speaker.assistant.provider.embedded.ModelDownloadState
 import com.opensmarthome.speaker.assistant.provider.embedded.ModelDownloader
 import com.opensmarthome.speaker.service.VoiceService
@@ -29,7 +30,10 @@ import timber.log.Timber
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @javax.inject.Inject lateinit var providerManager: ProviderManager
+
     private var voiceServiceStarted = false
+    private var providerInitialized = false
     private lateinit var modelDownloader: ModelDownloader
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -58,6 +62,10 @@ class MainActivity : ComponentActivity() {
 
                 when (downloadState) {
                     is ModelDownloadState.Ready -> {
+                        if (!providerInitialized) {
+                            providerInitialized = true
+                            providerManager.initialize()
+                        }
                         ModeScaffold()
                     }
                     else -> {

@@ -1,7 +1,5 @@
 package com.opensmarthome.speaker.assistant.provider.embedded
 
-import android.content.Context
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.model.AssistantSession
 import com.opensmarthome.speaker.assistant.model.ToolCallRequest
@@ -12,48 +10,52 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
 class EmbeddedLlmProvider(
-    private val context: Context,
     private val config: EmbeddedLlmConfig
 ) : AssistantProvider {
 
     override val id: String = "embedded_llm"
     override val displayName: String = "On-Device LLM"
     override val capabilities = ProviderCapabilities(
-        supportsStreaming = true,
+        supportsStreaming = false,
         supportsTools = true,
         maxContextTokens = config.contextSize,
         modelName = File(config.modelPath).nameWithoutExtension
     )
 
-    private var inference: LlmInference? = null
+    private val bridge = LlamaCppBridge()
 
     override suspend fun startSession(config: Map<String, String>): AssistantSession {
-        if (inference == null) {
+        if (!bridge.isModelLoaded()) {
             withContext(Dispatchers.IO) {
-                loadModel()
+                val loaded = bridge.loadModel(
+                    this@EmbeddedLlmProvider.config.modelPath,
+                    this@EmbeddedLlmProvider.config.contextSize,
+                    this@EmbeddedLlmProvider.config.threads,
+                    this@EmbeddedLlmProvider.config.gpuLayers
+                )
+                if (!loaded) {
+                    throw IllegalStateException("Failed to load model: ${this@EmbeddedLlmProvider.config.modelPath}")
+                }
+                Timber.d("Model loaded via llama.cpp")
             }
         }
         return AssistantSession(providerId = id)
     }
 
-    override suspend fun endSession(session: AssistantSession) {
-        // Keep model loaded
-    }
+    override suspend fun endSession(session: AssistantSession) {}
 
     override suspend fun send(
         session: AssistantSession,
         messages: List<AssistantMessage>,
         tools: List<ToolSchema>
     ): AssistantMessage = withContext(Dispatchers.IO) {
-        val llm = inference ?: throw IllegalStateException("Model not loaded")
         val prompt = buildPrompt(messages, tools)
-        val response = llm.generateResponse(prompt)
+        val response = bridge.generate(prompt, config.maxTokens, config.temperature)
         parseResponse(response)
     }
 
@@ -62,56 +64,27 @@ class EmbeddedLlmProvider(
         messages: List<AssistantMessage>,
         tools: List<ToolSchema>
     ): Flow<AssistantMessage.Delta> = flow {
-        val llm = inference ?: throw IllegalStateException("Model not loaded")
         val prompt = buildPrompt(messages, tools)
-
-        val tokenChannel = kotlinx.coroutines.channels.Channel<String>(kotlinx.coroutines.channels.Channel.BUFFERED)
-
-        val future = llm.generateResponseAsync(prompt) { partialResult, done ->
-            if (partialResult.isNotEmpty()) {
-                tokenChannel.trySend(partialResult)
-            }
-            if (done) {
-                tokenChannel.close()
-            }
-        }
-
-        for (token in tokenChannel) {
-            emit(AssistantMessage.Delta(contentDelta = token))
+        val response = bridge.generate(prompt, config.maxTokens, config.temperature)
+        // Emit word by word for visual feedback
+        for (word in response.split(" ")) {
+            emit(AssistantMessage.Delta(contentDelta = "$word "))
         }
         emit(AssistantMessage.Delta(finishReason = "stop"))
     }.flowOn(Dispatchers.IO)
 
     override suspend fun isAvailable(): Boolean {
-        return inference != null || File(config.modelPath).exists()
+        return bridge.isModelLoaded() || File(config.modelPath).exists()
     }
 
     override suspend fun latencyMs(): Long = 0L
 
     fun unload() {
-        inference?.close()
-        inference = null
-    }
-
-    private fun loadModel() {
-        val modelFile = File(config.modelPath)
-        if (!modelFile.exists()) {
-            throw IllegalStateException("Model file not found: ${config.modelPath}")
-        }
-
-        val options = LlmInference.LlmInferenceOptions.builder()
-            .setModelPath(config.modelPath)
-            .setMaxTokens(config.maxTokens)
-            .setMaxTopK(40)
-            .build()
-
-        inference = LlmInference.createFromOptions(context, options)
-        Timber.d("MediaPipe LLM loaded: ${modelFile.name} (${modelFile.length() / 1_048_576}MB)")
+        bridge.unload()
     }
 
     private fun buildPrompt(messages: List<AssistantMessage>, tools: List<ToolSchema>): String {
         val sb = StringBuilder()
-
         sb.append("<start_of_turn>user\n")
         sb.append(config.systemPrompt)
 
@@ -119,7 +92,6 @@ class EmbeddedLlmProvider(
             sb.append("\n\nAvailable tools:\n")
             for (tool in tools) {
                 sb.append("- ${tool.name}: ${tool.description}\n")
-                sb.append("  Parameters: ${tool.parameters.entries.joinToString { "${it.key}: ${it.value.description}" }}\n")
             }
             sb.append("\nTo call a tool, respond with JSON: {\"tool\": \"name\", \"arguments\": {...}}\n")
         }
