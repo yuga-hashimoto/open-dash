@@ -85,28 +85,14 @@ class EmbeddedLlmProvider(
 
     private fun buildPrompt(messages: List<AssistantMessage>, tools: List<ToolSchema>): String {
         val sb = StringBuilder()
-        sb.append("<start_of_turn>user\n")
-        sb.append(config.systemPrompt)
 
-        if (tools.isNotEmpty()) {
-            sb.append("\n\nAvailable tools:\n")
-            for (tool in tools) {
-                sb.append("- ${tool.name}: ${tool.description}\n")
-            }
-            sb.append("\nTo call a tool, respond with JSON: {\"tool\": \"name\", \"arguments\": {...}}\n")
+        // Keep prompt minimal for fast inference
+        // Only include the last user message for speed
+        val lastUserMsg = messages.lastOrNull { it is AssistantMessage.User } as? AssistantMessage.User
+
+        if (lastUserMsg != null) {
+            sb.append("<start_of_turn>user\n${lastUserMsg.content}<end_of_turn>\n")
         }
-        sb.append("<end_of_turn>\n")
-
-        for (msg in messages) {
-            when (msg) {
-                is AssistantMessage.User -> sb.append("<start_of_turn>user\n${msg.content}<end_of_turn>\n")
-                is AssistantMessage.Assistant -> sb.append("<start_of_turn>model\n${msg.content}<end_of_turn>\n")
-                is AssistantMessage.System -> sb.append("<start_of_turn>user\n[System: ${msg.content}]<end_of_turn>\n")
-                is AssistantMessage.ToolCallResult -> sb.append("<start_of_turn>user\n[Tool Result: ${msg.result}]<end_of_turn>\n")
-                is AssistantMessage.Delta -> {}
-            }
-        }
-
         sb.append("<start_of_turn>model\n")
         return sb.toString()
     }
