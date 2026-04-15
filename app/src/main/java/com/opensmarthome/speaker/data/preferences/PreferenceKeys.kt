@@ -16,4 +16,5 @@ object PreferenceKeys {
     val MQTT_BROKER_URL = stringPreferencesKey("mqtt_broker_url")
     val MQTT_USERNAME = stringPreferencesKey("mqtt_username")
     val MQTT_PASSWORD = stringPreferencesKey("mqtt_password")
+    val WAKE_WORD = stringPreferencesKey("wake_word")
 }

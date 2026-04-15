@@ -96,6 +96,21 @@ fun SettingsScreen(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
+        // Wake Word Section
+        val wakeWord by viewModel.wakeWord.collectAsState()
+        SectionHeader("Wake Word")
+        SettingsTextField("Wake Word", wakeWord) { word ->
+            viewModel.saveWakeWord(word)
+        }
+        Text(
+            text = "The phrase the app listens for to start a conversation. Restart the app after changing.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
         // Info
         Text(
             text = "On-Device LLM: Place a .task model file in the app's files/models/ directory. " +

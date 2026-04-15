@@ -7,6 +7,8 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
+import com.opensmarthome.speaker.data.preferences.AppPreferences
+import com.opensmarthome.speaker.data.preferences.PreferenceKeys
 import com.opensmarthome.speaker.voice.pipeline.VoicePipeline
 import com.opensmarthome.speaker.voice.wakeword.VoskModelDownloader
 import com.opensmarthome.speaker.voice.wakeword.VoskWakeWordDetector
@@ -15,6 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -23,6 +26,7 @@ import javax.inject.Inject
 class VoiceService : Service() {
 
     @Inject lateinit var voicePipeline: VoicePipeline
+    @Inject lateinit var preferences: AppPreferences
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeWordDetector: VoskWakeWordDetector? = null
@@ -62,7 +66,8 @@ class VoiceService : Service() {
         }
 
         if (downloader.isModelDownloaded()) {
-            val config = WakeWordConfig(keyword = "hey speaker")
+            val savedWakeWord = preferences.observe(PreferenceKeys.WAKE_WORD).first() ?: "hey speaker"
+            val config = WakeWordConfig(keyword = savedWakeWord)
             wakeWordDetector = VoskWakeWordDetector(config, downloader.getModelDir())
             wakeWordDetector?.start {
                 Timber.d("Wake word detected! Starting voice pipeline...")

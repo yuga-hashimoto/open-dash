@@ -42,6 +42,9 @@ class SettingsViewModel @Inject constructor(
     private val _mqttBrokerUrl = MutableStateFlow("")
     val mqttBrokerUrl: StateFlow<String> = _mqttBrokerUrl.asStateFlow()
 
+    private val _wakeWord = MutableStateFlow("hey speaker")
+    val wakeWord: StateFlow<String> = _wakeWord.asStateFlow()
+
     init {
         viewModelScope.launch {
             preferences.observe(PreferenceKeys.HA_BASE_URL).collect { _haBaseUrl.value = it ?: "" }
@@ -60,6 +63,9 @@ class SettingsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             preferences.observe(PreferenceKeys.MQTT_BROKER_URL).collect { _mqttBrokerUrl.value = it ?: "" }
+        }
+        viewModelScope.launch {
+            preferences.observe(PreferenceKeys.WAKE_WORD).collect { _wakeWord.value = it ?: "hey speaker" }
         }
         _haToken.value = securePreferences.getString(SecurePreferences.KEY_HA_TOKEN)
         _switchBotSecret.value = securePreferences.getString("switchbot_secret")
@@ -98,6 +104,12 @@ class SettingsViewModel @Inject constructor(
     fun saveMqttSettings(brokerUrl: String) {
         viewModelScope.launch {
             preferences.set(PreferenceKeys.MQTT_BROKER_URL, brokerUrl)
+        }
+    }
+
+    fun saveWakeWord(word: String) {
+        viewModelScope.launch {
+            preferences.set(PreferenceKeys.WAKE_WORD, word.lowercase().trim())
         }
     }
 }
