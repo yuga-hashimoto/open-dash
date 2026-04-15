@@ -1,4 +1,4 @@
-package com.opensmarthome.speaker.homeassistant.tool
+package com.opensmarthome.speaker.tool
 
 data class ToolSchema(
     val name: String,

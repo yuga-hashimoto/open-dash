@@ -1,6 +1,11 @@
 # OpenSmartSpeaker
 
-A tablet-first Android home assistant that combines a smart display UI, always-available voice interaction, Home Assistant integration, and switchable AI backends (OpenClaw / OpenAI-compatible local LLMs).
+A self-contained, tablet-first Android smart speaker that runs entirely on-device — like Alexa, but open source and private. No external servers required.
+
+Features:
+- **On-device LLM** via llama.cpp (Gemma 4 E2B/E4B)
+- **Direct device control** via Matter, SwitchBot, MQTT, BLE
+- **Optional backends**: OpenClaw, OpenAI-compatible endpoints, Home Assistant
 
 ## Architecture
 
@@ -8,23 +13,27 @@ A tablet-first Android home assistant that combines a smart display UI, always-a
 OpenSmartSpeaker
 ├── Android UI / Smart Display
 │   ├── Chat mode
-│   ├── Dashboard mode (HA entity cards)
+│   ├── Dashboard mode (device cards)
 │   └── Ambient mode (clock, weather)
 ├── Voice Runtime
 │   ├── Wake word (Vosk-based)
 │   ├── STT (Android SpeechRecognizer)
 │   ├── TTS (Android TTS)
 │   └── 7-state pipeline with barge-in
-├── Conversation Router
-│   ├── OpenClawProvider (WebSocket)
-│   ├── OpenAiCompatibleProvider (REST + SSE)
-│   └── Policy: Manual / Auto / Failover / LowestLatency
-├── Tool Execution
-│   ├── Home Assistant REST / WebSocket client
-│   └── LLM function calling (4 tool schemas)
+├── AI Backends (switchable)
+│   ├── EmbeddedLlmProvider (llama.cpp JNI, on-device)
+│   ├── OpenClawProvider (WebSocket, optional)
+│   ├── OpenAiCompatibleProvider (REST + SSE, optional)
+│   └── ConversationRouter (Manual / Auto / Failover / LowestLatency)
+├── Device Control (direct, no server needed)
+│   ├── MatterDeviceProvider (Android Matter API)
+│   ├── SwitchBotDeviceProvider (Cloud API + BLE)
+│   ├── MqttDeviceProvider (Shelly / Tasmota)
+│   ├── HomeAssistantDeviceProvider (optional)
+│   └── DeviceToolExecutor (LLM function calling)
 ├── Local Context
 │   ├── Room database (sessions, messages)
-│   ├── Entity cache (30s refresh)
+│   ├── Device cache (30s refresh)
 │   └── Conversation history trimming
 └── Discovery
     └── mDNS (HA + OpenClaw)

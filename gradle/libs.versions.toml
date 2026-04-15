@@ -18,7 +18,7 @@ timber = "5.0.1"
 activity-compose = "1.9.3"
 core-ktx = "1.15.0"
 security-crypto = "1.1.0-alpha06"
-nsd = "1.15.0"
+paho-mqtt = "1.2.5"
 
 junit5 = "5.11.3"
 mockk = "1.13.13"
@@ -75,6 +75,9 @@ vosk = { group = "com.alphacephei", name = "vosk-android", version.ref = "vosk" 
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+
+# MQTT
+paho-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.client.mqttv3", version.ref = "paho-mqtt" }
 
 # Coroutines
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

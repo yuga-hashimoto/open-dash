@@ -2,32 +2,26 @@ package com.opensmarthome.speaker.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.opensmarthome.speaker.homeassistant.cache.EntityCache
-import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
-import com.opensmarthome.speaker.homeassistant.model.Entity
-import com.opensmarthome.speaker.homeassistant.model.ServiceCall
+import com.opensmarthome.speaker.device.DeviceManager
+import com.opensmarthome.speaker.device.model.Device
+import com.opensmarthome.speaker.device.model.DeviceCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val entityCache: EntityCache,
-    private val haClient: HomeAssistantClient
+    private val deviceManager: DeviceManager
 ) : ViewModel() {
 
-    val entities: StateFlow<Map<String, Entity>> = entityCache.entities
+    val devices: StateFlow<Map<String, Device>> = deviceManager.devices
 
-    private val _groupedEntities = MutableStateFlow<Map<String, List<Entity>>>(emptyMap())
-    val groupedEntities: StateFlow<Map<String, List<Entity>>> = _groupedEntities.asStateFlow()
-
-    private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+    private val _groupedDevices = MutableStateFlow<Map<String, List<Device>>>(emptyMap())
+    val groupedDevices: StateFlow<Map<String, List<Device>>> = _groupedDevices.asStateFlow()
 
     val quickActions = listOf(
         QuickAction("All Lights Off", "light", "turn_off"),
@@ -35,49 +29,42 @@ class DashboardViewModel @Inject constructor(
     )
 
     init {
+        viewModelScope.launch { deviceManager.start() }
         viewModelScope.launch {
-            entityCache.start()
-        }
-        viewModelScope.launch {
-            entityCache.entities.collect { entityMap ->
-                val controllable = entityMap.values.filter { entity ->
-                    entity.domain in listOf("light", "switch", "climate", "media_player", "cover", "fan", "input_boolean")
-                }
-                _groupedEntities.value = controllable.groupBy { it.domain }
+            deviceManager.devices.collect { deviceMap ->
+                _groupedDevices.value = deviceMap.values
+                    .filter { it.type.value in listOf("light", "switch", "climate", "media_player", "cover", "fan", "input_boolean") }
+                    .groupBy { it.type.value }
             }
-        }
-        viewModelScope.launch {
-            _isConnected.value = haClient.isConnected()
         }
     }
 
-    fun toggleEntity(entity: Entity) {
+    fun toggleDevice(device: Device) {
         viewModelScope.launch {
             try {
-                val service = if (entity.state == "on") "turn_off" else "turn_on"
-                haClient.callService(
-                    ServiceCall(domain = entity.domain, service = service, entityId = entity.entityId)
+                val action = if (device.state.isOn == true) "turn_off" else "turn_on"
+                deviceManager.executeCommand(
+                    DeviceCommand(deviceId = device.id, action = action)
                 )
-                entityCache.refresh()
+                deviceManager.refreshAll()
             } catch (e: Exception) {
-                Timber.e(e, "Failed to toggle ${entity.entityId}")
+                Timber.e(e, "Failed to toggle ${device.id}")
             }
         }
     }
 
-    fun setBrightness(entity: Entity, brightness: Float) {
+    fun setBrightness(device: Device, brightness: Float) {
         viewModelScope.launch {
             try {
-                haClient.callService(
-                    ServiceCall(
-                        domain = "light",
-                        service = "turn_on",
-                        entityId = entity.entityId,
-                        data = mapOf("brightness" to brightness.toInt())
+                deviceManager.executeCommand(
+                    DeviceCommand(
+                        deviceId = device.id,
+                        action = "turn_on",
+                        parameters = mapOf("brightness" to brightness.toInt())
                     )
                 )
             } catch (e: Exception) {
-                Timber.e(e, "Failed to set brightness for ${entity.entityId}")
+                Timber.e(e, "Failed to set brightness for ${device.id}")
             }
         }
     }
@@ -85,14 +72,15 @@ class DashboardViewModel @Inject constructor(
     fun executeQuickAction(action: QuickAction) {
         viewModelScope.launch {
             try {
-                haClient.callService(
-                    ServiceCall(
-                        domain = action.domain,
-                        service = action.service,
-                        entityId = action.entityId
-                    )
+                val devices = deviceManager.getDevicesByType(
+                    com.opensmarthome.speaker.device.model.DeviceType.fromString(action.domain)
                 )
-                entityCache.refresh()
+                for (device in devices) {
+                    deviceManager.executeCommand(
+                        DeviceCommand(deviceId = device.id, action = action.service)
+                    )
+                }
+                deviceManager.refreshAll()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to execute quick action: ${action.label}")
             }
@@ -101,6 +89,6 @@ class DashboardViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        entityCache.stop()
+        deviceManager.stop()
     }
 }

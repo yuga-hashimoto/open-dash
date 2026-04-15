@@ -5,6 +5,7 @@ import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
 import com.opensmarthome.speaker.homeassistant.model.Area
 import com.opensmarthome.speaker.homeassistant.model.Entity
 import com.opensmarthome.speaker.homeassistant.model.ServiceCallResult
+import com.opensmarthome.speaker.tool.ToolCall
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery

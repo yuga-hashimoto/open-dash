@@ -6,8 +6,8 @@ import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.model.AssistantSession
 import com.opensmarthome.speaker.assistant.model.ConversationState
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
-import com.opensmarthome.speaker.homeassistant.tool.ToolCall
-import com.opensmarthome.speaker.homeassistant.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.ToolCall
+import com.opensmarthome.speaker.tool.ToolExecutor
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,9 +1,5 @@
 package com.opensmarthome.speaker.di
 
-import com.opensmarthome.speaker.homeassistant.tool.ToolExecutor
-import com.opensmarthome.speaker.homeassistant.tool.ToolExecutorImpl
-import com.opensmarthome.speaker.homeassistant.cache.EntityCache
-import com.opensmarthome.speaker.homeassistant.cache.EntityCacheImpl
 import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
 import com.opensmarthome.speaker.homeassistant.client.HomeAssistantConfig
 import com.opensmarthome.speaker.homeassistant.client.HomeAssistantRestClient
@@ -34,19 +30,4 @@ object HomeAssistantModule {
         moshi: Moshi,
         config: HomeAssistantConfig
     ): HomeAssistantClient = HomeAssistantRestClient(client, moshi, config)
-
-    @Provides
-    @Singleton
-    fun provideEntityCache(
-        haClient: HomeAssistantClient,
-        config: HomeAssistantConfig
-    ): EntityCache = EntityCacheImpl(haClient, config)
-
-    @Provides
-    @Singleton
-    fun provideToolExecutor(
-        haClient: HomeAssistantClient,
-        entityCache: EntityCache,
-        moshi: Moshi
-    ): ToolExecutor = ToolExecutorImpl(haClient, entityCache, moshi)
 }

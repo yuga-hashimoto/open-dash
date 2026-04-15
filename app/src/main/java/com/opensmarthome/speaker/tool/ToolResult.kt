@@ -1,4 +1,4 @@
-package com.opensmarthome.speaker.homeassistant.tool
+package com.opensmarthome.speaker.tool
 
 data class ToolResult(
     val callId: String,

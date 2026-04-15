@@ -3,6 +3,11 @@ package com.opensmarthome.speaker.homeassistant.tool
 import com.opensmarthome.speaker.homeassistant.cache.EntityCache
 import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
 import com.opensmarthome.speaker.homeassistant.model.ServiceCall
+import com.opensmarthome.speaker.tool.ToolCall
+import com.opensmarthome.speaker.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.ToolParameter
+import com.opensmarthome.speaker.tool.ToolResult
+import com.opensmarthome.speaker.tool.ToolSchema
 import com.squareup.moshi.Moshi
 import timber.log.Timber
 

@@ -1,4 +1,4 @@
-package com.opensmarthome.speaker.homeassistant.tool
+package com.opensmarthome.speaker.tool
 
 interface ToolExecutor {
     suspend fun availableTools(): List<ToolSchema>

@@ -2,7 +2,6 @@ package com.opensmarthome.speaker.ui.dashboard
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -22,8 +21,7 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
-    val grouped by viewModel.groupedEntities.collectAsState()
-    val isConnected by viewModel.isConnected.collectAsState()
+    val grouped by viewModel.groupedDevices.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
         QuickActionRow(
@@ -31,32 +29,23 @@ fun DashboardScreen(
             onAction = { viewModel.executeQuickAction(it) }
         )
 
-        if (!isConnected) {
-            Text(
-                text = "Not connected to Home Assistant",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            )
-        }
-
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 180.dp),
             modifier = Modifier.fillMaxSize().padding(8.dp)
         ) {
-            grouped.forEach { (domain, entities) ->
+            grouped.forEach { (type, devices) ->
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Text(
-                        text = domain.replaceFirstChar { it.uppercase() }.replace("_", " "),
+                        text = type.replaceFirstChar { it.uppercase() }.replace("_", " "),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
                     )
                 }
-                items(entities, key = { it.entityId }) { entity ->
-                    EntityCard(
-                        entity = entity,
-                        onToggle = { viewModel.toggleEntity(it) },
-                        onBrightnessChange = { e, b -> viewModel.setBrightness(e, b) }
+                items(devices, key = { it.id }) { device ->
+                    DeviceCard(
+                        device = device,
+                        onToggle = { viewModel.toggleDevice(it) },
+                        onBrightnessChange = { d, b -> viewModel.setBrightness(d, b) }
                     )
                 }
             }

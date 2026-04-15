@@ -4,7 +4,7 @@ import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.model.AssistantSession
 import com.opensmarthome.speaker.assistant.provider.AssistantProvider
 import com.opensmarthome.speaker.assistant.provider.ProviderCapabilities
-import com.opensmarthome.speaker.homeassistant.tool.ToolSchema
+import com.opensmarthome.speaker.tool.ToolSchema
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

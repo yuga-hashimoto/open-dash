@@ -2,7 +2,7 @@ package com.opensmarthome.speaker.assistant.provider
 
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.model.AssistantSession
-import com.opensmarthome.speaker.homeassistant.tool.ToolSchema
+import com.opensmarthome.speaker.tool.ToolSchema
 import kotlinx.coroutines.flow.Flow
 
 interface AssistantProvider {

@@ -6,8 +6,8 @@ import com.opensmarthome.speaker.assistant.provider.AssistantProvider
 import com.opensmarthome.speaker.assistant.provider.ProviderCapabilities
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
 import com.opensmarthome.speaker.assistant.router.RoutingPolicy
-import com.opensmarthome.speaker.homeassistant.tool.ToolExecutor
-import com.opensmarthome.speaker.homeassistant.tool.ToolSchema
+import com.opensmarthome.speaker.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.ToolSchema
 import com.opensmarthome.speaker.voice.tts.TextToSpeech
 import com.opensmarthome.speaker.voice.stt.SpeechToText
 import com.squareup.moshi.Moshi

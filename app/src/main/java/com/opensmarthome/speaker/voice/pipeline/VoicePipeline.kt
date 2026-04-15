@@ -2,8 +2,8 @@ package com.opensmarthome.speaker.voice.pipeline
 
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
-import com.opensmarthome.speaker.homeassistant.tool.ToolCall
-import com.opensmarthome.speaker.homeassistant.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.ToolCall
+import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.voice.stt.SpeechToText
 import com.opensmarthome.speaker.voice.stt.SttResult
 import com.opensmarthome.speaker.voice.tts.TextToSpeech

@@ -92,6 +92,9 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
+    // MQTT
+    implementation(libs.paho.mqtt)
+
     // Logging
     implementation(libs.timber)
 
