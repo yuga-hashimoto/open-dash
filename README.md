@@ -1,102 +1,88 @@
 # open-smart-speaker
 
-**あなたの古いタブレットを、プライベートなスマートスピーカーに変える。**
+An open-source Android smart speaker app that turns any tablet into a voice-controlled smart home hub. All AI processing runs on-device — no cloud services required.
 
-Google Home や Alexa のように声で家電を操作できる Android アプリ。ただし、クラウドにデータを送らない。AI も音声認識も、全てタブレットの中で動く。
+Say "Hey Speaker" and control your lights, switches, and home devices with your voice.
 
-## 何ができるか
+## Features
 
-**「リビングの電気つけて」** と話しかけるだけで、照明がつく。
+- **On-device AI**: Runs Gemma 2B locally via MediaPipe LLM Inference. No internet needed for conversations.
+- **Wake word activation**: Always listening for "Hey Speaker" using Vosk (auto-downloaded on first launch).
+- **Voice conversation**: Speak naturally. The app understands your intent, controls devices, and responds aloud.
+- **Smart home control**: Supports SwitchBot, Matter, MQTT (Shelly/Tasmota), and Home Assistant devices.
+- **Dashboard**: Visual grid of all connected devices with tap-to-toggle controls.
+- **Ambient display**: Large clock with temperature and humidity from connected sensors.
+- **Multiple AI backends**: Switch between on-device LLM, OpenClaw, or any OpenAI-compatible endpoint.
+- **Encrypted storage**: All tokens and secrets stored with AES256-GCM encryption.
 
-- 声で家電を操作（照明ON/OFF、エアコン温度変更、カーテン開閉）
-- 質問に答える（天気、時間、一般知識）
-- 壁掛けタブレットとして常時表示（時計、天気、デバイス状態）
-- ウェイクワード「Hey Speaker」で起動、ハンズフリー操作
+## Supported Devices
 
-## なぜこれが必要か
+| Protocol | Devices |
+|----------|---------|
+| SwitchBot | Bot, Curtain, Plug, Color Bulb, Strip Light, Ceiling Light, Lock, Meter |
+| Matter | Any Matter-certified device (via Android Matter API) |
+| MQTT | Shelly, Tasmota, and other MQTT-discoverable devices |
+| Home Assistant | All HA-managed devices (optional, for users with an HA server) |
 
-| 既存のスマートスピーカー | open-smart-speaker |
-|---|---|
-| 音声データがクラウドに送信される | **全てデバイス上で処理。外部通信なし** |
-| 月額料金やサブスクが必要な機能がある | **完全無料、オープンソース** |
-| 特定メーカーのデバイスしか操作できない | **SwitchBot、Matter、MQTT 対応機器を横断操作** |
-| インターネットが切れると使えない | **オフラインでも動作** |
-| カスタマイズできない | **AI モデルもウェイクワードも変更可能** |
+## Requirements
 
-## 対応デバイス
+- Android tablet (Android 9+, 8GB RAM recommended)
+- Smart home devices to control (SwitchBot, Matter, MQTT, or HA)
 
-| プロトコル | 対応機器の例 |
-|-----------|------------|
-| **SwitchBot** | ボット、カーテン、温湿度計、プラグ、照明 |
-| **Matter** | Apple/Google/Amazon 共通規格の新世代デバイス |
-| **MQTT** | Shelly、Tasmota、その他 DIY スマートホーム機器 |
-| **Home Assistant** | HA サーバーを持っている人は全デバイス連携可能（任意） |
+## Setup
 
-## 画面モード
+1. Install the APK on your tablet
+2. Grant microphone permission
+3. Open **Settings** and configure your device providers:
+   - **SwitchBot**: Enter your API Token and Secret Key
+   - **MQTT**: Enter your broker URL (e.g. `tcp://192.168.1.100:1883`)
+   - **Home Assistant**: Enter base URL and Long-Lived Access Token (optional)
+4. For on-device AI: place a Gemma 2B `.task` model file in the app's `files/models/` directory
+5. Say "Hey Speaker" or tap the microphone button
 
-| モード | 用途 |
-|-------|------|
-| **Chat** | AI と会話。テキストでも音声でも |
-| **Dashboard** | 家中のデバイスをカード表示。タップで ON/OFF |
-| **Ambient** | 壁掛け時計。天気・温度・湿度を常時表示 |
+## Building from Source
 
-## セットアップ
-
-### 必要なもの
-- Android タブレット（Android 9以上、RAM 8GB 推奨）
-- 操作したいスマートホームデバイス（SwitchBot 等）
-
-### 手順
-1. APK をインストール
-2. マイクの権限を許可
-3. Settings で接続するデバイスの設定を入力
-   - SwitchBot: アプリから取得した Token と Secret
-   - MQTT: ブローカーの URL
-4. AI モデルファイル（Gemma 2B `.task`）をアプリに配置
-5. 「Hey Speaker」と話しかけるか、マイクボタンをタップ
-
-### ビルド（開発者向け）
 ```bash
-./gradlew assembleDebug  # ビルド
-./gradlew test           # テスト
+# Build
+./gradlew assembleDebug
+
+# Test (31 unit tests)
+./gradlew test
 ```
 
-## 技術スタック
+Requires JDK 17 and Android SDK Platform 35.
 
-| 項目 | 技術 |
-|------|------|
-| 言語 | Kotlin 2.1.0 |
-| UI | Jetpack Compose + Material 3 |
-| AI推論 | MediaPipe LLM Inference（オンデバイス） |
-| 音声 | Vosk（ウェイクワード）、Android STT/TTS |
-| デバイス制御 | Matter、SwitchBot API、MQTT |
-| セキュリティ | AES256-GCM 暗号化（トークン保存） |
-| Min SDK | 28 (Android 9) |
+## Tech Stack
 
-## アーキテクチャ
+- **Kotlin 2.1.0** with Jetpack Compose and Material 3
+- **MediaPipe LLM Inference** for on-device AI (no NDK required)
+- **Vosk** for offline wake word detection
+- **OkHttp 4.12.0** for REST, SSE streaming, and WebSocket
+- **Room 2.6.1** for conversation history persistence
+- **Hilt** for dependency injection
+- **Eclipse Paho** for MQTT client
+- **Moshi** for JSON serialization
+
+## Project Structure
 
 ```
-open-smart-speaker
-├── 音声パイプライン
-│   ├── ウェイクワード検出 (Vosk)
-│   ├── 音声→テキスト (Android STT)
-│   ├── AI 推論 (MediaPipe / OpenClaw / 外部LLM)
-│   ├── デバイス操作 (DeviceToolExecutor)
-│   └── テキスト→音声 (Android TTS)
-├── デバイス制御
-│   ├── SwitchBot (REST API + BLE)
-│   ├── Matter (Android Matter API)
-│   ├── MQTT (Paho クライアント)
-│   └── Home Assistant (任意)
-├── UI
-│   ├── Chat / Dashboard / Ambient / Settings
-│   └── タブレット最適化 + 常時画面ON
-└── データ
-    ├── Room DB (会話履歴)
-    ├── 暗号化設定 (トークン)
-    └── mDNS 自動検出
+app/src/main/java/com/opensmarthome/speaker/
+├── assistant/              # AI provider abstraction and routing
+│   ├── provider/embedded/  # On-device LLM (MediaPipe)
+│   ├── provider/openai/    # OpenAI-compatible REST+SSE
+│   ├── provider/openclaw/  # OpenClaw WebSocket
+│   └── router/             # Provider selection (Auto/Manual/Failover/LowestLatency)
+├── device/                 # Smart home device control
+│   ├── provider/matter/    # Matter device control
+│   ├── provider/switchbot/ # SwitchBot API client
+│   ├── provider/mqtt/      # MQTT discovery and control
+│   └── tool/               # LLM function calling for device operations
+├── voice/                  # Voice pipeline (wake word → STT → AI → TTS)
+├── ui/                     # Chat, Dashboard, Ambient, Settings screens
+├── service/                # Foreground service for always-on voice
+└── data/                   # Room database, encrypted preferences
 ```
 
-## ライセンス
+## License
 
 MIT
