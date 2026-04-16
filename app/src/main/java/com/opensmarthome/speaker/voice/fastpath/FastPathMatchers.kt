@@ -488,7 +488,11 @@ object MorningBriefingMatcher : FastPathMatcher {
     override fun tryMatch(normalized: String): FastPathMatch? {
         for (p in patterns) {
             if (p.containsMatchIn(normalized)) {
-                return FastPathMatch(toolName = "morning_briefing", arguments = emptyMap())
+                return FastPathMatch(
+                    toolName = "morning_briefing",
+                    arguments = emptyMap(),
+                    spokenConfirmation = "Here's your morning briefing."
+                )
             }
         }
         return null
@@ -506,7 +510,11 @@ object EveningBriefingMatcher : FastPathMatcher {
     override fun tryMatch(normalized: String): FastPathMatch? {
         for (p in patterns) {
             if (p.containsMatchIn(normalized)) {
-                return FastPathMatch(toolName = "evening_briefing", arguments = emptyMap())
+                return FastPathMatch(
+                    toolName = "evening_briefing",
+                    arguments = emptyMap(),
+                    spokenConfirmation = "Here's your evening briefing."
+                )
             }
         }
         return null
