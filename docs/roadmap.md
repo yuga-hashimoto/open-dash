@@ -72,7 +72,7 @@ Make it feel like Alexa/Google Home first.
 ## Phase 12 — Priority 5: Refactor / Quality
 - [x] P12.1: Dead code sweep — removed dead `is AndroidTtsProvider` branch in VoicePipeline.applyTtsLanguagePreference (TtsManager is the only injected TextToSpeech, so the direct provider branch was unreachable). Removed corresponding unused import
 - [ ] P12.2: CameraX integration (replaces skeleton)
-- [ ] P12.3: MediaProjection integration (replaces skeleton)
+- [x] P12.3: MediaProjection integration — MediaProjectionScreenRecorder uses MediaProjection + MediaRecorder + VirtualDisplay to record the display as MP4 in cache; consent requested via ActivityResultContracts.StartActivityForResult; MainActivity registers it in ScreenRecorderHolder on onCreate
 - [x] P12.4: SecurePreferences audit — SWITCHBOT_TOKEN moved from plaintext DataStore to SecurePreferences (was leaking); added KEY_SWITCHBOT_TOKEN/SECRET/MQTT_PASSWORD constants; removed silent fallback to plaintext SharedPreferences on keystore failure; deleted dead plaintext secret keys (HA_TOKEN, OPENCLAW_API_KEY, SWITCHBOT_SECRET, MQTT_PASSWORD from PreferenceKeys)
 - [x] P12.5: Unified OkHttp with sensible timeouts — TtsManager no longer builds its own client; all HTTP uses NetworkModule singleton (30s connect / 60s read / 30s write)
 - [ ] P12.6: Coverage report — aim 80% non-UI

@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     @javax.inject.Inject lateinit var providerManager: ProviderManager
     @javax.inject.Inject lateinit var appPreferences: AppPreferences
+    @javax.inject.Inject lateinit var screenRecorderHolder: com.opensmarthome.speaker.tool.system.ScreenRecorderHolder
+
+    private lateinit var screenRecorder: com.opensmarthome.speaker.tool.system.MediaProjectionScreenRecorder
 
     private var voiceServiceStarted = false
     private var providerInitialized = false
@@ -78,6 +81,10 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setupImmersiveMode()
+
+        // MediaProjection launcher must be registered before onStart().
+        screenRecorder = com.opensmarthome.speaker.tool.system.MediaProjectionScreenRecorder(this)
+        screenRecorderHolder.setRecorder(screenRecorder)
 
         modelDownloader = ModelDownloader(this)
 
@@ -240,6 +247,9 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         if (isFinishing) {
             VoiceService.stop(this)
+        }
+        if (::screenRecorder.isInitialized) {
+            screenRecorderHolder.clear()
         }
         super.onDestroy()
     }
