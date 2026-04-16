@@ -43,6 +43,32 @@ class MorningGreetingRule : SuggestionRule {
     }
 }
 
+/**
+ * Morning briefing: 7-9 AM with NORMAL priority. Complements
+ * MorningGreetingRule (LOW priority, weather only) by surfacing the
+ * morning_briefing composite tool which includes weather + news +
+ * calendar in one shot. Fires only on weekdays — weekends already get
+ * WeekendMorningRule.
+ */
+class MorningBriefingSuggestionRule : SuggestionRule {
+    override suspend fun evaluate(context: ProactiveContext): Suggestion? {
+        val isWeekend = context.dayOfWeek == java.util.Calendar.SATURDAY ||
+            context.dayOfWeek == java.util.Calendar.SUNDAY
+        return if (!isWeekend && context.hourOfDay in 7..9) {
+            Suggestion(
+                id = "morning_briefing_${context.hourOfDay}",
+                priority = Suggestion.Priority.NORMAL,
+                message = "Want your morning briefing — weather, news, " +
+                    "and today's calendar in one shot?",
+                suggestedAction = SuggestedAction(
+                    toolName = "morning_briefing",
+                    arguments = emptyMap()
+                )
+            )
+        } else null
+    }
+}
+
 /** Evening suggestion: 18-22 dim-the-lights prompt. */
 class EveningLightsRule : SuggestionRule {
     override suspend fun evaluate(context: ProactiveContext): Suggestion? {

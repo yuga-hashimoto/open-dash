@@ -165,6 +165,7 @@ object DeviceModule {
         com.opensmarthome.speaker.assistant.proactive.SuggestionEngine(
             rules = listOf(
                 com.opensmarthome.speaker.assistant.proactive.MorningGreetingRule(),
+                com.opensmarthome.speaker.assistant.proactive.MorningBriefingSuggestionRule(),
                 com.opensmarthome.speaker.assistant.proactive.WeekendMorningRule(),
                 com.opensmarthome.speaker.assistant.proactive.EveningLightsRule(),
                 com.opensmarthome.speaker.assistant.proactive.EveningBriefingRule(),

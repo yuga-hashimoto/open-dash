@@ -29,6 +29,40 @@ class SuggestionEngineTest {
     }
 
     @Test
+    fun `morning briefing fires on weekday at 8`() = runTest {
+        val ctx = ProactiveContext(
+            nowMs = 0,
+            hourOfDay = 8,
+            dayOfWeek = java.util.Calendar.WEDNESDAY
+        )
+        val s = MorningBriefingSuggestionRule().evaluate(ctx)
+        assertThat(s).isNotNull()
+        assertThat(s?.suggestedAction?.toolName).isEqualTo("morning_briefing")
+        assertThat(s?.priority).isEqualTo(Suggestion.Priority.NORMAL)
+    }
+
+    @Test
+    fun `morning briefing silent on weekend`() = runTest {
+        val ctx = ProactiveContext(
+            nowMs = 0,
+            hourOfDay = 8,
+            dayOfWeek = java.util.Calendar.SATURDAY
+        )
+        // Weekends defer to WeekendMorningRule.
+        assertThat(MorningBriefingSuggestionRule().evaluate(ctx)).isNull()
+    }
+
+    @Test
+    fun `morning briefing silent at noon`() = runTest {
+        val ctx = ProactiveContext(
+            nowMs = 0,
+            hourOfDay = 12,
+            dayOfWeek = java.util.Calendar.MONDAY
+        )
+        assertThat(MorningBriefingSuggestionRule().evaluate(ctx)).isNull()
+    }
+
+    @Test
     fun `evening briefing fires at 20`() = runTest {
         val ctx = ProactiveContext(nowMs = 0, hourOfDay = 20, dayOfWeek = 1)
         val suggestion = EveningBriefingRule().evaluate(ctx)
