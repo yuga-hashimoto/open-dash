@@ -64,7 +64,7 @@ Make it feel like Alexa/Google Home first.
 - [x] P10.6: Music Assistant / media control UI — NowPlayingBar wired to dispatch play/pause/next/prev via DeviceManager.executeCommand; HA media_player service names (media_play/media_pause/media_next_track/media_previous_track); HomeViewModel.dispatchMediaAction; clock tick moved from ViewModel to Composable for testability; HomeViewModelTest covers action wiring
 
 ## Phase 11 — Priority 4: Hybrid / External Gateway
-- [ ] P11.1: HermesAgent protocol adapter (new AssistantProvider)
+- [x] P11.1: HermesAgent protocol adapter — HermesAgentProvider implements AssistantProvider; NDJSON streaming; Bearer token auth; health probe; test coverage with MockWebServer
 - [ ] P11.2: OpenClawProvider streaming + tool forwarding
 - [ ] P11.3: "Heavy task" hint — escalate to gateway when needed
 - [ ] P11.4: Unified provider switcher polish
