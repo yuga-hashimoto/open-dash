@@ -50,8 +50,18 @@ class VoiceService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-        scope.launch {
-            initializeWakeWord()
+        // Handle actions
+        when (intent?.action) {
+            ACTION_START_LISTENING -> {
+                Timber.d("VoiceService: trigger listening from external source")
+                scope.launch { voicePipeline.startListening() }
+            }
+            ACTION_STOP_LISTENING -> {
+                voicePipeline.stopSpeaking()
+            }
+            else -> {
+                scope.launch { initializeWakeWord() }
+            }
         }
 
         Timber.d("VoiceService started in foreground")
@@ -60,7 +70,6 @@ class VoiceService : Service() {
 
     private suspend fun initializeWakeWord() {
         try {
-            // Check if Vosk library is available
             Class.forName("org.vosk.Model")
         } catch (e: ClassNotFoundException) {
             Timber.w("Vosk library not available, wake word disabled. Add vosk-android dependency to enable.")
@@ -98,12 +107,15 @@ class VoiceService : Service() {
     override fun onDestroy() {
         wakeWordDetector?.stop()
         voicePipeline.stopSpeaking()
+        voicePipeline.destroy()
         super.onDestroy()
         Timber.d("VoiceService destroyed")
     }
 
     companion object {
         const val NOTIFICATION_ID = 1001
+        const val ACTION_START_LISTENING = "com.opensmarthome.speaker.START_LISTENING"
+        const val ACTION_STOP_LISTENING = "com.opensmarthome.speaker.STOP_LISTENING"
 
         fun start(context: Context) {
             val intent = Intent(context, VoiceService::class.java)
@@ -116,6 +128,13 @@ class VoiceService : Service() {
 
         fun stop(context: Context) {
             context.stopService(Intent(context, VoiceService::class.java))
+        }
+
+        fun triggerListening(context: Context) {
+            val intent = Intent(context, VoiceService::class.java).apply {
+                action = ACTION_START_LISTENING
+            }
+            context.startService(intent)
         }
     }
 }

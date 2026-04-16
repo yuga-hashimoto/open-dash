@@ -1,14 +1,22 @@
 package com.opensmarthome.speaker.voice.pipeline
 
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Build
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
+import com.opensmarthome.speaker.assistant.model.AssistantSession
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
+import com.opensmarthome.speaker.data.preferences.AppPreferences
+import com.opensmarthome.speaker.data.preferences.PreferenceKeys
 import com.opensmarthome.speaker.tool.ToolCall
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.voice.stt.SpeechToText
 import com.opensmarthome.speaker.voice.stt.SttResult
 import com.opensmarthome.speaker.voice.tts.TextToSpeech
 import com.opensmarthome.speaker.voice.wakeword.WakeWordDetector
-import com.opensmarthome.speaker.assistant.model.AssistantSession
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,18 +26,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class VoicePipeline(
+    private val context: Context,
     private val stt: SpeechToText,
     private val tts: TextToSpeech,
     private val router: ConversationRouter,
     private val toolExecutor: ToolExecutor,
     private val moshi: Moshi,
-    private val wakeWordDetector: WakeWordDetector? = null,
-    private val continuousMode: Boolean = false
+    private val preferences: AppPreferences,
+    private val wakeWordDetector: WakeWordDetector? = null
 ) {
     private val _state = MutableStateFlow<VoicePipelineState>(VoicePipelineState.Idle)
     val state: StateFlow<VoicePipelineState> = _state.asStateFlow()
@@ -45,9 +55,15 @@ class VoicePipeline(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var watchdogJob: Job? = null
 
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var toneGenerator: ToneGenerator? = null
+
     companion object {
         private const val MAX_TOOL_ROUNDS = 10
         private const val WATCHDOG_TIMEOUT_MS = 5 * 60 * 1000L
+        private const val CONTINUOUS_MODE_DELAY_MS = 500L
+        private const val DEFAULT_SILENCE_TIMEOUT_MS = 1500L
     }
 
     fun startWakeWordListening() {
@@ -67,13 +83,16 @@ class VoicePipeline(
     }
 
     suspend fun startListening() {
-        // Reset for re-entry
+        // Barge-in: if speaking, stop TTS and start listening
         if (_state.value is VoicePipelineState.Speaking) {
             tts.stop()
         }
         stt.stopListening()
         _partialText.value = ""
         _lastResponse.value = ""
+
+        requestAudioFocus()
+        playListeningBeep()
 
         _state.value = VoicePipelineState.Listening
         resetWatchdog()
@@ -93,6 +112,7 @@ class VoicePipeline(
                         Timber.w("STT error: ${result.message}")
                         _lastResponse.value = "Could not hear you. Tap the mic to try again."
                         _state.value = VoicePipelineState.Error(result.message)
+                        abandonAudioFocus()
                         delay(2000)
                         _state.value = VoicePipelineState.Idle
                         return@collect
@@ -103,6 +123,7 @@ class VoicePipeline(
             Timber.e(e, "STT failed")
             _lastResponse.value = "Voice recognition unavailable."
             _state.value = VoicePipelineState.Error(e.message ?: "STT error")
+            abandonAudioFocus()
             delay(2000)
             _state.value = VoicePipelineState.Idle
             return
@@ -112,6 +133,7 @@ class VoicePipeline(
         if (finalText.isNotBlank()) {
             processUserInput(finalText)
         } else {
+            abandonAudioFocus()
             Timber.d("No speech detected, returning to Idle")
             _state.value = VoicePipelineState.Idle
         }
@@ -123,6 +145,9 @@ class VoicePipeline(
         _partialText.value = text
         _lastResponse.value = ""
         resetWatchdog()
+
+        // Play thinking sound if enabled
+        playThinkingSound()
 
         try {
             val provider = router.resolveProvider()
@@ -171,31 +196,49 @@ class VoicePipeline(
 
                         _lastResponse.value = response.content
                         Timber.d("Speaking response: ${response.content.take(50)}...")
-                        _state.value = VoicePipelineState.Speaking
-                        try {
-                            tts.speak(response.content)
-                            Timber.d("TTS completed")
-                        } catch (e: Exception) {
-                            Timber.e(e, "TTS failed")
+
+                        // Check if TTS is enabled
+                        val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
+                        if (ttsEnabled) {
+                            _state.value = VoicePipelineState.Speaking
+                            try {
+                                tts.speak(response.content)
+                                Timber.d("TTS completed")
+                            } catch (e: Exception) {
+                                Timber.e(e, "TTS failed")
+                            }
                         }
-                        _state.value = VoicePipelineState.Idle
+
+                        // Continuous conversation mode
+                        val continuousMode = preferences.observe(PreferenceKeys.CONTINUOUS_MODE).first() ?: false
+                        if (continuousMode) {
+                            Timber.d("Continuous mode: restarting listening after delay")
+                            delay(CONTINUOUS_MODE_DELAY_MS)
+                            startListening()
+                        } else {
+                            abandonAudioFocus()
+                            _state.value = VoicePipelineState.Idle
+                        }
                         return
                     }
                     else -> {
+                        abandonAudioFocus()
                         _state.value = VoicePipelineState.Idle
                         return
                     }
                 }
             }
 
+            abandonAudioFocus()
             _state.value = VoicePipelineState.Idle
         } catch (e: Exception) {
             Timber.e(e, "Voice pipeline error")
             _lastResponse.value = when {
                 e.message?.contains("No available") == true ->
-                    "No AI provider configured. Go to Settings to set up OpenClaw or a local LLM model."
+                    "No AI provider configured. Go to Settings to set up OpenClaw or download an on-device model."
                 else -> "Something went wrong: ${e.message}"
             }
+            abandonAudioFocus()
             _state.value = VoicePipelineState.Error(e.message ?: "Error")
             delay(4000)
             _state.value = VoicePipelineState.Idle
@@ -218,6 +261,7 @@ class VoicePipeline(
 
     fun stopSpeaking() {
         tts.stop()
+        abandonAudioFocus()
         _state.value = VoicePipelineState.Idle
     }
 
@@ -225,6 +269,63 @@ class VoicePipeline(
         conversationHistory.clear()
         currentSession = null
     }
+
+    // --- Audio Focus ---
+
+    private fun requestAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+            audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                .setAudioAttributes(attrs)
+                .build()
+            audioManager.requestAudioFocus(audioFocusRequest!!)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            audioFocusRequest = null
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+    }
+
+    // --- Thinking Sound ---
+
+    private suspend fun playThinkingSound() {
+        val enabled = preferences.observe(PreferenceKeys.THINKING_SOUND).first() ?: true
+        if (!enabled) return
+
+        try {
+            if (toneGenerator == null) {
+                toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 80)
+            }
+            toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+        } catch (e: Exception) {
+            Timber.w("Could not play thinking sound: ${e.message}")
+        }
+    }
+
+    private fun playListeningBeep() {
+        try {
+            if (toneGenerator == null) {
+                toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 60)
+            }
+            toneGenerator?.startTone(ToneGenerator.TONE_PROP_ACK, 100)
+        } catch (e: Exception) {
+            Timber.w("Could not play listening beep: ${e.message}")
+        }
+    }
+
+    // --- Conversation History ---
 
     private fun trimConversationHistory() {
         val maxMessages = 50
@@ -236,6 +337,8 @@ class VoicePipeline(
         }
     }
 
+    // --- Watchdog ---
+
     private fun startWatchdog() {
         cancelWatchdog()
         watchdogJob = scope.launch {
@@ -243,6 +346,7 @@ class VoicePipeline(
             if (isActive) {
                 tts.stop()
                 stt.stopListening()
+                abandonAudioFocus()
                 _state.value = VoicePipelineState.Idle
             }
         }
@@ -251,10 +355,18 @@ class VoicePipeline(
     private fun resetWatchdog() { startWatchdog() }
     private fun cancelWatchdog() { watchdogJob?.cancel(); watchdogJob = null }
 
+    // --- Tool Arguments ---
+
     @Suppress("UNCHECKED_CAST")
     private fun parseToolArguments(json: String): Map<String, Any?> {
         return try {
             moshi.adapter(Map::class.java).fromJson(json) as? Map<String, Any?> ?: emptyMap()
         } catch (e: Exception) { emptyMap() }
+    }
+
+    fun destroy() {
+        toneGenerator?.release()
+        toneGenerator = null
+        abandonAudioFocus()
     }
 }

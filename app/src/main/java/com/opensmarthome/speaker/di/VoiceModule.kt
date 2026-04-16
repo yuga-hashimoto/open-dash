@@ -2,6 +2,7 @@ package com.opensmarthome.speaker.di
 
 import android.content.Context
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
+import com.opensmarthome.speaker.data.preferences.AppPreferences
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.voice.pipeline.VoicePipeline
 import com.opensmarthome.speaker.voice.stt.AndroidSttProvider
@@ -36,10 +37,20 @@ object VoiceModule {
     @Provides
     @Singleton
     fun provideVoicePipeline(
+        @ApplicationContext context: Context,
         stt: SpeechToText,
         tts: TextToSpeech,
         router: ConversationRouter,
         toolExecutor: ToolExecutor,
-        moshi: Moshi
-    ): VoicePipeline = VoicePipeline(stt, tts, router, toolExecutor, moshi)
+        moshi: Moshi,
+        preferences: AppPreferences
+    ): VoicePipeline = VoicePipeline(
+        context = context,
+        stt = stt,
+        tts = tts,
+        router = router,
+        toolExecutor = toolExecutor,
+        moshi = moshi,
+        preferences = preferences
+    )
 }
