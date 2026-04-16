@@ -49,7 +49,7 @@ Make it feel like Alexa/Google Home first.
 - [x] P9.1: Settings → Skills manager (SkillsViewModel + SkillsScreen: list, install-from-URL, delete)
 - [x] P9.2: Settings → Routines manager (RoutinesViewModel + RoutinesScreen: list, delete, action preview)
 - [x] P9.3: Settings → Memory browser (MemoryViewModel + MemoryScreen: search, delete, clear-all)
-- [ ] P9.4: Settings → Documents / RAG (RagRepository)
+- [x] P9.4: Settings → Documents / RAG (DocumentsViewModel + DocumentsScreen: ingest card, list with chunk counts, delete)
 - [x] P9.5: Settings → Analytics dashboard (AnalyticsViewModel + AnalyticsScreen: summary card, per-tool success rates, reset)
 - [x] P9.6: Settings → Custom system prompt editor (SystemPromptViewModel + SystemPromptScreen)
 - [x] P9.7: Settings → Permissions checklist (PermissionsViewModel + PermissionsScreen, per-row 'Open settings' deep-link)

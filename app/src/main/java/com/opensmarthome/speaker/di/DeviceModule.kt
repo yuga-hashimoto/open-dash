@@ -211,6 +211,15 @@ object DeviceModule {
 
     @Provides
     @Singleton
+    fun provideRagRepository(
+        dao: DocumentChunkDao
+    ): com.opensmarthome.speaker.tool.rag.RagRepository {
+        val service = com.opensmarthome.speaker.tool.rag.RagService(dao)
+        return com.opensmarthome.speaker.tool.rag.RagRepository(service, dao)
+    }
+
+    @Provides
+    @Singleton
     fun provideToolExecutor(
         deviceManager: DeviceManager,
         moshi: Moshi,
