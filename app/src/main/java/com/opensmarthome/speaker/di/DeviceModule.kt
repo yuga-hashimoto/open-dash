@@ -28,6 +28,8 @@ import com.opensmarthome.speaker.assistant.skills.SkillRegistry
 import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
 import com.opensmarthome.speaker.assistant.routine.RoomRoutineStore
 import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
+import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
+import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.tool.memory.MemoryToolExecutor
@@ -161,6 +163,9 @@ object DeviceModule {
             ),
             SmsToolExecutor(
                 AndroidSmsSender(context)
+            ),
+            ScreenToolExecutor(
+                AccessibilityScreenReader()
             ),
             MemoryToolExecutor(memoryDao),
             RoutineToolExecutor(routineStore, delegatingExecutor),
