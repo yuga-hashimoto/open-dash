@@ -260,6 +260,40 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `set thermostat to 22 dispatches climate set_temperature`() {
+        val m = router.match("set thermostat to 22")
+        assertThat(m?.toolName).isEqualTo("execute_command")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("climate")
+        assertThat(m?.arguments?.get("action")).isEqualTo("set_temperature")
+        @Suppress("UNCHECKED_CAST")
+        val params = m?.arguments?.get("parameters") as? Map<String, Any?>
+        assertThat(params?.get("temperature")).isEqualTo(22)
+    }
+
+    @Test
+    fun `change AC to 26 degrees`() {
+        val m = router.match("change ac to 26 degrees")
+        assertThat(m?.arguments?.get("action")).isEqualTo("set_temperature")
+    }
+
+    @Test
+    fun `japanese aircon temperature`() {
+        val m = router.match("エアコン25度")
+        assertThat(m?.arguments?.get("action")).isEqualTo("set_temperature")
+        @Suppress("UNCHECKED_CAST")
+        val params = m?.arguments?.get("parameters") as? Map<String, Any?>
+        assertThat(params?.get("temperature")).isEqualTo(25)
+    }
+
+    @Test
+    fun `thermostat clamps to safe range`() {
+        val m = router.match("set thermostat to 5")
+        @Suppress("UNCHECKED_CAST")
+        val params = m?.arguments?.get("parameters") as? Map<String, Any?>
+        assertThat(params?.get("temperature")).isEqualTo(10)
+    }
+
+    @Test
     fun `run goodnight routine`() {
         val m = router.match("run goodnight routine")
         assertThat(m?.toolName).isEqualTo("run_routine")

@@ -44,6 +44,7 @@ class DefaultFastPathRouter(
             TimerMatcher,
             TimeQueryMatcher,
             VolumeMatcher,
+            ThermostatMatcher,
             LightsMatcher,
             MediaControlMatcher,
             // RunRoutineMatcher must precede LaunchAppMatcher because "run X" overlaps.
@@ -206,6 +207,28 @@ object VolumeMatcher : FastPathMatcher {
             )
         }
         return null
+    }
+}
+
+/** "set thermostat to 22", "エアコン22度に" */
+object ThermostatMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """(?:set|change)\s+(?:the\s+)?(?:thermostat|ac|aircon|temperature)\s+(?:to\s+)?(\d{1,2})\s*(?:degrees?|°)?"""
+    )
+    private val japaneseRegex = Regex("""(?:エアコン|温度|設定温度)\s*(?:を)?\s*(\d{1,2})\s*(?:度|℃)""")
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        val match = englishRegex.find(normalized) ?: japaneseRegex.find(normalized) ?: return null
+        val temp = match.groupValues[1].toInt().coerceIn(10, 32)
+        return FastPathMatch(
+            toolName = "execute_command",
+            arguments = mapOf(
+                "device_type" to "climate",
+                "action" to "set_temperature",
+                "parameters" to mapOf("temperature" to temp)
+            ),
+            spokenConfirmation = "Setting to ${temp} degrees."
+        )
     }
 }
 
