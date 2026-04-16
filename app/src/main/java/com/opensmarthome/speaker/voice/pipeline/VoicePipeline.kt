@@ -18,6 +18,7 @@ import com.opensmarthome.speaker.data.preferences.PreferenceKeys
 import com.opensmarthome.speaker.tool.ToolCall
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.voice.fastpath.FastPathRouter
+import com.opensmarthome.speaker.voice.metrics.LatencyRecorder
 import com.opensmarthome.speaker.voice.stt.AndroidSttProvider
 import com.opensmarthome.speaker.voice.stt.SpeechToText
 import com.opensmarthome.speaker.voice.stt.SttResult
@@ -50,8 +51,11 @@ class VoicePipeline(
     private val sessionDao: SessionDao? = null,
     private val messageDao: MessageDao? = null,
     private val wakeWordDetector: WakeWordDetector? = null,
-    private val fastPathRouter: FastPathRouter? = null
+    private val fastPathRouter: FastPathRouter? = null,
+    private val latencyRecorder: LatencyRecorder = LatencyRecorder()
 ) {
+    /** Exposed for diagnostics / Settings debug screen. */
+    fun latencySummary() = latencyRecorder.summarize()
     private val _state = MutableStateFlow<VoicePipelineState>(VoicePipelineState.Idle)
     val state: StateFlow<VoicePipelineState> = _state.asStateFlow()
 
@@ -262,7 +266,13 @@ class VoicePipeline(
         // Target <200ms from final STT to spoken confirmation (Priority 1).
         val fastMatch = fastPathRouter?.match(text)
         if (fastMatch != null) {
-            if (tryHandleFastPath(text, fastMatch)) return
+            latencyRecorder.startSpan(LatencyRecorder.Span.FAST_PATH_TO_RESPONSE)
+            val handled = tryHandleFastPath(text, fastMatch)
+            val ms = latencyRecorder.endSpan(LatencyRecorder.Span.FAST_PATH_TO_RESPONSE)
+            if (handled) {
+                Timber.d("Fast-path completed in ${ms}ms")
+                return
+            }
         }
 
         // Play thinking sound if enabled
@@ -291,7 +301,12 @@ class VoicePipeline(
             _state.value = VoicePipelineState.Thinking
 
             while (toolRounds < MAX_TOOL_ROUNDS) {
+                latencyRecorder.startSpan(LatencyRecorder.Span.LLM_ROUND_TRIP, key = "round_$toolRounds")
                 val response = provider.send(currentSession!!, conversationHistory, tools)
+                val llmMs = latencyRecorder.endSpan(
+                    LatencyRecorder.Span.LLM_ROUND_TRIP, key = "round_$toolRounds"
+                )
+                Timber.d("LLM round $toolRounds completed in ${llmMs}ms")
 
                 when (response) {
                     is AssistantMessage.Assistant -> {
