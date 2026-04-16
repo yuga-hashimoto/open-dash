@@ -27,8 +27,10 @@ object TtsUtils {
         result = result.replace(REGEX_BOLD, "$1")
         result = result.replace(REGEX_ITALIC, "$1")
         result = result.replace(REGEX_INLINE_CODE, "$1")
-        result = result.replace(REGEX_LINK, "$1")
+        // Images must be stripped BEFORE links, otherwise REGEX_LINK matches
+        // the `[alt](url)` portion of `![alt](url)` and leaves a stray `!`.
         result = result.replace(REGEX_IMAGE, "$1")
+        result = result.replace(REGEX_LINK, "$1")
         result = result.replace(REGEX_HR, "")
         result = result.replace(REGEX_BLOCKQUOTE, "")
         result = result.replace(REGEX_BULLET, "")
