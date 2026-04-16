@@ -64,23 +64,21 @@ class EmbeddedLlmProvider(
         return AssistantSession(providerId = id)
     }
 
-    private fun initializeEngine() {
+    private suspend fun initializeEngine() {
         val modelPath = this.config.modelPath
 
-        // Try GPU first, fall back to CPU
-        val gpuResult = runCatching {
-            Engine(
-                EngineConfig(
-                    modelPath = modelPath,
-                    backend = Backend.GPU(),
-                    cacheDir = context.cacheDir.absolutePath
-                )
-            ).apply { initialize() }
-        }
-
-        engine = gpuResult.getOrElse { gpuError ->
-            Timber.w("GPU init failed: ${gpuError.message}, falling back to CPU")
-            runCatching {
+        val initializer = EngineInitializer()
+        val result = initializer.initialize(
+            initGpu = {
+                Engine(
+                    EngineConfig(
+                        modelPath = modelPath,
+                        backend = Backend.GPU(),
+                        cacheDir = context.cacheDir.absolutePath
+                    )
+                ).apply { initialize() }
+            },
+            initCpu = {
                 Engine(
                     EngineConfig(
                         modelPath = modelPath,
@@ -88,14 +86,18 @@ class EmbeddedLlmProvider(
                         cacheDir = context.cacheDir.absolutePath
                     )
                 ).apply { initialize() }
-            }.getOrElse { cpuError ->
-                throw IllegalStateException(
-                    "Failed to initialize engine: GPU(${gpuError.message}), CPU(${cpuError.message})"
-                )
             }
-        }
+        )
 
-        Timber.d("LiteRT-LM engine initialized")
+        engine = when (result) {
+            is EngineInitializer.Result.Success -> {
+                Timber.d("LiteRT-LM engine initialized on ${result.backend}")
+                result.engine
+            }
+            is EngineInitializer.Result.Failure -> throw IllegalStateException(
+                "Failed to initialize engine: GPU(${result.gpuError}), CPU(${result.cpuError})"
+            )
+        }
     }
 
     private fun createConversation() {
