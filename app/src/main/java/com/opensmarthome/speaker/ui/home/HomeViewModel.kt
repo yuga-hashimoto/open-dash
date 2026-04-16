@@ -112,7 +112,8 @@ class HomeViewModel @Inject constructor(
                         deviceName = it.name,
                         mediaTitle = it.state.mediaTitle,
                         mediaArtist = it.state.attributes["media_artist"] as? String,
-                        isPlaying = it.state.isOn == true
+                        isPlaying = it.state.isOn == true,
+                        volumeLevel = (it.state.attributes["volume_level"] as? Number)?.toFloat()
                     )
                 }
             }
@@ -123,6 +124,19 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             deviceManager.executeCommand(
                 DeviceCommand(deviceId = deviceId, action = action.haService)
+            )
+        }
+    }
+
+    fun dispatchMediaVolume(deviceId: String, level: Float) {
+        val clamped = level.coerceIn(0f, 1f)
+        viewModelScope.launch {
+            deviceManager.executeCommand(
+                DeviceCommand(
+                    deviceId = deviceId,
+                    action = "volume_set",
+                    parameters = mapOf("volume_level" to clamped)
+                )
             )
         }
     }

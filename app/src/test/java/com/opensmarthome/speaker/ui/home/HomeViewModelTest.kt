@@ -77,4 +77,45 @@ class HomeViewModelTest {
 
         coVerify { deviceManager.executeCommand(match { it.action == "media_pause" }) }
     }
+
+    @Test
+    fun `dispatchMediaVolume sends volume_set with clamped volume_level`() = runTest {
+        val deviceManager = mockk<DeviceManager>()
+        every { deviceManager.devices } returns MutableStateFlow(emptyMap())
+        val cmdSlot = slot<DeviceCommand>()
+        coEvery { deviceManager.executeCommand(capture(cmdSlot)) } returns CommandResult(success = true)
+
+        val ss = mockk<com.opensmarthome.speaker.assistant.proactive.SuggestionState>(relaxed = true)
+        every { ss.current } returns MutableStateFlow(emptyList())
+        val te = mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val vm = HomeViewModel(deviceManager, ss, te)
+
+        vm.dispatchMediaVolume("media_player.den", 0.42f)
+        advanceUntilIdle()
+
+        assertThat(cmdSlot.captured.deviceId).isEqualTo("media_player.den")
+        assertThat(cmdSlot.captured.action).isEqualTo("volume_set")
+        assertThat(cmdSlot.captured.parameters["volume_level"]).isEqualTo(0.42f)
+    }
+
+    @Test
+    fun `dispatchMediaVolume clamps out-of-range values`() = runTest {
+        val deviceManager = mockk<DeviceManager>()
+        every { deviceManager.devices } returns MutableStateFlow(emptyMap())
+        val cmdSlot = slot<DeviceCommand>()
+        coEvery { deviceManager.executeCommand(capture(cmdSlot)) } returns CommandResult(success = true)
+
+        val ss = mockk<com.opensmarthome.speaker.assistant.proactive.SuggestionState>(relaxed = true)
+        every { ss.current } returns MutableStateFlow(emptyList())
+        val te = mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val vm = HomeViewModel(deviceManager, ss, te)
+
+        vm.dispatchMediaVolume("media_player.over", 1.7f)
+        advanceUntilIdle()
+        assertThat(cmdSlot.captured.parameters["volume_level"]).isEqualTo(1.0f)
+
+        vm.dispatchMediaVolume("media_player.under", -0.2f)
+        advanceUntilIdle()
+        assertThat(cmdSlot.captured.parameters["volume_level"]).isEqualTo(0.0f)
+    }
 }

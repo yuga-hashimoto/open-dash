@@ -3,11 +3,15 @@ package com.opensmarthome.speaker.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -16,6 +20,8 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +38,9 @@ data class NowPlayingInfo(
     val deviceName: String,
     val mediaTitle: String?,
     val mediaArtist: String?,
-    val isPlaying: Boolean
+    val isPlaying: Boolean,
+    /** Current volume on 0.0-1.0 scale, matching HA `volume_level` attribute. Null = unknown. */
+    val volumeLevel: Float? = null
 )
 
 /** Service actions the bar dispatches to its host. Names match HA media_player services. */
@@ -47,6 +55,7 @@ enum class MediaAction(val haService: String) {
 fun NowPlayingBar(
     nowPlaying: NowPlayingInfo,
     onMediaAction: (MediaAction) -> Unit = {},
+    onVolumeChange: (Float) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -55,49 +64,77 @@ fun NowPlayingBar(
         color = SpeakerSurfaceElevated.copy(alpha = 0.85f),
         tonalElevation = 8.dp
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.MusicNote,
-                contentDescription = null,
-                tint = DeviceMediaPlaying,
-                modifier = Modifier.size(24.dp)
-            )
-            Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = nowPlaying.mediaTitle ?: "Unknown",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = SpeakerTextPrimary,
-                    maxLines = 1
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.MusicNote,
+                    contentDescription = null,
+                    tint = DeviceMediaPlaying,
+                    modifier = Modifier.size(24.dp)
                 )
-                if (nowPlaying.mediaArtist != null) {
+                Column(
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = nowPlaying.mediaArtist,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SpeakerTextSecondary,
+                        text = nowPlaying.mediaTitle ?: "Unknown",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = SpeakerTextPrimary,
                         maxLines = 1
                     )
+                    if (nowPlaying.mediaArtist != null) {
+                        Text(
+                            text = nowPlaying.mediaArtist,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SpeakerTextSecondary,
+                            maxLines = 1
+                        )
+                    }
+                }
+                IconButton(onClick = { onMediaAction(MediaAction.PREVIOUS) }) {
+                    Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous", tint = SpeakerTextPrimary)
+                }
+                IconButton(onClick = {
+                    onMediaAction(if (nowPlaying.isPlaying) MediaAction.PAUSE else MediaAction.PLAY)
+                }) {
+                    Icon(
+                        imageVector = if (nowPlaying.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (nowPlaying.isPlaying) "Pause" else "Play",
+                        tint = SpeakerTextPrimary
+                    )
+                }
+                IconButton(onClick = { onMediaAction(MediaAction.NEXT) }) {
+                    Icon(Icons.Filled.SkipNext, contentDescription = "Next", tint = SpeakerTextPrimary)
                 }
             }
-            IconButton(onClick = { onMediaAction(MediaAction.PREVIOUS) }) {
-                Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous", tint = SpeakerTextPrimary)
-            }
-            IconButton(onClick = {
-                onMediaAction(if (nowPlaying.isPlaying) MediaAction.PAUSE else MediaAction.PLAY)
-            }) {
-                Icon(
-                    imageVector = if (nowPlaying.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (nowPlaying.isPlaying) "Pause" else "Play",
-                    tint = SpeakerTextPrimary
-                )
-            }
-            IconButton(onClick = { onMediaAction(MediaAction.NEXT) }) {
-                Icon(Icons.Filled.SkipNext, contentDescription = "Next", tint = SpeakerTextPrimary)
+            if (nowPlaying.volumeLevel != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val volume = nowPlaying.volumeLevel.coerceIn(0f, 1f)
+                    Icon(
+                        imageVector = if (volume <= 0f) Icons.AutoMirrored.Filled.VolumeOff
+                        else Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = "Volume",
+                        tint = SpeakerTextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Slider(
+                        value = volume,
+                        onValueChange = { onVolumeChange(it.coerceIn(0f, 1f)) },
+                        valueRange = 0f..1f,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        colors = SliderDefaults.colors(
+                            thumbColor = DeviceMediaPlaying,
+                            activeTrackColor = DeviceMediaPlaying
+                        )
+                    )
+                    Text(
+                        text = "${(volume * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SpeakerTextSecondary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
     }

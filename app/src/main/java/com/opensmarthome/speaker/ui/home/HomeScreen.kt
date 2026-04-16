@@ -100,6 +100,9 @@ fun HomeScreen(
                 onMediaAction = { action ->
                     viewModel.dispatchMediaAction(playing.deviceId, action)
                 },
+                onVolumeChange = { level ->
+                    viewModel.dispatchMediaVolume(playing.deviceId, level)
+                },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp)
             )
         }
