@@ -37,6 +37,7 @@ class VoiceService : Service() {
     @Inject lateinit var voicePipeline: VoicePipeline
     @Inject lateinit var preferences: AppPreferences
     @Inject lateinit var batteryMonitor: com.opensmarthome.speaker.util.BatteryMonitor
+    @Inject lateinit var thermalMonitor: com.opensmarthome.speaker.util.ThermalMonitor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeWordDetector: VoskWakeWordDetector? = null
@@ -196,13 +197,21 @@ class VoiceService : Service() {
             return
         }
 
-        // Battery saver: skip wake word when battery is low and device is
-        // unplugged. This is an opt-in policy — defaults to off so users who
-        // keep the tablet plugged in continuously aren't affected.
+        // Battery + thermal saver: skip wake word when either the battery is
+        // low (and the device is unplugged) or the chassis is reporting a
+        // thermal throttle. Opt-in policy — defaults off so users who keep
+        // the tablet plugged in continuously aren't affected.
         val batterySaverEnabled = preferences.observe(PreferenceKeys.BATTERY_SAVER_ENABLED).first() ?: false
-        if (batterySaverEnabled && batteryMonitor.status.value.isLow) {
-            Timber.d("Battery saver active (level=${batteryMonitor.status.value.level}%), skipping wake word")
-            return
+        if (batterySaverEnabled) {
+            if (batteryMonitor.status.value.isLow) {
+                Timber.d("Battery saver active (level=${batteryMonitor.status.value.level}%), skipping wake word")
+                return
+            }
+            val thermal = thermalMonitor.status.value
+            if (thermal.shouldThrottle) {
+                Timber.d("Thermal throttle active (level=$thermal), skipping wake word")
+                return
+            }
         }
 
         try {
