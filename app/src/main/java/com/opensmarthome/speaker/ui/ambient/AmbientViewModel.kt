@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.opensmarthome.speaker.device.DeviceManager
 import com.opensmarthome.speaker.tool.ToolCall
 import com.opensmarthome.speaker.tool.ToolExecutor
+import com.opensmarthome.speaker.util.BatteryMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
@@ -24,7 +26,8 @@ import javax.inject.Inject
 class AmbientViewModel @Inject constructor(
     private val deviceManager: DeviceManager,
     private val snapshotBuilder: AmbientSnapshotBuilder,
-    private val toolExecutor: ToolExecutor
+    private val toolExecutor: ToolExecutor,
+    private val batteryMonitor: BatteryMonitor
 ) : ViewModel() {
 
     private val _snapshot = MutableStateFlow(AmbientSnapshot(nowMs = System.currentTimeMillis()))
@@ -32,9 +35,12 @@ class AmbientViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            deviceManager.devices.collect { deviceMap ->
-                _snapshot.value = snapshotBuilder.build(deviceMap.values)
-            }
+            combine(deviceManager.devices, batteryMonitor.status) { deviceMap, battery ->
+                snapshotBuilder.build(deviceMap.values).copy(
+                    batteryLevel = battery.level,
+                    batteryCharging = battery.isCharging
+                )
+            }.collect { _snapshot.value = it }
         }
     }
 

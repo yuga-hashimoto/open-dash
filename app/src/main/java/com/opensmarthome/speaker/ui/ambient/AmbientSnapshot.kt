@@ -23,7 +23,11 @@ data class AmbientSnapshot(
     val nextTimerLabel: String? = null,
     val nextTimerRemainingSeconds: Int? = null,
     val recentDeviceActivity: List<DeviceLine> = emptyList(),
-    val upcomingCalendarEvents: List<String> = emptyList()
+    val upcomingCalendarEvents: List<String> = emptyList(),
+    /** Host device battery level 0..100, or null if not yet sampled. */
+    val batteryLevel: Int? = null,
+    /** True while the host device is plugged in. */
+    val batteryCharging: Boolean = false
 ) {
     data class DeviceLine(val name: String, val state: String)
 

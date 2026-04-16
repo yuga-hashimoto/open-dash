@@ -5,6 +5,8 @@ import com.opensmarthome.speaker.device.DeviceManager
 import com.opensmarthome.speaker.device.model.Device
 import com.opensmarthome.speaker.device.model.DeviceState
 import com.opensmarthome.speaker.device.model.DeviceType
+import com.opensmarthome.speaker.util.BatteryMonitor
+import com.opensmarthome.speaker.util.BatteryStatus
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +56,9 @@ class AmbientViewModelTest {
         val builder = AmbientSnapshotBuilder(clock = { 1_700_000_000_000L })
         val vm = run {
             val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
-            AmbientViewModel(deviceManager, builder, te)
+            val bm = mockk<BatteryMonitor>()
+            every { bm.status } returns MutableStateFlow(BatteryStatus(level = 100, isCharging = true))
+            AmbientViewModel(deviceManager, builder, te, bm)
         }
         advanceUntilIdle()
 
@@ -73,7 +77,9 @@ class AmbientViewModelTest {
         val builder = AmbientSnapshotBuilder(clock = { 0L })
         val vm = run {
             val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
-            AmbientViewModel(deviceManager, builder, te)
+            val bm = mockk<BatteryMonitor>()
+            every { bm.status } returns MutableStateFlow(BatteryStatus(level = 100, isCharging = true))
+            AmbientViewModel(deviceManager, builder, te, bm)
         }
         advanceUntilIdle()
         assertThat(vm.snapshot.value.recentDeviceActivity).isEmpty()
@@ -89,5 +95,28 @@ class AmbientViewModelTest {
 
         assertThat(vm.snapshot.value.recentDeviceActivity).hasSize(1)
         assertThat(vm.snapshot.value.recentDeviceActivity.first().name).isEqualTo("Living Light")
+    }
+
+    @Test
+    fun `snapshot reflects battery level and charging state`() = runTest {
+        val deviceManager: DeviceManager = mockk()
+        every { deviceManager.devices } returns MutableStateFlow(emptyMap())
+        val builder = AmbientSnapshotBuilder(clock = { 0L })
+        val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val battery = MutableStateFlow(BatteryStatus(level = 42, isCharging = false))
+        val bm = mockk<BatteryMonitor>()
+        every { bm.status } returns battery
+
+        val vm = AmbientViewModel(deviceManager, builder, te, bm)
+        advanceUntilIdle()
+
+        assertThat(vm.snapshot.value.batteryLevel).isEqualTo(42)
+        assertThat(vm.snapshot.value.batteryCharging).isFalse()
+
+        battery.value = BatteryStatus(level = 78, isCharging = true)
+        advanceUntilIdle()
+
+        assertThat(vm.snapshot.value.batteryLevel).isEqualTo(78)
+        assertThat(vm.snapshot.value.batteryCharging).isTrue()
     }
 }
