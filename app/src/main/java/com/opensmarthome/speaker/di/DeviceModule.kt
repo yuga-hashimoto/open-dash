@@ -341,9 +341,10 @@ object DeviceModule {
             RoutineToolExecutor(routineStore, delegatingExecutor),
             SkillToolExecutor(skillRegistry, skillInstaller),
             com.opensmarthome.speaker.tool.system.FindDeviceTool(context),
-            // Composite — calls back into the executor it's part of via lambda
-            // to avoid a Hilt cycle.
-            com.opensmarthome.speaker.tool.composite.MorningBriefingTool { delegatingExecutor }
+            // Composites — call back into the executor they're part of via
+            // lambda to avoid a Hilt cycle.
+            com.opensmarthome.speaker.tool.composite.MorningBriefingTool { delegatingExecutor },
+            com.opensmarthome.speaker.tool.composite.EveningBriefingTool { delegatingExecutor }
             )
         )
         compositeHolder[0] = composite

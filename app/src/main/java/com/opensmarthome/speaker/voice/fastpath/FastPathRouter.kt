@@ -53,9 +53,10 @@ class DefaultFastPathRouter(
             RunRoutineMatcher,
             LaunchAppMatcher,
             FindDeviceMatcher,
-            // MorningBriefingMatcher must precede WeatherMatcher / NewsMatcher
-            // so 'good morning briefing' wins.
+            // Briefing matchers must precede WeatherMatcher / NewsMatcher
+            // so 'good morning briefing' / 'evening briefing' win.
             MorningBriefingMatcher,
+            EveningBriefingMatcher,
             WeatherMatcher,
             NewsMatcher,
             DatetimeMatcher,
@@ -510,6 +511,27 @@ object HelpMatcher : FastPathMatcher {
         }
         if (japanesePatterns.any { it.containsMatchIn(normalized) }) {
             return FastPathMatch(toolName = null, spokenConfirmation = JA_HELP)
+        }
+        return null
+    }
+}
+
+/**
+ * "evening briefing", "wind down" → evening_briefing — notifications +
+ * tomorrow's calendar + active timers in one shot.
+ */
+object EveningBriefingMatcher : FastPathMatcher {
+    private val patterns = listOf(
+        Regex("""(?:good\s+)?evening\s+(?:briefing|summary|update)"""),
+        Regex("""wind\s+down(?:\s+briefing)?"""),
+        Regex("""(?:夜|今夜|寝る前)\s*(?:の)?\s*(?:ブリーフィング|まとめ|サマリー)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (p in patterns) {
+            if (p.containsMatchIn(normalized)) {
+                return FastPathMatch(toolName = "evening_briefing", arguments = emptyMap())
+            }
         }
         return null
     }
