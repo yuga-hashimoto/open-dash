@@ -109,7 +109,7 @@ fun HomeScreen(
         suggestions.firstOrNull()?.let { suggestion ->
             SuggestionBubble(
                 suggestion = suggestion,
-                onAccept = { viewModel.dismissSuggestion(it.id) },
+                onAccept = { viewModel.acceptSuggestion(it) },
                 onDismiss = { viewModel.dismissSuggestion(it.id) },
                 modifier = Modifier.align(Alignment.TopCenter)
             )

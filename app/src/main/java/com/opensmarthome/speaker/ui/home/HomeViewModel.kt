@@ -7,23 +7,54 @@ import com.opensmarthome.speaker.assistant.proactive.SuggestionState
 import com.opensmarthome.speaker.device.DeviceManager
 import com.opensmarthome.speaker.device.model.DeviceCommand
 import com.opensmarthome.speaker.device.model.DeviceType
+import com.opensmarthome.speaker.tool.ToolCall
+import com.opensmarthome.speaker.tool.ToolExecutor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val deviceManager: DeviceManager,
-    private val suggestionState: SuggestionState
+    private val suggestionState: SuggestionState,
+    private val toolExecutor: ToolExecutor
 ) : ViewModel() {
 
     val suggestions: StateFlow<List<Suggestion>> = suggestionState.current
 
     fun dismissSuggestion(id: String) {
         suggestionState.dismiss(id)
+    }
+
+    /**
+     * "Yes" on a SuggestionBubble: execute the suggested tool call, then
+     * dismiss the bubble. Best-effort — if the tool fails the user can still
+     * try via voice or manually.
+     */
+    fun acceptSuggestion(suggestion: Suggestion) {
+        val action = suggestion.suggestedAction
+        if (action == null) {
+            suggestionState.dismiss(suggestion.id)
+            return
+        }
+        viewModelScope.launch {
+            try {
+                toolExecutor.execute(
+                    ToolCall(
+                        id = "suggest_${suggestion.id}",
+                        name = action.toolName,
+                        arguments = action.arguments
+                    )
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "Suggested action failed: ${action.toolName}")
+            }
+            suggestionState.dismiss(suggestion.id)
+        }
     }
 
     private val _weather = MutableStateFlow<WeatherData?>(null)

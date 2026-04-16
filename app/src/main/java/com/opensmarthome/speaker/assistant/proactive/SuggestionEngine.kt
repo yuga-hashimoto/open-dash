@@ -50,7 +50,16 @@ class EveningLightsRule : SuggestionRule {
             Suggestion(
                 id = "evening_lights_${context.hourOfDay}",
                 priority = Suggestion.Priority.LOW,
-                message = "It's getting late. Want me to dim the lights?"
+                message = "It's getting late. Want me to dim the lights?",
+                // Tap "Yes" → dim all lights to 30% via execute_command
+                suggestedAction = SuggestedAction(
+                    toolName = "execute_command",
+                    arguments = mapOf(
+                        "device_type" to "light",
+                        "action" to "set_brightness",
+                        "parameters" to mapOf("brightness" to 30)
+                    )
+                )
             )
         } else null
     }

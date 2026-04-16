@@ -45,7 +45,8 @@ class HomeViewModelTest {
 
         val ss = mockk<com.opensmarthome.speaker.assistant.proactive.SuggestionState>(relaxed = true)
         every { ss.current } returns MutableStateFlow(emptyList())
-        val vm = HomeViewModel(deviceManager, ss)
+        val te = mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val vm = HomeViewModel(deviceManager, ss, te)
         vm.dispatchMediaAction("media_player.kitchen", MediaAction.PLAY)
         advanceUntilIdle()
 
@@ -69,7 +70,8 @@ class HomeViewModelTest {
 
         val ss = mockk<com.opensmarthome.speaker.assistant.proactive.SuggestionState>(relaxed = true)
         every { ss.current } returns MutableStateFlow(emptyList())
-        val vm = HomeViewModel(deviceManager, ss)
+        val te = mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val vm = HomeViewModel(deviceManager, ss, te)
         vm.dispatchMediaAction("media_player.x", MediaAction.PAUSE)
         advanceUntilIdle()
 
