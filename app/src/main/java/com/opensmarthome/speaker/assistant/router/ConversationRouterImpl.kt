@@ -1,6 +1,7 @@
 package com.opensmarthome.speaker.assistant.router
 
 import com.opensmarthome.speaker.assistant.provider.AssistantProvider
+import com.opensmarthome.speaker.util.NetworkMonitor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,7 +10,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ConversationRouterImpl @Inject constructor() : ConversationRouter {
+class ConversationRouterImpl @Inject constructor(
+    private val networkMonitor: NetworkMonitor
+) : ConversationRouter {
 
     private val _availableProviders = MutableStateFlow<List<AssistantProvider>>(emptyList())
     override val availableProviders: StateFlow<List<AssistantProvider>> = _availableProviders.asStateFlow()
@@ -59,14 +62,22 @@ class ConversationRouterImpl @Inject constructor() : ConversationRouter {
     }
 
     private suspend fun resolveAuto(userInput: String?): AssistantProvider {
-        val available = _availableProviders.value.filter { provider ->
-            runCatching { provider.isAvailable() }.getOrDefault(false)
-        }
-        if (available.isEmpty()) throw NoAvailableProviderException("No available providers")
+        val online = networkMonitor.isOnline.value
+        // Skip remote providers when offline so we don't waste a turn on a
+        // network error spiral.
+        val available = _availableProviders.value
+            .filter { online || it.capabilities.isLocal }
+            .filter { provider ->
+                runCatching { provider.isAvailable() }.getOrDefault(false)
+            }
+        if (available.isEmpty()) throw NoAvailableProviderException(
+            if (!online) "Offline and no local provider available"
+            else "No available providers"
+        )
 
         // Prefer a remote provider when HeavyTaskDetector decides the local
         // model isn't a good fit (long input, heavy keywords, vision gap).
-        if (userInput != null) {
+        if (userInput != null && online) {
             val local = available.firstOrNull { it.capabilities.isLocal }
             if (local != null) {
                 val decision = HeavyTaskDetector.decide(userInput, local.capabilities)

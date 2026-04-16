@@ -21,7 +21,9 @@ class ConversationRouterImplTest {
 
     @BeforeEach
     fun setup() {
-        router = ConversationRouterImpl()
+        val nm = io.mockk.mockk<com.opensmarthome.speaker.util.NetworkMonitor>()
+        io.mockk.every { nm.isOnline } returns kotlinx.coroutines.flow.MutableStateFlow(true)
+        router = ConversationRouterImpl(nm)
     }
 
     @Test
