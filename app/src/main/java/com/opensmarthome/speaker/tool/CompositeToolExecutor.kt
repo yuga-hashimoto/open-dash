@@ -1,13 +1,16 @@
 package com.opensmarthome.speaker.tool
 
+import com.opensmarthome.speaker.tool.analytics.ToolUsageStats
 import timber.log.Timber
 
 /**
  * Combines multiple ToolExecutors into a single executor.
  * Routes tool calls to the appropriate executor based on tool name.
+ * Optionally records usage statistics.
  */
 class CompositeToolExecutor(
-    private val executors: List<ToolExecutor>
+    private val executors: List<ToolExecutor>,
+    private val stats: ToolUsageStats? = null
 ) : ToolExecutor {
 
     private val toolToExecutor = mutableMapOf<String, ToolExecutor>()
@@ -29,15 +32,21 @@ class CompositeToolExecutor(
 
     override suspend fun execute(call: ToolCall): ToolResult {
         val executor = toolToExecutor[call.name]
-        if (executor == null) {
+        val result = if (executor == null) {
             // Try refreshing tool list in case it was not yet loaded
             availableTools()
             val retryExecutor = toolToExecutor[call.name]
-                ?: return ToolResult(call.id, false, "", "Unknown tool: ${call.name}")
-            return retryExecutor.execute(call)
+                ?: return recordAndReturn(call.name, ToolResult(call.id, false, "", "Unknown tool: ${call.name}"))
+            retryExecutor.execute(call)
+        } else {
+            Timber.d("Routing tool call '${call.name}' to ${executor.javaClass.simpleName}")
+            executor.execute(call)
         }
+        return recordAndReturn(call.name, result)
+    }
 
-        Timber.d("Routing tool call '${call.name}' to ${executor.javaClass.simpleName}")
-        return executor.execute(call)
+    private fun recordAndReturn(toolName: String, result: ToolResult): ToolResult {
+        stats?.record(toolName, success = result.success)
+        return result
     }
 }

@@ -33,6 +33,7 @@ import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
+import com.opensmarthome.speaker.tool.analytics.ToolUsageStats
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.tool.memory.MemoryToolExecutor
@@ -126,6 +127,10 @@ object DeviceModule {
 
     @Provides
     @Singleton
+    fun provideToolUsageStats(): ToolUsageStats = ToolUsageStats()
+
+    @Provides
+    @Singleton
     fun provideSkillInstaller(
         @ApplicationContext context: Context,
         client: OkHttpClient,
@@ -148,7 +153,8 @@ object DeviceModule {
         routineDao: RoutineDao,
         documentChunkDao: DocumentChunkDao,
         cameraProviderHolder: CameraProviderHolder,
-        screenRecorderHolder: ScreenRecorderHolder
+        screenRecorderHolder: ScreenRecorderHolder,
+        toolUsageStats: ToolUsageStats
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -161,7 +167,8 @@ object DeviceModule {
                 compositeHolder[0]!!.execute(call)
         }
         val composite = CompositeToolExecutor(
-            listOf(
+            stats = toolUsageStats,
+            executors = listOf(
             DeviceToolExecutor(deviceManager, moshi),
             SystemToolExecutor(
                 AndroidTimerManager(context),

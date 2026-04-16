@@ -87,6 +87,20 @@ Close remaining gaps vs. OpenClaw Android node.
 - [x] P6.9: Vision support foundation (MediaAttachment, ProviderCapabilities flag, encoder helper)
 - [x] P6.10: Skill install from URL (FileSystemSkillLoader + SkillInstaller + install_skill_from_url tool)
 
+### Phase 7: Activation & Polish
+Turn Phase 6 skeletons into working implementations; UX for permissions and onboarding.
+
+- [ ] P7.1: CameraX integration for CameraProvider (actual photo capture)
+- [ ] P7.2: MediaProjection integration for ScreenRecorder
+- [ ] P7.3: Permission onboarding flow (notification access, accessibility, camera, SMS, calendar, contacts, location, storage)
+- [ ] P7.4: Settings screen for installed skills (enable/disable, delete)
+- [ ] P7.5: Settings screen for routines (view, create, delete) with voice-recording wizard
+- [x] P7.6: Tool usage analytics (local only — ToolUsageStats wired via CompositeToolExecutor)
+- [ ] P7.7: Suggestion surface UI (proactive suggestions shown as ambient bubble)
+- [ ] P7.8: User-editable system prompt in Settings
+- [ ] P7.9: Memory UI (browse/edit long-term memory entries)
+- [ ] P7.10: Document ingest UI (file picker → RagService.ingest)
+
 ### Continuous: Maintenance
 ロードマップ項目がない場合、以下を実施する:
 - コードのリファクタリング（重複排除、型安全性向上）
