@@ -53,6 +53,11 @@ class DeviceToolExecutor(
             name = "get_rooms",
             description = "List all rooms in the smart home",
             parameters = emptyMap()
+        ),
+        ToolSchema(
+            name = "get_now_playing",
+            description = "Return the currently-playing media (track name + artist + device name) from any registered media_player devices. Returns null when nothing is playing.",
+            parameters = emptyMap()
         )
     )
 
@@ -65,6 +70,7 @@ class DeviceToolExecutor(
                 "get_devices_by_room" -> executeGetDevicesByRoom(call)
                 "execute_command" -> executeCommand(call)
                 "get_rooms" -> executeGetRooms()
+                "get_now_playing" -> executeGetNowPlaying(call)
                 else -> ToolResult(call.id, false, "", "Unknown tool: ${call.name}")
             }
         } catch (e: Exception) {
@@ -149,6 +155,21 @@ class DeviceToolExecutor(
         }
 
         return ToolResult(call.id, false, "", "Provide device_id or device_type")
+    }
+
+    private fun executeGetNowPlaying(call: ToolCall): ToolResult {
+        val playing = deviceManager.getDevicesByType(DeviceType.MEDIA_PLAYER)
+            .firstOrNull { !it.state.mediaTitle.isNullOrBlank() }
+            ?: return ToolResult(call.id, true, """{"playing": null}""")
+
+        val data = mapOf(
+            "device_id" to playing.id,
+            "device_name" to playing.name,
+            "title" to playing.state.mediaTitle,
+            "artist" to (playing.state.attributes["media_artist"] as? String),
+            "is_on" to playing.state.isOn
+        )
+        return ToolResult(call.id, true, toJson(data))
     }
 
     private fun executeGetRooms(): ToolResult {
