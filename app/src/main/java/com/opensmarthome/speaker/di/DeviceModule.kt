@@ -23,6 +23,7 @@ import com.opensmarthome.speaker.tool.info.NewsToolExecutor
 import com.opensmarthome.speaker.tool.info.OpenMeteoWeatherProvider
 import com.opensmarthome.speaker.tool.info.RssNewsProvider
 import com.opensmarthome.speaker.tool.info.SearchToolExecutor
+import com.opensmarthome.speaker.tool.info.UnitConverterToolExecutor
 import com.opensmarthome.speaker.tool.info.WeatherToolExecutor
 import com.opensmarthome.speaker.tool.info.WebFetchToolExecutor
 import com.opensmarthome.speaker.assistant.skills.AssetSkillLoader
@@ -184,6 +185,7 @@ object DeviceModule {
                 DuckDuckGoSearchProvider(client, moshi)
             ),
             WebFetchToolExecutor(HtmlWebFetcher(client)),
+            UnitConverterToolExecutor(),
             NewsToolExecutor(
                 RssNewsProvider(client)
             ),
