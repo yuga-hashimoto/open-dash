@@ -54,6 +54,7 @@ class VoskWakeWordDetector(
         private const val MAX_RETRY_ATTEMPTS = 5
         private const val RETRY_BACKOFF_BASE_MS = 1000L
         private const val RETRY_BACKOFF_MAX_MS = 10000L
+        internal const val PARTIAL_MATCH_SENSITIVITY_THRESHOLD = 0.5f
     }
 
     override fun start(onDetected: () -> Unit) {
@@ -227,7 +228,7 @@ class VoskWakeWordDetector(
                 } else {
                     partialMethod.invoke(rec) as String
                 }
-                checkForWakeWord(jsonResult)
+                checkForWakeWord(jsonResult, isFinal = accepted)
             }
         } catch (e: Exception) {
             Timber.w(e, "Vosk audio loop exited with exception")
@@ -237,7 +238,13 @@ class VoskWakeWordDetector(
         }
     }
 
-    private fun checkForWakeWord(jsonResult: String) {
+    /**
+     * Sensitivity gates partial-result matching: when sensitivity < 0.5, only final
+     * (end-of-utterance) Vosk results are considered. This reduces false wakes at
+     * the cost of a ~300ms latency penalty vs. matching on partials.
+     */
+    internal fun checkForWakeWord(jsonResult: String, isFinal: Boolean) {
+        if (!isFinal && config.sensitivity < PARTIAL_MATCH_SENSITIVITY_THRESHOLD) return
         try {
             val json = org.json.JSONObject(jsonResult)
             val text = json.optString("text", "")
@@ -245,7 +252,7 @@ class VoskWakeWordDetector(
                 .lowercase()
 
             if (text.isNotBlank() && keywordPattern.containsMatchIn(text)) {
-                Timber.d("Wake word detected in: '$text'")
+                Timber.d("Wake word detected in: '$text' (isFinal=$isFinal)")
                 // Pause before triggering callback to release mic
                 pause()
                 onDetectedCallback?.invoke()
