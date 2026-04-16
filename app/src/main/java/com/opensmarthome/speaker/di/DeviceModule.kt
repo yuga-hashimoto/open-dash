@@ -37,7 +37,9 @@ import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
-import com.opensmarthome.speaker.tool.analytics.ToolUsageStats
+import com.opensmarthome.speaker.data.db.ToolUsageDao
+import com.opensmarthome.speaker.tool.analytics.PersistentToolUsageStats
+import com.opensmarthome.speaker.tool.analytics.ToolUsageRecorder
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.tool.memory.MemoryToolExecutor
@@ -131,7 +133,8 @@ object DeviceModule {
 
     @Provides
     @Singleton
-    fun provideToolUsageStats(): ToolUsageStats = ToolUsageStats()
+    fun providePersistentToolUsageStats(dao: ToolUsageDao): PersistentToolUsageStats =
+        PersistentToolUsageStats(dao)
 
     @Provides
     @Singleton
@@ -158,7 +161,7 @@ object DeviceModule {
         documentChunkDao: DocumentChunkDao,
         cameraProviderHolder: CameraProviderHolder,
         screenRecorderHolder: ScreenRecorderHolder,
-        toolUsageStats: ToolUsageStats
+        toolUsageStats: PersistentToolUsageStats
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -171,7 +174,7 @@ object DeviceModule {
                 compositeHolder[0]!!.execute(call)
         }
         val composite = CompositeToolExecutor(
-            stats = toolUsageStats,
+            stats = ToolUsageRecorder { name, ok -> toolUsageStats.record(name, ok) },
             executors = listOf(
             DeviceToolExecutor(deviceManager, moshi),
             SystemToolExecutor(

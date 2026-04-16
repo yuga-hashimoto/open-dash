@@ -1,16 +1,16 @@
 package com.opensmarthome.speaker.tool
 
-import com.opensmarthome.speaker.tool.analytics.ToolUsageStats
+import com.opensmarthome.speaker.tool.analytics.ToolUsageRecorder
 import timber.log.Timber
 
 /**
  * Combines multiple ToolExecutors into a single executor.
  * Routes tool calls to the appropriate executor based on tool name.
- * Optionally records usage statistics.
+ * Optionally records usage statistics through any ToolUsageRecorder.
  */
 class CompositeToolExecutor(
     private val executors: List<ToolExecutor>,
-    private val stats: ToolUsageStats? = null
+    private val stats: ToolUsageRecorder? = null
 ) : ToolExecutor {
 
     private val toolToExecutor = mutableMapOf<String, ToolExecutor>()

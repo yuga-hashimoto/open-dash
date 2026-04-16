@@ -8,6 +8,7 @@ import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.MessageDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.data.db.SessionDao
+import com.opensmarthome.speaker.data.db.ToolUsageDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,4 +45,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDocumentChunkDao(db: AppDatabase): DocumentChunkDao = db.documentChunkDao()
+
+    @Provides
+    fun provideToolUsageDao(db: AppDatabase): ToolUsageDao = db.toolUsageDao()
 }
