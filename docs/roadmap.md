@@ -65,7 +65,7 @@ Make it feel like Alexa/Google Home first.
 
 ## Phase 11 — Priority 4: Hybrid / External Gateway
 - [x] P11.1: HermesAgent protocol adapter — HermesAgentProvider implements AssistantProvider; NDJSON streaming; Bearer token auth; health probe; test coverage with MockWebServer
-- [ ] P11.2: OpenClawProvider streaming + tool forwarding
+- [x] P11.2: OpenClawProvider streaming + tool forwarding — send() now aggregates ToolCallRequest from tool_call deltas into Assistant.toolCalls; request payload forwards full parameter schema (type/description/required/enum); capabilities.isLocal=false so ErrorClassifier surfaces network issues honestly
 - [x] P11.3: Heavy task hint — HeavyTaskDetector with conservative heuristics (long input, heavy keywords EN+JA, vision request vs local capability). Router policy can consult it when Auto; UI can show escalation hint to user
 - [x] P11.4: Unified provider switcher polish — ProvidersScreen + ProvidersViewModel lists registered AssistantProviders with badges (On-device / Streaming / Tools / Vision), active highlighted; tap to call router.selectProvider; ProvidersViewModelTest covers rows + selection
 
