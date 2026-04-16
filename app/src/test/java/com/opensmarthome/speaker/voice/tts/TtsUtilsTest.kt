@@ -49,6 +49,22 @@ class TtsUtilsTest {
     }
 
     @Test
+    fun `strip images keeps alt text`() {
+        // Regression guard for PR #188: REGEX_IMAGE must be applied before
+        // REGEX_LINK, otherwise the `[alt](url)` portion of `![alt](url)` is
+        // consumed by the link matcher and leaves a stray '!' prefix.
+        assertThat(TtsUtils.stripMarkdownForSpeech("![a kitten](cat.png) look at that"))
+            .isEqualTo("a kitten look at that")
+    }
+
+    @Test
+    fun `strip mixed image and link keeps both labels`() {
+        val input = "Logo ![OSS logo](logo.png) and see [the docs](https://example.com)."
+        assertThat(TtsUtils.stripMarkdownForSpeech(input))
+            .isEqualTo("Logo OSS logo and see the docs.")
+    }
+
+    @Test
     fun `strip bullets`() {
         val input = """
             - first item
