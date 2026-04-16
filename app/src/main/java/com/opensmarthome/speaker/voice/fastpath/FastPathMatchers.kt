@@ -664,10 +664,12 @@ object HelpMatcher : FastPathMatcher {
         Regex("""(?:できる|出来る)こと.*(?:教えて|おしえて|知りたい)""")
     )
 
-    private const val EN_HELP = "Try things like: set a timer, volume up, turn the lights on, " +
-        "what time is it, or ask me a question. Say 'help' anytime."
-    private const val JA_HELP = "例えば、タイマーをセット、音量を上げて、電気をつけて、今何時、" +
-        "などと話しかけてみてください。"
+    private const val EN_HELP = "Try: set a timer, turn the lights on, what's the weather, " +
+        "tell me the news, run the morning routine, or ask me anything. " +
+        "I can also remember things, search your documents, and run skills."
+    private const val JA_HELP = "例えば、タイマーをセット、電気をつけて、今日の天気、ニュース、" +
+        "朝のルーチンを実行、などと話しかけてください。" +
+        "メモやドキュメント検索、スキルの実行もできます。"
 
     override fun tryMatch(normalized: String): FastPathMatch? {
         if (englishPatterns.any { it.containsMatchIn(normalized) }) {

@@ -34,7 +34,7 @@ to the list.
 | `ListDevicesMatcher` | "list my devices", "デバイス一覧" | `get_devices_by_type` (defaults to lights) | |
 | `DatetimeMatcher` | "what's today's date", "今日は何日" | `get_datetime` | |
 | `GreetingMatcher` | "thanks", "hello", "ありがとう", "おはよう", "ごめん" | (speak-only) | Canned reply, no tool |
-| `HelpMatcher` | "help", "what can you do", "できることを教えて" | (speak-only) | Capability summary |
+| `HelpMatcher` | "help", "what can you do", "できることを教えて" | (speak-only) | Capability summary mentions timers, lights, weather, news, routines, memory, skills |
 
 ## Adding a new matcher
 

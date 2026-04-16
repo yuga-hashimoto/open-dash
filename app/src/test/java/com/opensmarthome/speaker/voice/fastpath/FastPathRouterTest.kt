@@ -219,6 +219,16 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `english help mentions agent capabilities`() {
+        val m = router.match("what can you do")
+        val text = m?.spokenConfirmation?.lowercase() ?: ""
+        // Surface OpenClaw-class capabilities, not just smart-speaker basics.
+        assertThat(text).contains("weather")
+        assertThat(text).contains("news")
+        assertThat(text).contains("skill")
+    }
+
+    @Test
     fun `what can you do returns speak-only help`() {
         val m = router.match("What can you do?")
         assertThat(m?.toolName).isNull()
@@ -230,6 +240,15 @@ class FastPathRouterTest {
         val m = router.match("できることを教えて")
         assertThat(m?.toolName).isNull()
         assertThat(m?.spokenConfirmation).isNotNull()
+    }
+
+    @Test
+    fun `japanese help mentions agent capabilities`() {
+        val m = router.match("できることを教えて")
+        val text = m?.spokenConfirmation ?: ""
+        assertThat(text).contains("天気")
+        assertThat(text).contains("ニュース")
+        assertThat(text).contains("スキル")
     }
 
     @Test
