@@ -2,6 +2,7 @@ package com.opensmarthome.speaker.assistant.provider.openclaw
 
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.model.AssistantSession
+import com.opensmarthome.speaker.assistant.model.ToolCallRequest
 import com.opensmarthome.speaker.assistant.provider.AssistantProvider
 import com.opensmarthome.speaker.assistant.provider.ProviderCapabilities
 import com.opensmarthome.speaker.tool.ToolSchema
@@ -24,7 +25,8 @@ class OpenClawProvider(
         supportsStreaming = true,
         supportsTools = true,
         maxContextTokens = 128000,
-        modelName = config.model.ifBlank { "openclaw" }
+        modelName = config.model.ifBlank { "openclaw" },
+        isLocal = false
     )
 
     private var webSocket: OpenClawWebSocket? = null
@@ -52,17 +54,22 @@ class OpenClawProvider(
         ws.send(payload)
 
         val responseBuilder = StringBuilder()
+        val toolCalls = mutableListOf<ToolCallRequest>()
         var finished = false
         ws.messages.collect { raw ->
             if (finished) return@collect
             val parsed = parseResponse(raw)
+            parsed.toolCallDelta?.let { toolCalls.add(it) }
             if (parsed.finishReason != null) {
                 finished = true
                 return@collect
             }
             responseBuilder.append(parsed.contentDelta)
         }
-        return AssistantMessage.Assistant(content = responseBuilder.toString())
+        return AssistantMessage.Assistant(
+            content = responseBuilder.toString(),
+            toolCalls = toolCalls
+        )
     }
 
     override fun sendStreaming(
@@ -124,7 +131,22 @@ class OpenClawProvider(
         }
         val payload = mutableMapOf<String, Any>("messages" to msgList)
         if (tools.isNotEmpty()) {
-            payload["tools"] = tools.map { mapOf("name" to it.name, "description" to it.description) }
+            // Forward the full parameter schema so remote agents can validate args
+            // and generate structured tool calls with the correct shape.
+            payload["tools"] = tools.map { tool ->
+                mapOf(
+                    "name" to tool.name,
+                    "description" to tool.description,
+                    "parameters" to tool.parameters.mapValues { (_, p) ->
+                        mapOf(
+                            "type" to p.type,
+                            "description" to p.description,
+                            "required" to p.required,
+                            "enum" to p.enum
+                        ).filterValues { it != null }
+                    }
+                )
+            }
         }
         return try {
             moshi.adapter(Map::class.java).toJson(payload) ?: "{}"
@@ -140,8 +162,25 @@ class OpenClawProvider(
             val map = moshi.adapter(Map::class.java).fromJson(raw) as? Map<String, Any?> ?: emptyMap()
             val content = map["content"] as? String ?: ""
             val done = map["done"] as? Boolean ?: false
+
+            // Tool call format: {"tool_call": {"id": "...", "name": "...", "arguments": "..."}}
+            @Suppress("UNCHECKED_CAST")
+            val toolCallMap = map["tool_call"] as? Map<String, Any?>
+            val toolCall = toolCallMap?.let {
+                val name = it["name"] as? String ?: return@let null
+                val args = it["arguments"]?.let { a ->
+                    if (a is String) a else moshi.adapter(Any::class.java).toJson(a) ?: "{}"
+                } ?: "{}"
+                ToolCallRequest(
+                    id = it["id"] as? String ?: "call_${System.currentTimeMillis()}",
+                    name = name,
+                    arguments = args
+                )
+            }
+
             AssistantMessage.Delta(
                 contentDelta = content,
+                toolCallDelta = toolCall,
                 finishReason = if (done) "stop" else null
             )
         } catch (e: Exception) {
