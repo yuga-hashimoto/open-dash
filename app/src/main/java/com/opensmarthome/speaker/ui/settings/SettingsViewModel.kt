@@ -56,6 +56,9 @@ class SettingsViewModel @Inject constructor(
     private val _wakeWordSensitivity = MutableStateFlow(0.6f)
     val wakeWordSensitivity: StateFlow<Float> = _wakeWordSensitivity.asStateFlow()
 
+    private val _batterySaverEnabled = MutableStateFlow(false)
+    val batterySaverEnabled: StateFlow<Boolean> = _batterySaverEnabled.asStateFlow()
+
     // TTS settings
     private val _ttsSpeechRate = MutableStateFlow(1.0f)
     val ttsSpeechRate: StateFlow<Float> = _ttsSpeechRate.asStateFlow()
@@ -146,6 +149,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferences.observe(PreferenceKeys.MQTT_BROKER_URL).collect { _mqttBrokerUrl.value = it ?: "" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.WAKE_WORD).collect { _wakeWord.value = it ?: "hey speaker" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.WAKE_WORD_SENSITIVITY).collect { _wakeWordSensitivity.value = it ?: 0.6f } }
+        viewModelScope.launch { preferences.observe(PreferenceKeys.BATTERY_SAVER_ENABLED).collect { _batterySaverEnabled.value = it ?: false } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_SPEECH_RATE).collect { _ttsSpeechRate.value = it ?: 1.0f } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_PITCH).collect { _ttsPitch.value = it ?: 1.0f } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_ENGINE).collect { _ttsEngine.value = it ?: "" } }
@@ -216,6 +220,10 @@ class SettingsViewModel @Inject constructor(
     fun saveWakeWordSensitivity(sensitivity: Float) {
         val clamped = sensitivity.coerceIn(0f, 1f)
         viewModelScope.launch { preferences.set(PreferenceKeys.WAKE_WORD_SENSITIVITY, clamped) }
+    }
+
+    fun saveBatterySaverEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.set(PreferenceKeys.BATTERY_SAVER_ENABLED, enabled) }
     }
 
     // TTS settings

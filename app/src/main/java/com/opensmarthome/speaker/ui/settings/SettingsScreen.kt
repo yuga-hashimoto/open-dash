@@ -303,6 +303,10 @@ fun SettingsScreen(
         )
         SettingsHint("Higher = more likely to trigger (can cause false wakes). Lower = more conservative. Default 0.60.")
 
+        val batterySaver by viewModel.batterySaverEnabled.collectAsState()
+        SettingsToggle("Battery Saver", batterySaver) { viewModel.saveBatterySaverEnabled(it) }
+        SettingsHint("Pause wake-word detection when battery <= 20 % and the device is unplugged.")
+
         SettingsDivider()
 
         // === Connections ===

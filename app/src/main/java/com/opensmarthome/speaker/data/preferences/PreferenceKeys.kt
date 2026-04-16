@@ -60,6 +60,8 @@ object PreferenceKeys {
     val WAKE_WORD = stringPreferencesKey("wake_word")
     val HOTWORD_ENABLED = booleanPreferencesKey("hotword_enabled")
     val WAKE_WORD_SENSITIVITY = floatPreferencesKey("wake_word_sensitivity")
+    /** When true, wake-word detection pauses while battery is low and unplugged. */
+    val BATTERY_SAVER_ENABLED = booleanPreferencesKey("battery_saver_enabled")
 
     // Setup
     val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")

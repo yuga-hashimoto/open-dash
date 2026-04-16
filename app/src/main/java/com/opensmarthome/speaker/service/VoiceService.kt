@@ -36,6 +36,7 @@ class VoiceService : Service() {
 
     @Inject lateinit var voicePipeline: VoicePipeline
     @Inject lateinit var preferences: AppPreferences
+    @Inject lateinit var batteryMonitor: com.opensmarthome.speaker.util.BatteryMonitor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeWordDetector: VoskWakeWordDetector? = null
@@ -192,6 +193,15 @@ class VoiceService : Service() {
         val hotwordEnabled = preferences.observe(PreferenceKeys.HOTWORD_ENABLED).first() ?: true
         if (!hotwordEnabled) {
             Timber.d("Hotword disabled at runtime, not starting detector")
+            return
+        }
+
+        // Battery saver: skip wake word when battery is low and device is
+        // unplugged. This is an opt-in policy — defaults to off so users who
+        // keep the tablet plugged in continuously aren't affected.
+        val batterySaverEnabled = preferences.observe(PreferenceKeys.BATTERY_SAVER_ENABLED).first() ?: false
+        if (batterySaverEnabled && batteryMonitor.status.value.isLow) {
+            Timber.d("Battery saver active (level=${batteryMonitor.status.value.level}%), skipping wake word")
             return
         }
 
