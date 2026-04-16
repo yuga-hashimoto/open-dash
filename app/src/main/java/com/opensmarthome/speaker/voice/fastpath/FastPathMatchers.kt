@@ -541,6 +541,28 @@ object NewsMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * "what do you remember", "list memories", "覚えていること" → list_memory
+ * with no prefix. Returns whatever's in the memory store so the LLM (or
+ * the user, via the speak-back) can audit it.
+ */
+object ListMemoryMatcher : FastPathMatcher {
+    private val patterns = listOf(
+        Regex("""what\s+do\s+you\s+remember"""),
+        Regex("""list\s+(?:my\s+)?memor(?:y|ies)"""),
+        Regex("""(?:覚えて|記憶して)(?:いる|る)?\s*(?:こと|もの)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (p in patterns) {
+            if (p.containsMatchIn(normalized)) {
+                return FastPathMatch(toolName = "list_memory", arguments = emptyMap())
+            }
+        }
+        return null
+    }
+}
+
 /** "what's today's date" / "今日は何日" */
 object DatetimeMatcher : FastPathMatcher {
     private val patterns = listOf(

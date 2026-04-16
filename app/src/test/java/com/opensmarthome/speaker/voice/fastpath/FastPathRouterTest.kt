@@ -297,6 +297,18 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `what do you remember calls list_memory`() {
+        val m = router.match("what do you remember")
+        assertThat(m?.toolName).isEqualTo("list_memory")
+    }
+
+    @Test
+    fun `japanese list memory`() {
+        val m = router.match("覚えていること")
+        assertThat(m?.toolName).isEqualTo("list_memory")
+    }
+
+    @Test
     fun `tell me the news`() {
         val m = router.match("tell me the news")
         assertThat(m?.toolName).isEqualTo("get_news")
