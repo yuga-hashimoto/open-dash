@@ -3,6 +3,7 @@ package com.opensmarthome.speaker.di
 import android.content.Context
 import androidx.room.Room
 import com.opensmarthome.speaker.data.db.AppDatabase
+import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.MessageDao
 import com.opensmarthome.speaker.data.db.RoutineDao
@@ -40,4 +41,7 @@ object DatabaseModule {
 
     @Provides
     fun provideRoutineDao(db: AppDatabase): RoutineDao = db.routineDao()
+
+    @Provides
+    fun provideDocumentChunkDao(db: AppDatabase): DocumentChunkDao = db.documentChunkDao()
 }

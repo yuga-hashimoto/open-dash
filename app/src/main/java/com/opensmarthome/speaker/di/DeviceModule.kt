@@ -32,9 +32,12 @@ import com.opensmarthome.speaker.assistant.routine.RoomRoutineStore
 import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
+import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.tool.memory.MemoryToolExecutor
+import com.opensmarthome.speaker.tool.rag.RagService
+import com.opensmarthome.speaker.tool.rag.RagToolExecutor
 import com.opensmarthome.speaker.tool.system.AndroidAppLauncher
 import com.opensmarthome.speaker.tool.system.AndroidCalendarProvider
 import com.opensmarthome.speaker.tool.system.AndroidContactsProvider
@@ -130,7 +133,8 @@ object DeviceModule {
         skillRegistry: SkillRegistry,
         skillInstaller: SkillInstaller,
         memoryDao: MemoryDao,
-        routineDao: RoutineDao
+        routineDao: RoutineDao,
+        documentChunkDao: DocumentChunkDao
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -185,6 +189,7 @@ object DeviceModule {
                 AccessibilityScreenReader()
             ),
             MemoryToolExecutor(memoryDao),
+            RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
             SkillToolExecutor(skillRegistry, skillInstaller)
             )
