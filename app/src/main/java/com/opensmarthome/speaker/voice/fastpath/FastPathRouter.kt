@@ -46,6 +46,8 @@ class DefaultFastPathRouter(
             VolumeMatcher,
             LightsMatcher,
             MediaControlMatcher,
+            // RunRoutineMatcher must precede LaunchAppMatcher because "run X" overlaps.
+            RunRoutineMatcher,
             LaunchAppMatcher,
             DatetimeMatcher,
             GreetingMatcher,
@@ -314,6 +316,38 @@ object MediaControlMatcher : FastPathMatcher {
                     spokenConfirmation = p.spoken
                 )
             }
+        }
+        return null
+    }
+}
+
+/**
+ * "run routine <name>", "execute routine <name>", "<name>ルーチンを実行" —
+ * forwards to run_routine tool. Requires the explicit 'routine' keyword to
+ * disambiguate from LaunchAppMatcher.
+ */
+object RunRoutineMatcher : FastPathMatcher {
+    private val englishRegex = Regex("""(?:run|execute|trigger)\s+(?:the\s+)?(.+?)\s+routine\s*[!?.]*\s*$""")
+    private val japaneseRegex = Regex("""(.+?)\s*ルーチン\s*(?:を)?\s*(?:実行|起動|やって)""")
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishRegex.matchEntire(normalized.trim())?.let {
+            val name = it.groupValues[1].trim()
+            if (name.isEmpty()) return null
+            return FastPathMatch(
+                toolName = "run_routine",
+                arguments = mapOf("name" to name),
+                spokenConfirmation = "Running $name."
+            )
+        }
+        japaneseRegex.matchEntire(normalized.trim())?.let {
+            val name = it.groupValues[1].trim()
+            if (name.isEmpty()) return null
+            return FastPathMatch(
+                toolName = "run_routine",
+                arguments = mapOf("name" to name),
+                spokenConfirmation = "${name}を実行します。"
+            )
         }
         return null
     }

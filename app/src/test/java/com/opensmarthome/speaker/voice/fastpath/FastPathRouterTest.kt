@@ -260,6 +260,26 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `run goodnight routine`() {
+        val m = router.match("run goodnight routine")
+        assertThat(m?.toolName).isEqualTo("run_routine")
+        assertThat(m?.arguments?.get("name")).isEqualTo("goodnight")
+    }
+
+    @Test
+    fun `execute morning routine`() {
+        val m = router.match("execute morning routine")
+        assertThat(m?.arguments?.get("name")).isEqualTo("morning")
+    }
+
+    @Test
+    fun `japanese run routine`() {
+        val m = router.match("おやすみルーチンを実行")
+        assertThat(m?.toolName).isEqualTo("run_routine")
+        assertThat(m?.arguments?.get("name")).isEqualTo("おやすみ")
+    }
+
+    @Test
     fun `dim lights sets 30 percent brightness`() {
         val m = router.match("dim the lights")
         assertThat(m?.toolName).isEqualTo("execute_command")
