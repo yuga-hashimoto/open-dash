@@ -33,6 +33,8 @@ class SkillRegistry {
 
     fun get(name: String): Skill? = skills[name]
 
+    fun unregister(name: String): Boolean = skills.remove(name) != null
+
     fun all(): List<Skill> = skills.values.toList()
 
     fun isEmpty(): Boolean = skills.isEmpty()
