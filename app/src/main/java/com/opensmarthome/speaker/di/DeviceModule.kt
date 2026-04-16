@@ -24,6 +24,8 @@ import com.opensmarthome.speaker.tool.info.RssNewsProvider
 import com.opensmarthome.speaker.tool.info.SearchToolExecutor
 import com.opensmarthome.speaker.tool.info.WeatherToolExecutor
 import com.opensmarthome.speaker.assistant.skills.AssetSkillLoader
+import com.opensmarthome.speaker.assistant.skills.FileSystemSkillLoader
+import com.opensmarthome.speaker.assistant.skills.SkillInstaller
 import com.opensmarthome.speaker.assistant.skills.SkillRegistry
 import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
 import com.opensmarthome.speaker.assistant.routine.RoomRoutineStore
@@ -99,9 +101,23 @@ object DeviceModule {
     @Singleton
     fun provideSkillRegistry(@ApplicationContext context: Context): SkillRegistry {
         val registry = SkillRegistry()
-        val loader = AssetSkillLoader(context)
-        registry.registerAll(loader.loadAll())
+        // Bundled skills from assets
+        registry.registerAll(AssetSkillLoader(context).loadAll())
+        // User-installed skills from internal storage
+        val userSkillsDir = java.io.File(context.filesDir, "skills").apply { mkdirs() }
+        registry.registerAll(FileSystemSkillLoader(userSkillsDir).loadAll())
         return registry
+    }
+
+    @Provides
+    @Singleton
+    fun provideSkillInstaller(
+        @ApplicationContext context: Context,
+        client: OkHttpClient,
+        registry: SkillRegistry
+    ): SkillInstaller {
+        val userSkillsDir = java.io.File(context.filesDir, "skills").apply { mkdirs() }
+        return SkillInstaller(client, userSkillsDir, registry)
     }
 
     @Provides
@@ -112,6 +128,7 @@ object DeviceModule {
         @ApplicationContext context: Context,
         client: OkHttpClient,
         skillRegistry: SkillRegistry,
+        skillInstaller: SkillInstaller,
         memoryDao: MemoryDao,
         routineDao: RoutineDao
     ): ToolExecutor {
@@ -169,7 +186,7 @@ object DeviceModule {
             ),
             MemoryToolExecutor(memoryDao),
             RoutineToolExecutor(routineStore, delegatingExecutor),
-            SkillToolExecutor(skillRegistry)
+            SkillToolExecutor(skillRegistry, skillInstaller)
             )
         )
         compositeHolder[0] = composite

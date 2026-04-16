@@ -85,7 +85,7 @@ Close remaining gaps vs. OpenClaw Android node.
 - [ ] P6.7: Vector-based memory search (local embeddings)
 - [ ] P6.8: RAG / document ingest (user files → memory)
 - [ ] P6.9: Vision support via multimodal LLM
-- [ ] P6.10: Skill install from URL / ZIP
+- [x] P6.10: Skill install from URL (FileSystemSkillLoader + SkillInstaller + install_skill_from_url tool)
 
 ### Continuous: Maintenance
 ロードマップ項目がない場合、以下を実施する:
