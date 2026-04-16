@@ -674,6 +674,56 @@ object CalendarMatcher : FastPathMatcher {
 }
 
 /**
+ * "clear notifications", "dismiss all notifications", "通知を消して" → clear_notifications.
+ * Must precede ListNotificationsMatcher because "clear" is a stronger verb.
+ */
+object ClearNotificationsMatcher : FastPathMatcher {
+    private val patterns = listOf(
+        Regex("""(?:clear|dismiss|delete|remove)\s+(?:all\s+)?(?:my\s+)?notifications?"""),
+        Regex("""通知\s*(?:を)?\s*(?:全部|全て)?\s*(?:消して|クリア|削除)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (p in patterns) {
+            if (p.containsMatchIn(normalized)) {
+                return FastPathMatch(
+                    toolName = "clear_notifications",
+                    arguments = emptyMap(),
+                    spokenConfirmation = "Notifications cleared."
+                )
+            }
+        }
+        return null
+    }
+}
+
+/**
+ * "what notifications do I have", "show notifications", "any notifications",
+ * "通知一覧" / "通知ある" → list_notifications.
+ */
+object ListNotificationsMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""(?:list|show|see|read)\s+(?:my\s+|all\s+)?notifications?"""),
+        Regex("""what\s+notifications?\s+(?:do\s+i\s+have|are\s+there)"""),
+        Regex("""any\s+(?:new\s+)?notifications?"""),
+        Regex("""(?:do\s+i\s+have|got)\s+(?:any\s+)?notifications?""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""通知\s*(?:の)?\s*(?:一覧|リスト)"""),
+        Regex("""通知\s*(?:は|を)?\s*(?:ある|教えて|見せて)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "list_notifications", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
+/**
  * "what do you remember", "list memories", "覚えていること" → list_memory
  * with no prefix. Returns whatever's in the memory store so the LLM (or
  * the user, via the speak-back) can audit it.

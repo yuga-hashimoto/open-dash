@@ -32,6 +32,8 @@ to the list.
 | `WeatherMatcher` | "what's the weather", "今日の天気" | `get_weather` | |
 | `NewsMatcher` | "news", "tell me the news", "ニュース" | `get_news` | |
 | `CalendarMatcher` | "what's on my calendar today", "do I have any meetings", "今日の予定", "今日のミーティング" | `get_calendar_events` (days_ahead=1) | |
+| `ClearNotificationsMatcher` | "clear notifications", "dismiss all notifications", "通知を消して" | `clear_notifications` | Precedes ListNotifications |
+| `ListNotificationsMatcher` | "show notifications", "what notifications do I have", "通知一覧" | `list_notifications` | |
 | `ListMemoryMatcher` | "what do you remember", "覚えていること" | `list_memory` | |
 | `ListDevicesMatcher` | "list my devices", "デバイス一覧" | `get_devices_by_type` (defaults to lights) | |
 | `ListTimersMatcher` | "list timers", "what timers do I have", "タイマー一覧" | `get_timers` | Ordered after CancelAllTimersMatcher so "cancel all timers" still wins |
