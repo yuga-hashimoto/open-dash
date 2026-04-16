@@ -15,6 +15,10 @@ import com.opensmarthome.speaker.device.tool.DeviceToolExecutor
 import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
 import com.opensmarthome.speaker.tool.CompositeToolExecutor
 import com.opensmarthome.speaker.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.info.DuckDuckGoSearchProvider
+import com.opensmarthome.speaker.tool.info.OpenMeteoWeatherProvider
+import com.opensmarthome.speaker.tool.info.SearchToolExecutor
+import com.opensmarthome.speaker.tool.info.WeatherToolExecutor
 import com.opensmarthome.speaker.tool.system.AndroidAppLauncher
 import com.opensmarthome.speaker.tool.system.AndroidTimerManager
 import com.opensmarthome.speaker.tool.system.AndroidVolumeManager
@@ -68,7 +72,8 @@ object DeviceModule {
     fun provideToolExecutor(
         deviceManager: DeviceManager,
         moshi: Moshi,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        client: OkHttpClient
     ): ToolExecutor = CompositeToolExecutor(
         listOf(
             DeviceToolExecutor(deviceManager, moshi),
@@ -76,6 +81,12 @@ object DeviceModule {
                 AndroidTimerManager(context),
                 AndroidVolumeManager(context),
                 AndroidAppLauncher(context)
+            ),
+            WeatherToolExecutor(
+                OpenMeteoWeatherProvider(client, moshi)
+            ),
+            SearchToolExecutor(
+                DuckDuckGoSearchProvider(client, moshi)
             )
         )
     )
