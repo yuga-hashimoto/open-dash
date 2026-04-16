@@ -66,7 +66,7 @@ Make it feel like Alexa/Google Home first.
 ## Phase 11 — Priority 4: Hybrid / External Gateway
 - [ ] P11.1: HermesAgent protocol adapter (new AssistantProvider)
 - [ ] P11.2: OpenClawProvider streaming + tool forwarding
-- [ ] P11.3: "Heavy task" hint — escalate to gateway when needed
+- [x] P11.3: Heavy task hint — HeavyTaskDetector with conservative heuristics (long input, heavy keywords EN+JA, vision request vs local capability). Router policy can consult it when Auto; UI can show escalation hint to user
 - [x] P11.4: Unified provider switcher polish — ProvidersScreen + ProvidersViewModel lists registered AssistantProviders with badges (On-device / Streaming / Tools / Vision), active highlighted; tap to call router.selectProvider; ProvidersViewModelTest covers rows + selection
 
 ## Phase 12 — Priority 5: Refactor / Quality
