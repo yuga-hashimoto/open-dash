@@ -20,6 +20,7 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <!-- SEND_SMS implies telephony. Mark as optional so the app installs on

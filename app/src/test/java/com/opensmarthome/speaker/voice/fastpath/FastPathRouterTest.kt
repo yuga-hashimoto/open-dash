@@ -279,6 +279,18 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `find my tablet rings device`() {
+        val m = router.match("find my tablet")
+        assertThat(m?.toolName).isEqualTo("find_device")
+    }
+
+    @Test
+    fun `japanese find device`() {
+        val m = router.match("デバイスを探して")
+        assertThat(m?.toolName).isEqualTo("find_device")
+    }
+
+    @Test
     fun `whats the weather`() {
         val m = router.match("what's the weather")
         assertThat(m?.toolName).isEqualTo("get_weather")

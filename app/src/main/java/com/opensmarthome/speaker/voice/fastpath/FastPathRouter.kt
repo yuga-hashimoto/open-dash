@@ -52,6 +52,7 @@ class DefaultFastPathRouter(
             // RunRoutineMatcher must precede LaunchAppMatcher because "run X" overlaps.
             RunRoutineMatcher,
             LaunchAppMatcher,
+            FindDeviceMatcher,
             WeatherMatcher,
             DatetimeMatcher,
             GreetingMatcher,
@@ -505,6 +506,30 @@ object HelpMatcher : FastPathMatcher {
         }
         if (japanesePatterns.any { it.containsMatchIn(normalized) }) {
             return FastPathMatch(toolName = null, spokenConfirmation = JA_HELP)
+        }
+        return null
+    }
+}
+
+/**
+ * "find my phone/tablet", "where is my device", "デバイスを探して" — dispatches
+ * find_device tool which rings + vibrates the speaker for ~10s.
+ */
+object FindDeviceMatcher : FastPathMatcher {
+    private val patterns = listOf(
+        Regex("""(?:find|where('?s|\s+is))\s+(?:my\s+)?(?:phone|tablet|device|speaker)"""),
+        Regex("""(?:デバイス|タブレット|スピーカー|端末)\s*(?:を)?\s*(?:探して|どこ)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (p in patterns) {
+            if (p.containsMatchIn(normalized)) {
+                return FastPathMatch(
+                    toolName = "find_device",
+                    arguments = emptyMap(),
+                    spokenConfirmation = "Ringing now."
+                )
+            }
         }
         return null
     }

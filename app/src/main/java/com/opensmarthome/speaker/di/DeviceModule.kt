@@ -339,7 +339,8 @@ object DeviceModule {
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
-            SkillToolExecutor(skillRegistry, skillInstaller)
+            SkillToolExecutor(skillRegistry, skillInstaller),
+            com.opensmarthome.speaker.tool.system.FindDeviceTool(context)
             )
         )
         compositeHolder[0] = composite
