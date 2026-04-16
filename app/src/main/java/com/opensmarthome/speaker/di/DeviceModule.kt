@@ -340,7 +340,10 @@ object DeviceModule {
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
             SkillToolExecutor(skillRegistry, skillInstaller),
-            com.opensmarthome.speaker.tool.system.FindDeviceTool(context)
+            com.opensmarthome.speaker.tool.system.FindDeviceTool(context),
+            // Composite — calls back into the executor it's part of via lambda
+            // to avoid a Hilt cycle.
+            com.opensmarthome.speaker.tool.composite.MorningBriefingTool { delegatingExecutor }
             )
         )
         compositeHolder[0] = composite
