@@ -24,6 +24,8 @@ import com.opensmarthome.speaker.tool.info.WeatherToolExecutor
 import com.opensmarthome.speaker.assistant.skills.AssetSkillLoader
 import com.opensmarthome.speaker.assistant.skills.SkillRegistry
 import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
+import com.opensmarthome.speaker.data.db.MemoryDao
+import com.opensmarthome.speaker.tool.memory.MemoryToolExecutor
 import com.opensmarthome.speaker.tool.system.AndroidAppLauncher
 import com.opensmarthome.speaker.tool.system.AndroidCalendarProvider
 import com.opensmarthome.speaker.tool.system.AndroidContactsProvider
@@ -96,7 +98,8 @@ object DeviceModule {
         moshi: Moshi,
         @ApplicationContext context: Context,
         client: OkHttpClient,
-        skillRegistry: SkillRegistry
+        skillRegistry: SkillRegistry,
+        memoryDao: MemoryDao
     ): ToolExecutor = CompositeToolExecutor(
         listOf(
             DeviceToolExecutor(deviceManager, moshi),
@@ -126,6 +129,7 @@ object DeviceModule {
             ContactsToolExecutor(
                 AndroidContactsProvider(context)
             ),
+            MemoryToolExecutor(memoryDao),
             SkillToolExecutor(skillRegistry)
         )
     )

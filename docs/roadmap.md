@@ -59,7 +59,7 @@ Give the agent access to information.
 Make the agent persistent and contextual.
 
 - [x] P4.1: Conversation summarization / context compaction (stolen from off-grid-mobile-ai)
-- [ ] P4.2: User preference memory (remember user habits)
+- [x] P4.2: User preference memory (SQLite-backed remember/recall/search/forget tools)
 - [ ] P4.3: Device state context (auto-include relevant device states)
 - [x] P4.4: Time/location awareness in system prompt (get_datetime tool)
 

@@ -3,6 +3,7 @@ package com.opensmarthome.speaker.di
 import android.content.Context
 import androidx.room.Room
 import com.opensmarthome.speaker.data.db.AppDatabase
+import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.MessageDao
 import com.opensmarthome.speaker.data.db.SessionDao
 import dagger.Module
@@ -23,11 +24,16 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "open_smart_speaker.db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideSessionDao(db: AppDatabase): SessionDao = db.sessionDao()
 
     @Provides
     fun provideMessageDao(db: AppDatabase): MessageDao = db.messageDao()
+
+    @Provides
+    fun provideMemoryDao(db: AppDatabase): MemoryDao = db.memoryDao()
 }
