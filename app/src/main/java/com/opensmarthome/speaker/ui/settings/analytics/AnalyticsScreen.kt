@@ -85,6 +85,7 @@ fun AnalyticsScreen(
             LoadedContent(
                 summary = state.summary,
                 allTime = state.allTime,
+                latency = state.latency,
                 padding = padding
             )
         }
@@ -95,6 +96,7 @@ fun AnalyticsScreen(
 private fun LoadedContent(
     summary: AnalyticsRepository.Summary?,
     allTime: List<ToolUsageEntity>,
+    latency: List<AnalyticsViewModel.LatencyRow>,
     padding: PaddingValues
 ) {
     LazyColumn(
@@ -103,6 +105,18 @@ private fun LoadedContent(
         contentPadding = PaddingValues(16.dp)
     ) {
         summary?.let { item { SummaryCard(it) } }
+
+        if (latency.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Voice pipeline latency",
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+            items(latency, key = { it.event }) { row ->
+                LatencyRowCard(row = row)
+            }
+        }
 
         item {
             Text(
@@ -113,6 +127,35 @@ private fun LoadedContent(
         }
         items(allTime, key = { it.toolName }) { entry ->
             ToolUsageRow(entry = entry)
+        }
+    }
+}
+
+@Composable
+private fun LatencyRowCard(row: AnalyticsViewModel.LatencyRow) {
+    val overBudget = row.violations > 0
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(row.event, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (overBudget) "${row.violations} over" else "within budget",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (overBudget) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(Modifier.size(4.dp))
+            Text(
+                text = "avg ${row.averageMs}ms • p95 ${row.p95Ms}ms" +
+                    if (row.budgetMs > 0) " • budget ${row.budgetMs}ms" else "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
