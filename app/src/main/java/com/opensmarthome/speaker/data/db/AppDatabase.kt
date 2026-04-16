@@ -8,9 +8,10 @@ import androidx.room.RoomDatabase
         SessionEntity::class,
         MessageEntity::class,
         MemoryEntity::class,
-        RoutineEntity::class
+        RoutineEntity::class,
+        DocumentChunkEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -18,4 +19,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun messageDao(): MessageDao
     abstract fun memoryDao(): MemoryDao
     abstract fun routineDao(): RoutineDao
+    abstract fun documentChunkDao(): DocumentChunkDao
 }
