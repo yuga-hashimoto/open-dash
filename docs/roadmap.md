@@ -50,8 +50,8 @@ Give the agent Android-native capabilities.
 ### Phase 3: Information Tools
 Give the agent access to information.
 
-- [ ] P3.1: Weather tool (location-based weather)
-- [ ] P3.2: Web search tool (search and summarize)
+- [x] P3.1: Weather tool (Open-Meteo, no auth required)
+- [x] P3.2: Web search tool (DuckDuckGo Instant Answer API)
 - [ ] P3.3: News tool (headlines and summaries)
 - [ ] P3.4: Knowledge/FAQ tool (user-defined Q&A)
 
