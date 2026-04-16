@@ -780,4 +780,39 @@ class FastPathRouterTest {
         assertThat(m?.arguments?.get("device_type")).isEqualTo("media_player")
         assertThat(m?.arguments?.get("action")).isEqualTo("turn_off")
     }
+
+    @Test
+    fun `lock the door fast-path`() {
+        val m = router.match("lock the door")
+        assertThat(m?.toolName).isEqualTo("execute_command")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("lock")
+        assertThat(m?.arguments?.get("action")).isEqualTo("lock")
+    }
+
+    @Test
+    fun `unlock the door fast-path`() {
+        val m = router.match("unlock the door")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("lock")
+        assertThat(m?.arguments?.get("action")).isEqualTo("unlock")
+    }
+
+    @Test
+    fun `japanese door lock`() {
+        val m = router.match("ドアをロックして")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("lock")
+        assertThat(m?.arguments?.get("action")).isEqualTo("lock")
+    }
+
+    @Test
+    fun `japanese door unlock`() {
+        val m = router.match("玄関を解錠")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("lock")
+        assertThat(m?.arguments?.get("action")).isEqualTo("unlock")
+    }
+
+    @Test
+    fun `lock the cookies does not match`() {
+        val m = router.match("lock the cookies")
+        assertThat(m).isNull()
+    }
 }
