@@ -260,6 +260,18 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `whats the weather`() {
+        val m = router.match("what's the weather")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+    }
+
+    @Test
+    fun `japanese weather today`() {
+        val m = router.match("今日の天気")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+    }
+
+    @Test
     fun `set thermostat to 22 dispatches climate set_temperature`() {
         val m = router.match("set thermostat to 22")
         assertThat(m?.toolName).isEqualTo("execute_command")
