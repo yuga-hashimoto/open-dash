@@ -24,11 +24,13 @@ import com.opensmarthome.speaker.assistant.skills.SkillRegistry
 import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
 import com.opensmarthome.speaker.tool.system.AndroidAppLauncher
 import com.opensmarthome.speaker.tool.system.AndroidCalendarProvider
+import com.opensmarthome.speaker.tool.system.AndroidContactsProvider
 import com.opensmarthome.speaker.tool.system.AndroidLocationProvider
 import com.opensmarthome.speaker.tool.system.AndroidNotificationProvider
 import com.opensmarthome.speaker.tool.system.AndroidTimerManager
 import com.opensmarthome.speaker.tool.system.AndroidVolumeManager
 import com.opensmarthome.speaker.tool.system.CalendarToolExecutor
+import com.opensmarthome.speaker.tool.system.ContactsToolExecutor
 import com.opensmarthome.speaker.tool.system.LocationToolExecutor
 import com.opensmarthome.speaker.tool.system.NotificationToolExecutor
 import com.opensmarthome.speaker.tool.system.SystemToolExecutor
@@ -115,6 +117,9 @@ object DeviceModule {
             ),
             LocationToolExecutor(
                 AndroidLocationProvider(context)
+            ),
+            ContactsToolExecutor(
+                AndroidContactsProvider(context)
             ),
             SkillToolExecutor(skillRegistry)
         )

@@ -45,7 +45,7 @@ Give the agent Android-native capabilities.
 - [x] P2.3: Calendar tool (query events, requires READ_CALENDAR)
 - [x] P2.4: App launcher tool (open apps by name)
 - [x] P2.5: Volume/Media control tool
-- [ ] P2.6: Contacts/Phone tool (lookup, call)
+- [x] P2.6: Contacts tool (search, list — requires READ_CONTACTS)
 
 ### Phase 3: Information Tools
 Give the agent access to information.
