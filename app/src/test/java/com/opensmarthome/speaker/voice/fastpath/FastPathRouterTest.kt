@@ -815,4 +815,39 @@ class FastPathRouterTest {
         val m = router.match("lock the cookies")
         assertThat(m).isNull()
     }
+
+    @Test
+    fun `open the blinds fast-path`() {
+        val m = router.match("open the blinds")
+        assertThat(m?.toolName).isEqualTo("execute_command")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("cover")
+        assertThat(m?.arguments?.get("action")).isEqualTo("open_cover")
+    }
+
+    @Test
+    fun `close the garage fast-path`() {
+        val m = router.match("close the garage")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("cover")
+        assertThat(m?.arguments?.get("action")).isEqualTo("close_cover")
+    }
+
+    @Test
+    fun `japanese open curtains`() {
+        val m = router.match("カーテンを開けて")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("cover")
+        assertThat(m?.arguments?.get("action")).isEqualTo("open_cover")
+    }
+
+    @Test
+    fun `japanese close blinds`() {
+        val m = router.match("ブラインドを閉めて")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("cover")
+        assertThat(m?.arguments?.get("action")).isEqualTo("close_cover")
+    }
+
+    @Test
+    fun `open the camera still goes to launch_app`() {
+        val m = router.match("open the camera")
+        assertThat(m?.toolName).isEqualTo("launch_app")
+    }
 }
