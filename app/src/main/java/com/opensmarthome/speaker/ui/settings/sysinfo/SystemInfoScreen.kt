@@ -61,6 +61,8 @@ fun SystemInfoScreen(
                 add("  • $type" to "$count")
             }
             add("Skills" to "${state.skillCount}")
+            add("Routines" to "${state.routineCount}")
+            add("Documents (RAG)" to "${state.documentCount}")
             add("Memory entries" to "${state.memoryCount}")
             add("Connectivity" to if (state.online) "Online" else "Offline")
             add("Latency budget violations" to "${state.totalBudgetViolations}")
