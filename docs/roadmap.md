@@ -55,6 +55,7 @@ Give the agent access to information.
 - [x] P3.3: News tool (RSS/Atom via XmlPullParser, bundled feeds)
 - [x] P3.4: Knowledge/FAQ tool (user-defined Q&A, in-memory KnowledgeStore)
 - [x] P3.5: Web fetch tool (HtmlWebFetcher — readable text from any URL, OpenClaw web.fetch)
+- [x] P3.6: Unit converter tool (length/mass/temperature/volume, zero-dep)
 
 ### Phase 4: Agent Memory & Context
 Make the agent persistent and contextual.
