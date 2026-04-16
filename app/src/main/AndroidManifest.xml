@@ -143,6 +143,18 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- FileProvider used by IntentCameraProvider to expose the capture
+             target URI to the system camera app. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
     </application>
 
 </manifest>

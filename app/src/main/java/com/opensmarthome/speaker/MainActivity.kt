@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
 
     @javax.inject.Inject lateinit var providerManager: ProviderManager
     @javax.inject.Inject lateinit var appPreferences: AppPreferences
+    @javax.inject.Inject lateinit var cameraProviderHolder: com.opensmarthome.speaker.tool.system.CameraProviderHolder
+
+    private lateinit var intentCameraProvider: com.opensmarthome.speaker.tool.system.IntentCameraProvider
 
     private var voiceServiceStarted = false
     private var providerInitialized = false
@@ -78,6 +81,12 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setupImmersiveMode()
+
+        // IntentCameraProvider must be constructed before onStart() so its
+        // ActivityResultLauncher is registered while the activity is in
+        // CREATED state.
+        intentCameraProvider = com.opensmarthome.speaker.tool.system.IntentCameraProvider(this)
+        cameraProviderHolder.setProvider(intentCameraProvider)
 
         modelDownloader = ModelDownloader(this)
 
@@ -240,6 +249,9 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         if (isFinishing) {
             VoiceService.stop(this)
+        }
+        if (::intentCameraProvider.isInitialized) {
+            cameraProviderHolder.clear()
         }
         super.onDestroy()
     }
