@@ -86,6 +86,7 @@ fun AnalyticsScreen(
                 summary = state.summary,
                 allTime = state.allTime,
                 latency = state.latency,
+                fastPathRate = state.fastPathRate,
                 padding = padding
             )
         }
@@ -97,6 +98,7 @@ private fun LoadedContent(
     summary: AnalyticsRepository.Summary?,
     allTime: List<ToolUsageEntity>,
     latency: List<AnalyticsViewModel.LatencyRow>,
+    fastPathRate: Double?,
     padding: PaddingValues
 ) {
     LazyColumn(
@@ -105,6 +107,24 @@ private fun LoadedContent(
         contentPadding = PaddingValues(16.dp)
     ) {
         summary?.let { item { SummaryCard(it) } }
+        fastPathRate?.let { rate ->
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "${(rate * 100).toInt()}% fast-path",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(Modifier.size(4.dp))
+                        Text(
+                            text = "Canonical commands handled without the LLM — higher = snappier UX.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
 
         if (latency.isNotEmpty()) {
             item {

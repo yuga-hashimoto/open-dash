@@ -31,6 +31,8 @@ class AnalyticsViewModel @Inject constructor(
         val summary: AnalyticsRepository.Summary? = null,
         val allTime: List<ToolUsageEntity> = emptyList(),
         val latency: List<LatencyRow> = emptyList(),
+        /** Ratio of fast-path to total (fast+LLM) turns. Null when no data. */
+        val fastPathRate: Double? = null,
         val loading: Boolean = true
     )
 
@@ -57,10 +59,20 @@ class AnalyticsViewModel @Inject constructor(
                     violations = span?.let { violations[it] } ?: 0
                 )
             }
+            // Fast-path rate uses LatencyRecorder counts: FAST_PATH_TO_RESPONSE
+            // fires only when a fast-path match handled the turn; LLM_ROUND_TRIP
+            // fires only when the LLM was invoked. Ratio shows how often the
+            // Alexa-class path was hit.
+            val fastCount = latency.firstOrNull { it.event == "FAST_PATH_TO_RESPONSE" }?.count ?: 0
+            val llmCount = latency.firstOrNull { it.event == "LLM_ROUND_TRIP" }?.count ?: 0
+            val total = fastCount + llmCount
+            val fastRate = if (total > 0) fastCount.toDouble() / total else null
+
             _state.value = UiState(
                 summary = summary,
                 allTime = allTime,
                 latency = latency,
+                fastPathRate = fastRate,
                 loading = false
             )
         }
