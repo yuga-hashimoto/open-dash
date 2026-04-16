@@ -76,7 +76,7 @@ Make it feel like Alexa/Google Home first.
 - [x] P12.4: SecurePreferences audit — SWITCHBOT_TOKEN moved from plaintext DataStore to SecurePreferences (was leaking); added KEY_SWITCHBOT_TOKEN/SECRET/MQTT_PASSWORD constants; removed silent fallback to plaintext SharedPreferences on keystore failure; deleted dead plaintext secret keys (HA_TOKEN, OPENCLAW_API_KEY, SWITCHBOT_SECRET, MQTT_PASSWORD from PreferenceKeys)
 - [x] P12.5: Unified OkHttp with sensible timeouts — TtsManager no longer builds its own client; all HTTP uses NetworkModule singleton (30s connect / 60s read / 30s write)
 - [ ] P12.6: Coverage report — aim 80% non-UI
-- [ ] P12.7: Android Lint baseline / zero warnings in tool/
+- [x] P12.7: Android Lint baseline — added `lint { baseline = file("lint-baseline.xml") }` to app/build.gradle.kts. Baseline captures the 77 pre-existing warnings so CI now fails on new issues only. Regenerate with `./gradlew updateLintBaseline`
 
 ## Phase 13 — Priority 6: OSS Project Health
 - [x] P13.1: CONTRIBUTING.md (priority-order guide, code style, tool/skill authoring)

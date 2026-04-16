@@ -46,6 +46,15 @@ android {
         }
     }
 
+    lint {
+        // Baseline captures existing warnings so only new issues fail CI.
+        // Regenerate with `./gradlew updateLintBaseline`.
+        baseline = file("lint-baseline.xml")
+        checkDependencies = false
+        warningsAsErrors = false
+        abortOnError = true
+    }
+
     // llama.cpp JNI disabled — using MediaPipe LLM Inference (GPU accelerated)
     // To re-enable llama.cpp, uncomment below and install NDK 27.0.12077973
     // val ndkDir = file("${android.sdkDirectory}/ndk/27.0.12077973")
