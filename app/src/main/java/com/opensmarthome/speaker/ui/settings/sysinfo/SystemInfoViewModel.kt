@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
 import com.opensmarthome.speaker.assistant.skills.SkillRegistry
 import com.opensmarthome.speaker.data.db.MemoryDao
+import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.device.DeviceManager
 import com.opensmarthome.speaker.tool.ToolExecutor
+import com.opensmarthome.speaker.tool.rag.RagRepository
 import com.opensmarthome.speaker.util.NetworkMonitor
 import com.opensmarthome.speaker.voice.metrics.LatencyRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +30,9 @@ class SystemInfoViewModel @Inject constructor(
     private val router: ConversationRouter,
     private val networkMonitor: NetworkMonitor,
     private val latencyRecorder: LatencyRecorder,
-    private val toolExecutor: ToolExecutor
+    private val toolExecutor: ToolExecutor,
+    private val routineDao: RoutineDao,
+    private val ragRepository: RagRepository
 ) : ViewModel() {
 
     data class Snapshot(
@@ -42,10 +46,14 @@ class SystemInfoViewModel @Inject constructor(
         val online: Boolean,
         val totalBudgetViolations: Int,
         val totalLatencyMeasurements: Long = 0L,
+        val routineCount: Int = 0,
+        val documentCount: Int = 0,
         val loading: Boolean = false
     )
 
-    private val _state = MutableStateFlow(Snapshot(null, 0, 0, emptyList(), 0, 0, 0, false, 0, 0L, loading = true))
+    private val _state = MutableStateFlow(
+        Snapshot(null, 0, 0, emptyList(), 0, 0, 0, false, 0, 0L, 0, 0, loading = true)
+    )
     val state: StateFlow<Snapshot> = _state.asStateFlow()
 
     init {
@@ -64,6 +72,8 @@ class SystemInfoViewModel @Inject constructor(
             val tools = toolExecutor.availableTools().size
             val violations = latencyRecorder.budgetViolations().values.sum()
             val measurements = latencyRecorder.totalMeasurements()
+            val routines = runCatching { routineDao.listAll().size }.getOrDefault(0)
+            val documents = runCatching { ragRepository.listDocuments().size }.getOrDefault(0)
             _state.value = Snapshot(
                 activeProviderModel = router.activeProvider.value?.capabilities?.modelName,
                 providerCount = router.availableProviders.value.size,
@@ -75,6 +85,8 @@ class SystemInfoViewModel @Inject constructor(
                 online = networkMonitor.isOnline.value,
                 totalBudgetViolations = violations,
                 totalLatencyMeasurements = measurements,
+                routineCount = routines,
+                documentCount = documents,
                 loading = false
             )
         }
