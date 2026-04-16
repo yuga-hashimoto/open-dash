@@ -50,7 +50,7 @@ Make it feel like Alexa/Google Home first.
 - [x] P9.2: Settings → Routines manager (RoutinesViewModel + RoutinesScreen: list, delete, action preview)
 - [x] P9.3: Settings → Memory browser (MemoryViewModel + MemoryScreen: search, delete, clear-all)
 - [ ] P9.4: Settings → Documents / RAG (RagRepository)
-- [ ] P9.5: Settings → Analytics dashboard (AnalyticsRepository)
+- [x] P9.5: Settings → Analytics dashboard (AnalyticsViewModel + AnalyticsScreen: summary card, per-tool success rates, reset)
 - [ ] P9.6: Settings → Custom system prompt editor
 - [ ] P9.7: Settings → Permissions checklist (PermissionCatalog)
 - [ ] P9.8: Proactive suggestion bubble in Home (SuggestionState)

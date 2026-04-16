@@ -183,6 +183,14 @@ object DeviceModule {
 
     @Provides
     @Singleton
+    fun provideAnalyticsRepository(
+        dao: ToolUsageDao,
+        stats: PersistentToolUsageStats
+    ): com.opensmarthome.speaker.tool.analytics.AnalyticsRepository =
+        com.opensmarthome.speaker.tool.analytics.AnalyticsRepository(dao, stats)
+
+    @Provides
+    @Singleton
     fun provideToolExecutor(
         deviceManager: DeviceManager,
         moshi: Moshi,
