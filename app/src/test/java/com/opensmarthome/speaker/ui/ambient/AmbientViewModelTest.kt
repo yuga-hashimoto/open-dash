@@ -52,7 +52,10 @@ class AmbientViewModelTest {
         every { deviceManager.devices } returns devices
 
         val builder = AmbientSnapshotBuilder(clock = { 1_700_000_000_000L })
-        val vm = AmbientViewModel(deviceManager, builder)
+        val vm = run {
+            val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+            AmbientViewModel(deviceManager, builder, te)
+        }
         advanceUntilIdle()
 
         val snap = vm.snapshot.value
@@ -68,7 +71,10 @@ class AmbientViewModelTest {
         every { deviceManager.devices } returns devices
 
         val builder = AmbientSnapshotBuilder(clock = { 0L })
-        val vm = AmbientViewModel(deviceManager, builder)
+        val vm = run {
+            val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+            AmbientViewModel(deviceManager, builder, te)
+        }
         advanceUntilIdle()
         assertThat(vm.snapshot.value.recentDeviceActivity).isEmpty()
 

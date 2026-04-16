@@ -3,21 +3,28 @@ package com.opensmarthome.speaker.ui.ambient
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opensmarthome.speaker.device.DeviceManager
+import com.opensmarthome.speaker.tool.ToolCall
+import com.opensmarthome.speaker.tool.ToolExecutor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 /**
  * Exposes a single AmbientSnapshot state combining clock, weather, timers,
  * notifications and recent device activity for the Echo Show-style display.
+ *
+ * Also routes the ambient screen's quick-action buttons to the tool executor.
  */
 @HiltViewModel
 class AmbientViewModel @Inject constructor(
     private val deviceManager: DeviceManager,
-    private val snapshotBuilder: AmbientSnapshotBuilder
+    private val snapshotBuilder: AmbientSnapshotBuilder,
+    private val toolExecutor: ToolExecutor
 ) : ViewModel() {
 
     private val _snapshot = MutableStateFlow(AmbientSnapshot(nowMs = System.currentTimeMillis()))
@@ -27,6 +34,19 @@ class AmbientViewModel @Inject constructor(
         viewModelScope.launch {
             deviceManager.devices.collect { deviceMap ->
                 _snapshot.value = snapshotBuilder.build(deviceMap.values)
+            }
+        }
+    }
+
+    /** Fire a quick-action button. Best-effort — logs failures, doesn't surface them. */
+    fun runAction(toolName: String, arguments: Map<String, Any?> = emptyMap()) {
+        viewModelScope.launch {
+            try {
+                toolExecutor.execute(
+                    ToolCall(id = "ambient_${UUID.randomUUID()}", name = toolName, arguments = arguments)
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "Ambient quick action failed: $toolName")
             }
         }
     }

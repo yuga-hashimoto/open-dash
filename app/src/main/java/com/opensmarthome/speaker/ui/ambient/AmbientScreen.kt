@@ -55,11 +55,57 @@ fun AmbientScreen(
     val now = remember(tick) { LocalDateTime.now() }
     val wide = isExpandedLandscape()
 
-    if (wide) {
-        TwoColumnLayout(snapshot = snapshot, now = now, modifier = modifier)
-    } else {
-        SingleColumnLayout(snapshot = snapshot, now = now, modifier = modifier)
+    Column(modifier = modifier.fillMaxSize()) {
+        QuickActionRow(
+            onLightsOff = {
+                viewModel.runAction(
+                    "execute_command",
+                    mapOf("device_type" to "light", "action" to "turn_off")
+                )
+            },
+            onLightsOn = {
+                viewModel.runAction(
+                    "execute_command",
+                    mapOf("device_type" to "light", "action" to "turn_on")
+                )
+            },
+            onMute = { viewModel.runAction("set_volume", mapOf("level" to 0.0)) },
+            onMorningBriefing = { viewModel.runAction("morning_briefing") },
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp, end = 16.dp)
+        )
+        if (wide) {
+            TwoColumnLayout(snapshot = snapshot, now = now, modifier = Modifier.weight(1f))
+        } else {
+            SingleColumnLayout(snapshot = snapshot, now = now, modifier = Modifier.weight(1f))
+        }
     }
+}
+
+@Composable
+private fun QuickActionRow(
+    onLightsOn: () -> Unit,
+    onLightsOff: () -> Unit,
+    onMute: () -> Unit,
+    onMorningBriefing: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.layout.Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QuickActionChip("Lights on", onLightsOn)
+        QuickActionChip("Lights off", onLightsOff)
+        QuickActionChip("Mute", onMute)
+        QuickActionChip("Briefing", onMorningBriefing)
+    }
+}
+
+@Composable
+private fun QuickActionChip(label: String, onClick: () -> Unit) {
+    androidx.compose.material3.AssistChip(
+        onClick = onClick,
+        label = { Text(label) }
+    )
 }
 
 @Composable
