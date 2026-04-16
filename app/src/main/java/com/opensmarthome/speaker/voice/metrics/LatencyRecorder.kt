@@ -1,5 +1,6 @@
 package com.opensmarthome.speaker.voice.metrics
 
+import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -28,13 +29,17 @@ class LatencyRecorder(
         val maxMs: Long
     )
 
-    enum class Span {
-        WAKE_TO_LISTENING,
-        STT_DURATION,
-        FAST_PATH_TO_RESPONSE,
-        LLM_ROUND_TRIP,
-        TTS_PREPARATION,
-        TOOL_EXECUTION
+    enum class Span(val budgetMs: Long) {
+        // Priority 1 target: visual "listening" feedback within 500ms of wake.
+        WAKE_TO_LISTENING(500),
+        // STT varies by utterance; 5s is a soft ceiling before we complain.
+        STT_DURATION(5_000),
+        // Fast-path (canonical commands) must feel Alexa-instant.
+        FAST_PATH_TO_RESPONSE(200),
+        // Local LLM round-trip; remote providers usually come in under this.
+        LLM_ROUND_TRIP(8_000),
+        TTS_PREPARATION(400),
+        TOOL_EXECUTION(2_000)
     }
 
     private data class OpenMark(val startNanos: Long, val key: String)
@@ -52,7 +57,16 @@ class LatencyRecorder(
         val durationNs = clock() - mark.startNanos
         val durationMs = durationNs / 1_000_000L
         recordSample(span, durationMs)
+        if (durationMs > span.budgetMs) {
+            Timber.w("Latency budget exceeded: ${span.name} took ${durationMs}ms (budget ${span.budgetMs}ms)")
+        }
         return durationMs
+    }
+
+    /** Count of measurements that blew past the per-span budget. */
+    fun budgetViolations(): Map<Span, Int> = samplesByEvent.mapValues { (span, deque) ->
+        val snapshot = synchronized(deque) { deque.toList() }
+        snapshot.count { it > span.budgetMs }
     }
 
     private fun recordSample(span: Span, durationMs: Long) {

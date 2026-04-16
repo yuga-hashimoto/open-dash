@@ -71,6 +71,36 @@ class LatencyRecorderTest {
     }
 
     @Test
+    fun `spans carry budget targets matching priority 1 goals`() {
+        assertThat(LatencyRecorder.Span.WAKE_TO_LISTENING.budgetMs).isEqualTo(500L)
+        assertThat(LatencyRecorder.Span.FAST_PATH_TO_RESPONSE.budgetMs).isEqualTo(200L)
+    }
+
+    @Test
+    fun `budgetViolations counts samples over target`() {
+        var now = 0L
+        val recorder = LatencyRecorder(clock = { now })
+
+        // 200ms → under WAKE budget (500)
+        recorder.startSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+        now += 200_000_000L
+        recorder.endSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+
+        // 800ms → over WAKE budget
+        recorder.startSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+        now += 800_000_000L
+        recorder.endSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+
+        // 1500ms → over WAKE budget
+        recorder.startSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+        now += 1_500_000_000L
+        recorder.endSpan(LatencyRecorder.Span.WAKE_TO_LISTENING)
+
+        val violations = recorder.budgetViolations()
+        assertThat(violations[LatencyRecorder.Span.WAKE_TO_LISTENING]).isEqualTo(2)
+    }
+
+    @Test
     fun `independent spans use independent keys`() {
         var now = 0L
         val recorder = LatencyRecorder(clock = { now })
