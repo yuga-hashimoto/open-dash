@@ -709,4 +709,40 @@ class FastPathRouterTest {
         val m = router.match("evening briefing")
         assertThat(m?.toolName).isNotEqualTo("get_news")
     }
+
+    @Test
+    fun `fan on fast-path`() {
+        val m = router.match("fan on")
+        assertThat(m?.toolName).isEqualTo("execute_command")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("fan")
+        assertThat(m?.arguments?.get("action")).isEqualTo("turn_on")
+    }
+
+    @Test
+    fun `turn the fan off fast-path`() {
+        val m = router.match("turn the fan off")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("fan")
+        assertThat(m?.arguments?.get("action")).isEqualTo("turn_off")
+    }
+
+    @Test
+    fun `japanese fan on`() {
+        val m = router.match("扇風機をつけて")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("fan")
+        assertThat(m?.arguments?.get("action")).isEqualTo("turn_on")
+    }
+
+    @Test
+    fun `japanese fan off`() {
+        val m = router.match("ファンを消して")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("fan")
+        assertThat(m?.arguments?.get("action")).isEqualTo("turn_off")
+    }
+
+    @Test
+    fun `fan matcher does not steal lights off`() {
+        // Precedence guard — "lights off" must still route to light.
+        val m = router.match("turn the lights off")
+        assertThat(m?.arguments?.get("device_type")).isEqualTo("light")
+    }
 }

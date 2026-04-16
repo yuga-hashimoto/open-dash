@@ -184,6 +184,40 @@ object ThermostatMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * "fan on" / "fan off" / "ファンをつけて" / "扇風機を消して" → execute_command
+ * device_type=fan. Keeps itself narrow (anchored to the fan noun) to
+ * avoid swallowing "turn on" for other devices.
+ */
+object FanMatcher : FastPathMatcher {
+    private val onPatterns = listOf(
+        Regex("""(?:turn\s+)?(?:the\s+)?fan\s+on"""),
+        Regex("""(?:扇風機|ファン)\s*(?:を)?\s*(?:つけて|オン|回して)""")
+    )
+    private val offPatterns = listOf(
+        Regex("""(?:turn\s+)?(?:the\s+)?fan\s+off"""),
+        Regex("""(?:扇風機|ファン)\s*(?:を)?\s*(?:消して|オフ|止めて)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (onPatterns.any { it.containsMatchIn(normalized) }) {
+            return FastPathMatch(
+                toolName = "execute_command",
+                arguments = mapOf("device_type" to "fan", "action" to "turn_on"),
+                spokenConfirmation = "Fan on."
+            )
+        }
+        if (offPatterns.any { it.containsMatchIn(normalized) }) {
+            return FastPathMatch(
+                toolName = "execute_command",
+                arguments = mapOf("device_type" to "fan", "action" to "turn_off"),
+                spokenConfirmation = "Fan off."
+            )
+        }
+        return null
+    }
+}
+
 /** "lights on/off", "電気つけて/消して", "set brightness 50", "明るさ50%" */
 object LightsMatcher : FastPathMatcher {
     private val onPatterns = listOf(
