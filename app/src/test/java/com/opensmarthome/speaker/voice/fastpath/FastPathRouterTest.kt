@@ -297,6 +297,55 @@ class FastPathRouterTest {
     }
 
     @Test
+    fun `list notifications fast-path`() {
+        val m = router.match("show notifications")
+        assertThat(m?.toolName).isEqualTo("list_notifications")
+    }
+
+    @Test
+    fun `what notifications do I have`() {
+        val m = router.match("what notifications do I have")
+        assertThat(m?.toolName).isEqualTo("list_notifications")
+    }
+
+    @Test
+    fun `any notifications fast-path`() {
+        val m = router.match("any notifications")
+        assertThat(m?.toolName).isEqualTo("list_notifications")
+    }
+
+    @Test
+    fun `clear notifications fast-path`() {
+        val m = router.match("clear all notifications")
+        assertThat(m?.toolName).isEqualTo("clear_notifications")
+    }
+
+    @Test
+    fun `dismiss notifications fast-path`() {
+        val m = router.match("dismiss notifications")
+        assertThat(m?.toolName).isEqualTo("clear_notifications")
+    }
+
+    @Test
+    fun `japanese list notifications`() {
+        val m = router.match("通知一覧")
+        assertThat(m?.toolName).isEqualTo("list_notifications")
+    }
+
+    @Test
+    fun `japanese clear notifications`() {
+        val m = router.match("通知を消して")
+        assertThat(m?.toolName).isEqualTo("clear_notifications")
+    }
+
+    @Test
+    fun `clear precedes list precedence`() {
+        // "clear my notifications" must NOT route to list.
+        val m = router.match("clear my notifications")
+        assertThat(m?.toolName).isEqualTo("clear_notifications")
+    }
+
+    @Test
     fun `what do you remember calls list_memory`() {
         val m = router.match("what do you remember")
         assertThat(m?.toolName).isEqualTo("list_memory")

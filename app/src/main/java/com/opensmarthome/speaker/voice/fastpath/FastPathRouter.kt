@@ -81,6 +81,10 @@ class DefaultFastPathRouter(
             EveningBriefingMatcher,
             WeatherMatcher,
             NewsMatcher,
+            // Notification matchers: clear precedes list because "clear" verb
+            // dominates the "show / list" verbs on common notification utterances.
+            ClearNotificationsMatcher,
+            ListNotificationsMatcher,
             ListMemoryMatcher,
             ListDevicesMatcher,
             DatetimeMatcher,
