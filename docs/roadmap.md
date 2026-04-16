@@ -42,7 +42,7 @@ Make it feel like Alexa/Google Home first.
 - [ ] P8.4: Ambient home screen — clock + weather + notifications + device quick-control (steal from Ava/ViewAssist)
 - [ ] P8.5: Barge-in verification — user interrupts TTS mid-sentence
 - [ ] P8.6: "Hmm…" filler phrase during long LLM waits
-- [ ] P8.7: Error recovery copy — short, specific, spoken
+- [x] P8.7: ErrorClassifier — 7 categories (no-provider / STT / timeout / network / permission / tool / unknown) with spoken-friendly copy + retry flag (stolen Ava pattern)
 - [ ] P8.8: Tablet-first landscape layout, large touch targets, night mode
 
 ## Phase 9 — Priority 2: Surface existing OpenClaw engine capabilities in UI

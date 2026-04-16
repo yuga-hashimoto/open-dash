@@ -1,0 +1,77 @@
+package com.opensmarthome.speaker.voice.pipeline
+
+import com.google.common.truth.Truth.assertThat
+import org.junit.jupiter.api.Test
+
+class ErrorClassifierTest {
+
+    private val classifier = ErrorClassifier()
+
+    @Test
+    fun `no provider configured`() {
+        val r = classifier.classify("No available provider configured")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.NO_PROVIDER)
+        assertThat(r.canRetry).isFalse()
+        assertThat(r.userSpokenMessage).contains("AI model")
+    }
+
+    @Test
+    fun `stt failure from index out of range`() {
+        val r = classifier.classify("list index out of range")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.STT_FAILURE)
+        assertThat(r.canRetry).isTrue()
+    }
+
+    @Test
+    fun `stt failure from no match`() {
+        val r = classifier.classify("ERROR_NO_MATCH")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.STT_FAILURE)
+    }
+
+    @Test
+    fun `llm timeout`() {
+        val r = classifier.classify("Request timed out after 30s")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.LLM_TIMEOUT)
+        assertThat(r.canRetry).isTrue()
+    }
+
+    @Test
+    fun `network error from unable to resolve`() {
+        val r = classifier.classify("Unable to resolve host api.example.com")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.NETWORK)
+    }
+
+    @Test
+    fun `permission error`() {
+        val r = classifier.classify("Calendar permission not granted")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.PERMISSION)
+        assertThat(r.canRetry).isFalse()
+    }
+
+    @Test
+    fun `tool execution failure`() {
+        val r = classifier.classify("Tool execution failed: missing arguments")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.TOOL_FAILURE)
+    }
+
+    @Test
+    fun `unknown error still gets friendly copy`() {
+        val r = classifier.classify("something weird happened")
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.UNKNOWN)
+        assertThat(r.canRetry).isTrue()
+        assertThat(r.userSpokenMessage).doesNotContain("Exception")
+    }
+
+    @Test
+    fun `null input does not crash`() {
+        val r = classifier.classify(null)
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.UNKNOWN)
+    }
+
+    @Test
+    fun `throwable cause is also inspected`() {
+        val cause = RuntimeException("permission denied for camera")
+        val r = classifier.classify(null, cause)
+        assertThat(r.category).isEqualTo(ErrorClassifier.Category.PERMISSION)
+    }
+}
