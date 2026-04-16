@@ -54,6 +54,16 @@ class SkillRepository(
         return true
     }
 
+    /**
+     * Re-scan [userSkillsDir] and add any new SKILL.md files to the registry.
+     * Useful after the user side-loads a skill bundle without going through
+     * install_skill_from_url. Existing skills are overwritten.
+     */
+    fun reloadFromDisk() {
+        val loader = FileSystemSkillLoader(userSkillsDir)
+        registry.registerAll(loader.loadAll())
+    }
+
     private fun isDeletable(skill: Skill): Boolean =
         skill.source.startsWith("installed:") ||
             skill.source.startsWith("file:${userSkillsDir.absolutePath}")

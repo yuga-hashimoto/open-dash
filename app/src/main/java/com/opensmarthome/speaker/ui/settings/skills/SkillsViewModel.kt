@@ -53,6 +53,13 @@ class SkillsViewModel @Inject constructor(
         refresh()
     }
 
+    fun reloadFromDisk() {
+        viewModelScope.launch {
+            repository.reloadFromDisk()
+            refresh()
+        }
+    }
+
     fun installFromUrl(url: String) {
         val trimmed = url.trim()
         if (trimmed.isBlank()) {

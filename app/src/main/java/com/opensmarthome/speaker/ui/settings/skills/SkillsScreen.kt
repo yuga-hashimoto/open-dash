@@ -63,6 +63,11 @@ fun SkillsScreen(
                 title = { Text("Skills") },
                 navigationIcon = {
                     TextButton(onClick = onBack) { Text("Back") }
+                },
+                actions = {
+                    TextButton(onClick = { viewModel.reloadFromDisk() }) {
+                        Text("Reload")
+                    }
                 }
             )
         },
