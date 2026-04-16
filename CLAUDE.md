@@ -46,6 +46,9 @@ Located at `/Users/y-c-hashimoto/Documents/GitHub/open-smart-speaker参考リポ
 - **ViewAssist** — ambient info panel
 - **openclaw** (official, TS) — tool list reference, skills system, memory system
 - **gallery** (google-ai-edge) — SKILL.md format + JS-sandboxed skills, `@Tool` / `@ToolParam` annotations, FunctionGemma 270m patterns, on-device benchmarks, mobile actions (camera/intent/etc.)
+- **SmolChat-Android** — llama.cpp JNI wrapper (`smollm`), ObjectBox-based on-device vector DB (`smolvectordb`), HuggingFace model-hub API wrapper
+- **mlc-llm** — alternative on-device LLM runtime with its own compile-optimized backend
+- **dicio-android** — free-software voice assistant with multilanguage skills system (14 langs), shipping on F-Droid
 
 Every PR that steals from one of these should say "stolen from X" in the commit message.
 
