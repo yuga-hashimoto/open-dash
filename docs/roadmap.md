@@ -67,7 +67,7 @@ Make it feel like Alexa/Google Home first.
 - [ ] P11.1: HermesAgent protocol adapter (new AssistantProvider)
 - [ ] P11.2: OpenClawProvider streaming + tool forwarding
 - [ ] P11.3: "Heavy task" hint — escalate to gateway when needed
-- [ ] P11.4: Unified provider switcher polish
+- [x] P11.4: Unified provider switcher polish — ProvidersScreen + ProvidersViewModel lists registered AssistantProviders with badges (On-device / Streaming / Tools / Vision), active highlighted; tap to call router.selectProvider; ProvidersViewModelTest covers rows + selection
 
 ## Phase 12 — Priority 5: Refactor / Quality
 - [x] P12.1: Dead code sweep — removed dead `is AndroidTtsProvider` branch in VoicePipeline.applyTtsLanguagePreference (TtsManager is the only injected TextToSpeech, so the direct provider branch was unreachable). Removed corresponding unused import
