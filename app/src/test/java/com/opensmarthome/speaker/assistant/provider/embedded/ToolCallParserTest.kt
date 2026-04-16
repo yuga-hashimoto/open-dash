@@ -89,4 +89,59 @@ class ToolCallParserTest {
         assertThat(result.toolCalls[0].name).isEqualTo("execute_command")
         assertThat(result.toolCalls[0].arguments).contains("brightness")
     }
+
+    @Test
+    fun `parse XML wrapper with bare JSON inside`() {
+        val response = """Looking up the weather.
+<tool_call>{"name": "get_weather", "arguments": {"location": "Tokyo"}}</tool_call>"""
+
+        val result = parser.parse(response)
+
+        assertThat(result.toolCalls).hasSize(1)
+        assertThat(result.toolCalls[0].name).isEqualTo("get_weather")
+        assertThat(result.toolCalls[0].arguments).contains("Tokyo")
+        assertThat(result.text).contains("Looking up the weather")
+        assertThat(result.text).doesNotContain("tool_call")
+    }
+
+    @Test
+    fun `parse Gemma 4 style XML tokens`() {
+        val response = """<|tool_call>{"name": "set_timer", "arguments": {"seconds": 60}}<tool_call|>"""
+
+        val result = parser.parse(response)
+
+        assertThat(result.toolCalls).hasSize(1)
+        assertThat(result.toolCalls[0].name).isEqualTo("set_timer")
+        assertThat(result.text).isEmpty()
+    }
+
+    @Test
+    fun `parse XML wrapper spanning multiple lines`() {
+        val response = """<tool_call>
+{
+  "name": "execute_command",
+  "arguments": {
+    "device_id": "light_1"
+  }
+}
+</tool_call>"""
+
+        val result = parser.parse(response)
+
+        assertThat(result.toolCalls).hasSize(1)
+        assertThat(result.toolCalls[0].name).isEqualTo("execute_command")
+    }
+
+    @Test
+    fun `mixed XML and JSON formats both parsed`() {
+        val response = """<tool_call>{"name": "get_weather", "arguments": {"location": "NY"}}</tool_call>
+Then also:
+{"tool_call": {"name": "get_datetime", "arguments": {}}}"""
+
+        val result = parser.parse(response)
+
+        assertThat(result.toolCalls).hasSize(2)
+        val names = result.toolCalls.map { it.name }
+        assertThat(names).containsExactly("get_weather", "get_datetime").inOrder()
+    }
 }

@@ -58,7 +58,7 @@ Give the agent access to information.
 ### Phase 4: Agent Memory & Context
 Make the agent persistent and contextual.
 
-- [ ] P4.1: Conversation summarization (compress old context)
+- [x] P4.1: Conversation summarization / context compaction (stolen from off-grid-mobile-ai)
 - [ ] P4.2: User preference memory (remember user habits)
 - [ ] P4.3: Device state context (auto-include relevant device states)
 - [x] P4.4: Time/location awareness in system prompt (get_datetime tool)
