@@ -173,6 +173,16 @@ object DeviceModule {
 
     @Provides
     @Singleton
+    fun provideRoutineRepository(
+        dao: RoutineDao,
+        moshi: Moshi
+    ): com.opensmarthome.speaker.assistant.routine.RoutineRepository =
+        com.opensmarthome.speaker.assistant.routine.RoutineRepository(
+            com.opensmarthome.speaker.assistant.routine.RoomRoutineStore(dao, moshi)
+        )
+
+    @Provides
+    @Singleton
     fun provideToolExecutor(
         deviceManager: DeviceManager,
         moshi: Moshi,
