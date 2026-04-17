@@ -144,6 +144,22 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- Phase 15 accessibility service skeleton. Follow-up PRs (P15.2-P15.5)
+             wire read_active_screen / tap_by_text / scroll_screen / type_text
+             tools on top of this. User must enable in Settings > Accessibility. -->
+        <service
+            android:name=".a11y.OpenSmartSpeakerA11yService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/a11y_service_config" />
+        </service>
+
         <!-- FileProvider used by IntentCameraProvider to expose the capture
              target URI to the system camera app. -->
         <provider

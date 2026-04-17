@@ -86,8 +86,14 @@ object PermissionCatalog {
         SpecialGrant(
             id = "accessibility",
             title = "Accessibility",
-            rationale = "Lets the agent read the current screen for the 'read_screen' tool.",
-            unlocks = listOf("read_screen"),
+            rationale = "Lets the agent read what's on screen and tap buttons on your behalf when you ask. No data leaves the device; you can turn it off anytime in Settings > Accessibility.",
+            unlocks = listOf(
+                "read_screen",
+                "read_active_screen",
+                "tap_by_text",
+                "scroll_screen",
+                "type_text"
+            ),
             settingsAction = "android.settings.ACCESSIBILITY_SETTINGS"
         )
     )

@@ -7,4 +7,5 @@
     <string name="tab_settings">Settings</string>
     <string name="accessibility_service_description">Allows the smart speaker agent to read the currently visible screen text and automate UI actions on your behalf.</string>
     <string name="accessibility_service_summary">Enable to let the on-device agent see and control the screen.</string>
+    <string name="a11y_service_description">OpenSmartSpeaker uses this accessibility service to read what\'s on screen and tap buttons on your behalf when you ask. No data leaves the device. You can turn it off anytime in Settings.</string>
 </resources>
