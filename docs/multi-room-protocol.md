@@ -1,6 +1,6 @@
 # Multi-room protocol (ADR)
 
-Status: **Partially implemented** (P17.1 ADR, P17.2 NDJSON server + HMAC auth, P17.3 client + broadcaster, broadcast_tts tool). WebSocket upgrade, speaker groups, session handoff, and QR-pair auth still TODO.
+Status: **Partially implemented** (P17.1 ADR, P17.2 NDJSON server + HMAC auth, P17.3 client + broadcaster, broadcast_tts tool, WebSocket upgrade). Speaker groups, session handoff, and QR-pair auth still TODO.
 
 Captures the wire format, security model, and message catalogue we build on
 top of the mDNS discovery layer shipped in P14.5.
@@ -20,19 +20,21 @@ the wire look like before we write any of them.
 - `HmacSigner` (HMAC-SHA256 + base64 + constant-time compare)
 - `AnnouncementParser` (JSON shape / version / 30-s replay / HMAC layering)
 - `AnnouncementDispatcher` (`tts_broadcast` → `TextToSpeech`, heartbeat ack, unknown → `Unhandled`)
-- `AnnouncementServer` (NDJSON on port 8421, no WebSocket yet)
-- `AnnouncementClient` + `AnnouncementBroadcaster` (fan-out with missing-secret early-exit)
+- `AnnouncementServer` (NDJSON on port 8421, **+ RFC 6455 WebSocket upgrade on `GET /bus`**)
+- `WebSocketFrame` (hand-rolled RFC 6455 encoder/decoder, text-only, len <=65 535)
+- `WebSocketUpgrade` (hand-rolled `Sec-WebSocket-Accept` + header parser)
+- `AnnouncementClient` (NDJSON) + `AnnouncementWebSocketClient` (OkHttp) + `AnnouncementBroadcaster` (WS-first, NDJSON fallback, missing-secret early-exit)
 - `BroadcastTtsToolExecutor` + `BroadcastTtsMatcher`
 - `MULTIROOM_SECRET` stored in `SecurePreferences`
 - Settings UI for the secret and the enable toggle
 
 **Still TODO**:
-- WebSocket transport mode (the `HELLO ndjson\n` fallback is the only current path)
 - Speaker groups (P17.4)
 - Session handoff (P17.5)
 - QR-pair shared-secret setup (P17.6)
 - `heartbeat` liveness probing beyond dispatch ack
 - Per-peer dedup on `id`
+- Long WS frames (>65 535 bytes, 64-bit extended length path) — out of scope for v1, re-evaluate if `session_handoff` payloads grow
 
 We will run a **WebSocket server on TCP 8421** per speaker. Payloads are
 **JSON envelopes**, one envelope per WebSocket text frame, with a

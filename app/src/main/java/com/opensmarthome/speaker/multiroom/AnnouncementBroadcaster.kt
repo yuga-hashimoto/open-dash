@@ -32,7 +32,14 @@ class AnnouncementBroadcaster @Inject constructor(
     private val selfServiceName: () -> String?,
     private val groupLookup: suspend (String) -> SpeakerGroup? = { null },
     private val clock: () -> Long = { System.currentTimeMillis() / 1000L },
-    private val idGenerator: () -> String = { UUID.randomUUID().toString() }
+    private val idGenerator: () -> String = { UUID.randomUUID().toString() },
+    /**
+     * Optional WebSocket client. When present the broadcaster tries
+     * WebSocket transport first and falls back to [client] (NDJSON) only
+     * if the handshake fails. Left nullable so legacy call sites and
+     * tests can stay on NDJSON without pulling in an [OkHttpClient].
+     */
+    private val webSocketClient: AnnouncementWebSocketClient? = null
 ) {
 
     private val mapAdapter: JsonAdapter<Map<String, Any?>> = moshi.adapter(
@@ -215,7 +222,29 @@ class AnnouncementBroadcaster @Inject constructor(
             payload = payload,
             secret = secret
         )
-        return client.send(host = peer.host!!, port = peer.port!!, line = line)
+        return sendWithFallback(host = peer.host!!, port = peer.port!!, line = line)
+    }
+
+    /**
+     * Try WebSocket transport first (primary per ADR); fall back to NDJSON
+     * on any non-OK outcome so a peer that only speaks the legacy protocol
+     * still receives the envelope. We treat *any* non-[SendOutcome.Ok]
+     * result from the WS client as reason to retry on NDJSON — a false
+     * positive "already delivered" is far worse than a duplicate NDJSON
+     * attempt that will just fail fast too.
+     *
+     * When [webSocketClient] is null, we go straight to NDJSON (backward-
+     * compatible code path used by tests and by the deployed v17.2 binary).
+     */
+    private suspend fun sendWithFallback(
+        host: String,
+        port: Int,
+        line: String
+    ): SendOutcome {
+        val ws = webSocketClient ?: return client.send(host = host, port = port, line = line)
+        val wsOutcome = ws.send(host = host, port = port, line = line)
+        return if (wsOutcome is SendOutcome.Ok) wsOutcome
+        else client.send(host = host, port = port, line = line)
     }
 
     /**
@@ -282,7 +311,7 @@ class AnnouncementBroadcaster @Inject constructor(
         val results: List<Pair<DiscoveredSpeaker, SendOutcome>> = coroutineScope {
             peers.map { peer ->
                 async {
-                    peer to client.send(
+                    peer to sendWithFallback(
                         host = peer.host!!,
                         port = peer.port!!,
                         line = line

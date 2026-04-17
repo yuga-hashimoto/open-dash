@@ -213,6 +213,7 @@ object DeviceModule {
     fun provideAnnouncementBroadcaster(
         discovery: com.opensmarthome.speaker.util.MulticastDiscovery,
         client: com.opensmarthome.speaker.multiroom.AnnouncementClient,
+        webSocketClient: com.opensmarthome.speaker.multiroom.AnnouncementWebSocketClient,
         securePreferences: com.opensmarthome.speaker.data.preferences.SecurePreferences,
         moshi: Moshi,
         speakerGroupRepository: com.opensmarthome.speaker.multiroom.SpeakerGroupRepository
@@ -223,7 +224,8 @@ object DeviceModule {
             securePreferences = securePreferences,
             moshi = moshi,
             selfServiceName = { discovery.registeredName.value },
-            groupLookup = { name -> speakerGroupRepository.get(name) }
+            groupLookup = { name -> speakerGroupRepository.get(name) },
+            webSocketClient = webSocketClient
         )
 
     @Provides

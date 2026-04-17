@@ -178,16 +178,19 @@ smoke testing).
 - [x] P17.1: Wire format decision — ADR shipped at `docs/multi-room-protocol.md` (PR #239);
   JSON envelopes on TCP/8421, WebSocket primary with NDJSON fallback, HMAC-SHA256 auth,
   30-second replay window. Ref: OVOS message bus
-- [x] P17.2: `AnnouncementServer` — **receiver done** (NDJSON fallback only; WebSocket
-  upgrade still TODO). `HmacSigner` + `AnnouncementParser` + `AnnouncementDispatcher` +
+- [x] P17.2: `AnnouncementServer` — **receiver done**, NDJSON path + RFC 6455 WebSocket
+  upgrade (`GET /bus HTTP/1.1`, hand-rolled handshake / framing, no new deps).
+  `HmacSigner` + `AnnouncementParser` + `AnnouncementDispatcher` +
   `AnnouncementServer` all shipped with unit tests. `MULTIROOM_SECRET` stored in
   SecurePreferences. VoiceService lifecycle starts/stops the server behind the existing
   `MULTIROOM_BROADCAST_ENABLED` toggle. `tts_broadcast` and `heartbeat` are wired; other
   message types parse cleanly but dispatch as `Unhandled`. **Client / sender** side is P17.3+
-- [x] P17.3: **Sender side shipped** — `AnnouncementClient` + `AnnouncementBroadcaster` with
-  fan-out across discovered peers; `BroadcastTtsToolExecutor` + `BroadcastTtsMatcher` provide
-  the user-facing path. `broadcast_timer` envelope wiring for cross-speaker timer fan-out is
-  a small follow-up on top of this (same broadcaster, different envelope type)
+- [x] P17.3: **Sender side shipped** — `AnnouncementClient` (NDJSON) +
+  `AnnouncementWebSocketClient` (OkHttp, WS-first with NDJSON fallback) +
+  `AnnouncementBroadcaster` with fan-out across discovered peers; `BroadcastTtsToolExecutor`
+  + `BroadcastTtsMatcher` provide the user-facing path. `broadcast_timer` envelope wiring
+  for cross-speaker timer fan-out is a small follow-up on top of this (same broadcaster,
+  different envelope type)
 - [x] P17.4: Speaker groups — `SpeakerGroupEntity` + `SpeakerGroupRepository` persist client-side
   subsets; `AnnouncementBroadcaster.broadcastTtsToGroup` intersects with discovered peers;
   `BroadcastGroupMatcher` routes "broadcast X to kitchen" ahead of the unscoped matcher;
