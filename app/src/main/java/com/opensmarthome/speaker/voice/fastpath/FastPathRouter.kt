@@ -56,6 +56,11 @@ class DefaultFastPathRouter(
 
     companion object {
         val DEFAULT_MATCHERS: List<FastPathMatcher> = listOf(
+            // BroadcastCancelTimerMatcher must precede CancelAllTimersMatcher:
+            // its patterns are a scoped superset ("cancel timers on all speakers"
+            // contains "cancel timers"), so the scoped multi-room variant has to
+            // win whenever the qualifier is present.
+            BroadcastCancelTimerMatcher,
             // CancelAllTimersMatcher must precede TimerMatcher because "cancel timer" contains "timer".
             CancelAllTimersMatcher,
             // BroadcastTimerMatcher must precede TimerMatcher: the JA variant

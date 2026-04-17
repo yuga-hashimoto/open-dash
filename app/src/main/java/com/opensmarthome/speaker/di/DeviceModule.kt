@@ -412,6 +412,7 @@ object DeviceModule {
             com.opensmarthome.speaker.tool.system.BroadcastTtsToolExecutor(announcementBroadcaster),
             com.opensmarthome.speaker.tool.multiroom.BroadcastAnnouncementToolExecutor(announcementBroadcaster),
             com.opensmarthome.speaker.tool.multiroom.BroadcastTimerToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.BroadcastCancelTimerToolExecutor(announcementBroadcaster),
             com.opensmarthome.speaker.tool.multiroom.ListPeersToolExecutor(multicastDiscovery),
             PhotosToolExecutor(
                 AndroidPhotosProvider(context)

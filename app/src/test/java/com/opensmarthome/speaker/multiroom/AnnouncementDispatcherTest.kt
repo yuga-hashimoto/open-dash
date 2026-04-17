@@ -46,6 +46,29 @@ class AnnouncementDispatcherTest {
         return tm to calls
     }
 
+    /**
+     * TimerManager that records all cancel invocations so the dispatcher tests
+     * can assert which path (cancelAll vs cancelTimer(id)) fired.
+     */
+    private class RecordingTimerManager : TimerManager {
+        val cancelAllCalls = mutableListOf<Unit>()
+        val cancelIdCalls = mutableListOf<String>()
+        val activeTimers = mutableListOf(
+            TimerInfo(id = "tid-a", label = "", remainingSeconds = 60, totalSeconds = 60),
+            TimerInfo(id = "tid-b", label = "", remainingSeconds = 120, totalSeconds = 120)
+        )
+        override suspend fun setTimer(seconds: Int, label: String): String = "tid-x"
+        override suspend fun cancelTimer(timerId: String): Boolean {
+            cancelIdCalls.add(timerId)
+            return true
+        }
+        override suspend fun getActiveTimers(): List<TimerInfo> = activeTimers.toList()
+        override suspend fun cancelAllTimers(): Int {
+            cancelAllCalls.add(Unit)
+            return activeTimers.size
+        }
+    }
+
     private fun stubTts(): TextToSpeech {
         val tts = mockk<TextToSpeech>(relaxed = true)
         io.mockk.every { tts.isSpeaking } returns MutableStateFlow(false).asStateFlow()
@@ -295,6 +318,56 @@ class AnnouncementDispatcherTest {
     fun `start_timer without TimerManager wired is rejected gracefully`() {
         val r = dispatcher(timerManager = null)
             .dispatch(envelope("start_timer", mapOf("seconds" to 60)))
+        assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.Rejected::class.java)
+    }
+
+    @Test
+    fun `cancel_timer with no id returns TimersCancelled with scope=all`() {
+        val tm = RecordingTimerManager()
+        val r = dispatcher(timerManager = tm).dispatch(
+            envelope("cancel_timer", emptyMap())
+        )
+        assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.TimersCancelled::class.java)
+        val out = r as AnnouncementDispatcher.DispatchOutcome.TimersCancelled
+        assertThat(out.scope).isEqualTo("all")
+        // Side-effect (cancelAllTimers call) runs on Dispatchers.Default — same
+        // pattern as start_timer tests, which only assert the outcome contract.
+    }
+
+    @Test
+    fun `cancel_timer with id=all returns TimersCancelled with scope=all`() {
+        val tm = RecordingTimerManager()
+        val r = dispatcher(timerManager = tm).dispatch(
+            envelope("cancel_timer", mapOf("id" to "all"))
+        )
+        assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.TimersCancelled::class.java)
+        assertThat((r as AnnouncementDispatcher.DispatchOutcome.TimersCancelled).scope).isEqualTo("all")
+    }
+
+    @Test
+    fun `cancel_timer with specific id returns TimersCancelled with that scope`() {
+        val tm = RecordingTimerManager()
+        val r = dispatcher(timerManager = tm).dispatch(
+            envelope("cancel_timer", mapOf("id" to "tid-a"))
+        )
+        assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.TimersCancelled::class.java)
+        assertThat((r as AnnouncementDispatcher.DispatchOutcome.TimersCancelled).scope).isEqualTo("tid-a")
+    }
+
+    @Test
+    fun `cancel_timer with blank id is treated as cancel-all`() {
+        val tm = RecordingTimerManager()
+        val r = dispatcher(timerManager = tm).dispatch(
+            envelope("cancel_timer", mapOf("id" to "   "))
+        )
+        assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.TimersCancelled::class.java)
+        assertThat((r as AnnouncementDispatcher.DispatchOutcome.TimersCancelled).scope).isEqualTo("all")
+    }
+
+    @Test
+    fun `cancel_timer without TimerManager wired is rejected gracefully`() {
+        val r = dispatcher(timerManager = null)
+            .dispatch(envelope("cancel_timer", emptyMap()))
         assertThat(r).isInstanceOf(AnnouncementDispatcher.DispatchOutcome.Rejected::class.java)
     }
 }

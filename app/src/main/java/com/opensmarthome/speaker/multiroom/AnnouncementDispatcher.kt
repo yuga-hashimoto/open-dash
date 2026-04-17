@@ -52,6 +52,7 @@ class AnnouncementDispatcher(
             AnnouncementType.HEARTBEAT -> DispatchOutcome.AcknowledgedHeartbeat
             AnnouncementType.SESSION_HANDOFF -> handleSessionHandoff(envelope)
             AnnouncementType.START_TIMER -> handleStartTimer(envelope)
+            AnnouncementType.CANCEL_TIMER -> handleCancelTimer(envelope)
             else -> {
                 Timber.d("Dispatcher: ignoring unhandled type '${envelope.type}' from ${envelope.from}")
                 DispatchOutcome.Unhandled(envelope.type)
@@ -82,6 +83,33 @@ class AnnouncementDispatcher(
                 .onFailure { Timber.w(it, "setTimer from announcement failed") }
         }
         return DispatchOutcome.TimerStarted(seconds, label)
+    }
+
+    /**
+     * Parse + validate a `cancel_timer` envelope and fire the right local
+     * [TimerManager] call. Payload `id` is optional — when missing or equal
+     * to the sentinel [AnnouncementBroadcaster.CANCEL_TIMER_ID_ALL] we
+     * cancel every active timer; otherwise we cancel the specific id.
+     *
+     * The actual TimerManager call runs on the dispatcher's background
+     * scope (same pattern as [handleStartTimer]) so the receive loop
+     * doesn't block on AlarmManager.
+     */
+    private fun handleCancelTimer(envelope: AnnouncementEnvelope): DispatchOutcome {
+        val rawId = (envelope.payload["id"] as? String)?.trim()?.takeIf { it.isNotEmpty() }
+        val targetScope = rawId ?: AnnouncementBroadcaster.CANCEL_TIMER_ID_ALL
+        val tm = timerManagerProvider()
+            ?: return DispatchOutcome.Rejected("no timer manager available")
+        scope.launch {
+            runCatching {
+                if (targetScope == AnnouncementBroadcaster.CANCEL_TIMER_ID_ALL) {
+                    tm.cancelAllTimers()
+                } else {
+                    tm.cancelTimer(targetScope)
+                }
+            }.onFailure { Timber.w(it, "cancelTimer from announcement failed") }
+        }
+        return DispatchOutcome.TimersCancelled(targetScope)
     }
 
     private fun handleTtsBroadcast(envelope: AnnouncementEnvelope): DispatchOutcome {
@@ -194,6 +222,14 @@ class AnnouncementDispatcher(
          * banner for [ttlSeconds] AND queued for TTS speak.
          */
         data class Announcement(val text: String, val ttlSeconds: Int) : DispatchOutcome
+
+        /**
+         * `cancel_timer` accepted: a peer asked every speaker to cancel its
+         * timer(s). [scope] is the sentinel `"all"` (cancel every active
+         * timer) or a specific timer id. The local [TimerManager] call
+         * has been dispatched asynchronously.
+         */
+        data class TimersCancelled(val scope: String) : DispatchOutcome
     }
 
     companion object {

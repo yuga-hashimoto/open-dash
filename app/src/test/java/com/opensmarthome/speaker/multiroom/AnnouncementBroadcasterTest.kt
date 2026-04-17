@@ -610,6 +610,109 @@ class AnnouncementBroadcasterTest {
     }
 
     @Test
+    fun `broadcastCancelTimer with null id builds signed cancel_timer envelope with id=all`() = runTest {
+        val peers = listOf(
+            DiscoveredSpeaker("speaker-kitchen", host = "10.0.0.2", port = 8421),
+            DiscoveredSpeaker("speaker-bedroom", host = "10.0.0.3", port = 8421)
+        )
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val lineSlot = slot<String>()
+        coEvery { client.send(any(), any(), capture(lineSlot), any()) } returns SendOutcome.Ok
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self,
+            clock = { 4_000L },
+            idGenerator = { "id-cancel" }
+        )
+
+        val result = broadcaster.broadcastCancelTimer()
+
+        assertThat(result.sentCount).isEqualTo(2)
+        assertThat(result.failures).isEmpty()
+        coVerify(exactly = 1) { client.send("10.0.0.2", 8421, any(), any()) }
+        coVerify(exactly = 1) { client.send("10.0.0.3", 8421, any(), any()) }
+
+        @Suppress("UNCHECKED_CAST")
+        val envelope = mapAdapter.fromJson(lineSlot.captured) as Map<String, Any?>
+        assertThat(envelope["type"]).isEqualTo(AnnouncementType.CANCEL_TIMER)
+        assertThat(envelope["id"]).isEqualTo("id-cancel")
+        @Suppress("UNCHECKED_CAST")
+        val payload = envelope["payload"] as Map<String, Any?>
+        assertThat(payload["id"]).isEqualTo("all")
+        assertThat(envelope["hmac"] as? String).isNotEmpty()
+    }
+
+    @Test
+    fun `broadcastCancelTimer with specific id forwards that id in payload`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val lineSlot = slot<String>()
+        coEvery { client.send(any(), any(), capture(lineSlot), any()) } returns SendOutcome.Ok
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastCancelTimer(id = "tid-42")
+        assertThat(result.sentCount).isEqualTo(1)
+
+        @Suppress("UNCHECKED_CAST")
+        val envelope = mapAdapter.fromJson(lineSlot.captured) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val payload = envelope["payload"] as Map<String, Any?>
+        assertThat(payload["id"]).isEqualTo("tid-42")
+    }
+
+    @Test
+    fun `broadcastCancelTimer with no peers reports zero sent without failures`() = runTest {
+        val (d, self) = discovery(emptyList())
+        val client = mockk<AnnouncementClient>()
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastCancelTimer()
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures).isEmpty()
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `broadcastCancelTimer short-circuits when shared secret missing`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(null),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastCancelTimer()
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures)
+            .containsExactly("none" to SendOutcome.Other("no shared secret"))
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `handoffConversation returns failure when no shared secret`() = runTest {
         val peers = listOf(DiscoveredSpeaker("speaker-kitchen", host = "10.0.0.2", port = 8421))
         val (d, self) = discovery(peers)

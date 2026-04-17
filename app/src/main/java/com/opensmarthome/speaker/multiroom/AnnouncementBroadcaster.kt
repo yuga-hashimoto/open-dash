@@ -134,6 +134,37 @@ class AnnouncementBroadcaster @Inject constructor(
         return fanOut(line, filter = null)
     }
 
+    /**
+     * Broadcast a `cancel_timer` envelope to every resolved peer —
+     * complement of [broadcastTimer]. Each receiver's
+     * [AnnouncementDispatcher] calls its local [TimerManager.cancelAllTimers]
+     * (when [id] is null or "all") or [TimerManager.cancelTimer] (when [id]
+     * is a specific timer id).
+     *
+     * The wire payload always carries an `id` field — the sentinel string
+     * `"all"` when the caller passed null — so receivers can disambiguate
+     * "cancel everything" from a genuinely-absent field (which they'd
+     * otherwise be forced to interpret, risking divergent behaviour per
+     * peer).
+     */
+    suspend fun broadcastCancelTimer(id: String? = null): BroadcastResult {
+        val secret = requireSecret()
+            ?: return BroadcastResult(
+                sentCount = 0,
+                failures = listOf("none" to SendOutcome.Other("no shared secret"))
+            )
+
+        val payload: Map<String, Any?> = mapOf(
+            "id" to (id ?: CANCEL_TIMER_ID_ALL)
+        )
+        val line = buildEnvelopeLine(
+            type = AnnouncementType.CANCEL_TIMER,
+            payload = payload,
+            secret = secret
+        )
+        return fanOut(line, filter = null)
+    }
+
     private fun buildTtsLine(text: String, language: String, secret: String): String {
         val payload: Map<String, Any?> = mapOf(
             "text" to text,
@@ -309,6 +340,13 @@ class AnnouncementBroadcaster @Inject constructor(
 
         /** Default TTL (seconds) for a persistent announcement banner. */
         const val DEFAULT_ANNOUNCEMENT_TTL_SECONDS = 60
+
+        /**
+         * Sentinel payload id for a multi-room timer cancel that targets
+         * every active timer. See [broadcastCancelTimer] and
+         * [AnnouncementDispatcher.handleCancelTimer].
+         */
+        const val CANCEL_TIMER_ID_ALL = "all"
     }
 }
 

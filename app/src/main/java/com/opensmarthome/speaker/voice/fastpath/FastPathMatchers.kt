@@ -1513,6 +1513,35 @@ object HelpMatcher : FastPathMatcher {
 }
 
 /**
+ * "cancel timers on all speakers", "全スピーカーのタイマーをキャンセル".
+ *
+ * Scoped variant of [CancelAllTimersMatcher]. Must precede it in the
+ * router order so utterances that explicitly name every speaker go
+ * through the multi-room tool path instead of being swallowed as a
+ * local cancel. Patterns require the explicit "on all/every speakers"
+ * or "全スピーカー" qualifier so plain "cancel all timers" still falls
+ * through to [CancelAllTimersMatcher].
+ */
+object BroadcastCancelTimerMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """(?:cancel|stop|clear)\s+(?:all\s+)?timers?\s+on\s+(?:all|every)\s+speakers?"""
+    )
+    private val japaneseRegex = Regex(
+        """全スピーカー(?:の)?タイマー(?:を)?(?:キャンセル|取り消し|止めて|やめて)"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishRegex.containsMatchIn(normalized) || japaneseRegex.containsMatchIn(normalized)) {
+            return FastPathMatch(
+                toolName = "broadcast_cancel_timer",
+                arguments = emptyMap()
+            )
+        }
+        return null
+    }
+}
+
+/**
  * "set a 5 minute timer on all speakers", "全スピーカーで5分タイマー".
  *
  * Must sit immediately after [TimerMatcher] in the router order — this

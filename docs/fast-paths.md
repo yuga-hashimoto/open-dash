@@ -12,6 +12,7 @@ to the list.
 
 | Matcher | Sample utterances | Tool | Notes |
 |---|---|---|---|
+| `BroadcastCancelTimerMatcher` | "cancel timers on all speakers", "stop all timers on every speaker", "全スピーカーのタイマーをキャンセル" | `broadcast_cancel_timer` | Must precede CancelAllTimersMatcher — scoped multi-room variant has to win when the "on all speakers" / "全スピーカー" qualifier is present |
 | `CancelAllTimersMatcher` | "cancel all timers", "stop timers", "タイマー全部止めて" | `cancel_all_timers` | Precedes TimerMatcher |
 | `BroadcastTimerMatcher` | "set a 5 minute timer on all speakers", "全スピーカーで5分タイマー" | `broadcast_timer` | Must precede TimerMatcher — otherwise JP substring `5分タイマー` would hijack to local timer |
 | `TimerMatcher` | "set timer for 5 minutes", "5分タイマー" | `set_timer` | EN+JP |

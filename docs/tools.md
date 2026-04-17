@@ -106,6 +106,7 @@ Settings and a matching HMAC shared secret on every paired device. See
 |---|---|---|
 | `broadcast_tts` | BroadcastTtsToolExecutor | `{ text, language?, group? }` — speaks on every peer (or just members of the named group). Returns `sent` + `failed` counts |
 | `broadcast_timer` | BroadcastTimerToolExecutor | `{ seconds, label? }` — starts a timer on every peer. Clamped 1..86400 |
+| `broadcast_cancel_timer` | BroadcastCancelTimerToolExecutor | `{ id? }` — cancels timer(s) on every peer. Missing / blank / `"all"` cancels every active timer; specific id narrows to one timer per peer |
 | `broadcast_announcement` | BroadcastAnnouncementToolExecutor | `{ text, ttl_seconds? }` — speaks once AND pins a banner on the Ambient screen for ttl_seconds (default 60, clamped 5..3600). New in P17 follow-up |
 | `handoff_session` | HandoffToolExecutor | `{ target }` — transfers the current conversation to the named peer (replace semantics). Media handoff stubbed |
 | `list_peers` | ListPeersToolExecutor | No args — snapshot of `MulticastDiscovery.speakers` as JSON |
