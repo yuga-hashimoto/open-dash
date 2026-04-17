@@ -91,6 +91,25 @@ Make it feel like Alexa/Google Home first.
 ## Phase 14 — Priority 1: Smart speaker production gaps
 Roadmapがチェック済みでも、実機でアレクサ相当にはならない。以下は実装ゼロ or 薄い:
 
+**Closeout summary** (as of the current session): every P14 item has at least
+scaffolding merged. Remaining work is ネイティブ JNI / new model wiring that
+would each warrant its own implementation phase:
+
+- **P14.1 offline STT**: provider-selection plumbing + Settings UI done via
+  `DelegatingSttProvider` + `OfflineSttStub`. Real whisper.cpp / Vosk JNI = Phase 15.
+- **P14.2 VAD**: silence-timeout + min-speech knobs split; Silero VAD backend = Phase 15.
+- **P14.3 wake-word UI**: keyword + sensitivity shipped end-to-end. Done.
+- **P14.4 media depth**: volume / shuffle / repeat shipped. Queue list view = follow-up.
+- **P14.5 multi-room**: mDNS discover + register + Settings opt-in toggle shipped.
+  Broadcast RPC protocol = Phase 15.
+- **P14.6 DL resume**: HTTP Range end-to-end with full test coverage. Done.
+- **P14.7 smoke-test doc**: real-device checklist shipped (10 scripted steps +
+  multi-room section). Done.
+- **P14.8 power/thermal**: BatteryMonitor + ThermalMonitor with ambient UI chips
+  and VoiceService gating done. Idle wattage measurement still TODO.
+- **P14.9 neural TTS**: PiperTtsProvider placeholder + Settings route shipped.
+  piper-cpp JNI + voice-model download = Phase 15.
+
 - [ ] P14.1: Offline STT provider — **scaffolding done**: SttProviderType enum (ANDROID / VOSK / WHISPER) + `STT_PROVIDER_TYPE` preference + DelegatingSttProvider that routes by preference at startListening time; OfflineSttStub emits a spoken "coming soon" Error so pipeline's ErrorClassifier surfaces it; Settings UI shows the three options with "coming soon" badges on offline. Actual whisper.cpp / Vosk JNI wiring still TODO. Ref: whisper.cpp, sherpa-onnx, SmolChat-Android
 - [ ] P14.2: VAD / endpoint detection — **parameters exposed**: separated `MIN_SPEECH_MS` from `SILENCE_TIMEOUT_MS` (previously both used the same value, which was surprising); new slider under Voice Interaction; AndroidSttProvider wires both into `EXTRA_SPEECH_INPUT_*`. Offline Silero/WebRTC VAD integration still TODO. Ref: sherpa-onnx silero-vad binding
 - [x] P14.3: Wake word customization UI — Sensitivity slider (0.0-1.0) in SettingsScreen alongside existing keyword text field; WAKE_WORD_SENSITIVITY preference; VoiceService loads into WakeWordConfig; VoskWakeWordDetector uses sensitivity to gate partial-result matching (threshold 0.5 = partial vs final-only). Unit tests cover the gate. Keyword customization was already shipped
