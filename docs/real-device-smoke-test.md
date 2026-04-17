@@ -91,6 +91,20 @@ Verifies the mDNS/NSD plumbing added in PR #209 (discovery) and PR #220 (registr
 
 Note: no Settings toggle yet invokes `MulticastDiscovery.register(port, instanceName)` — to exercise registration today you need a debug harness or a manual call from a test build. Treat this section as a plumbing check, not a feature validation.
 
+#### Multi-room broadcast end-to-end (P17.2 / P17.3)
+
+Validates the NDJSON listener + sender wired up in PR #241 (server), PR #243 (client/broadcaster), and PR #245 (`broadcast_tts` tool + matcher).
+
+**Prerequisite**: two tablets on the same LAN, both running the app, and **both with the same Multi-room shared secret set** in Settings (the new row added in PR #242).
+
+1. On both devices, enable the **Multi-room broadcast** toggle.
+2. On device A, say "broadcast dinner is ready to all speakers" — expect device B to speak "dinner is ready" within ~1 s.
+3. **Tamper test**: change the secret on device B only, repeat step 2 — device B should stay silent (`AnnouncementParser` rejects on HMAC mismatch). Check `adb logcat` on device B for `Envelope rejected: HMAC_MISMATCH`.
+4. **Replay test**: set both clocks, then artificially skew device B's clock 2 minutes forward. Repeat step 2 — device B should stay silent (`Envelope rejected: REPLAY_WINDOW`).
+5. **No-secret test**: clear the secret on device A, repeat step 2. Device A's tool should return a spoken message "Broadcast refused: no shared secret."
+
+Reference: see [`multi-room-protocol.md`](multi-room-protocol.md) for the full protocol.
+
 ### 10. System info sanity
 - Open Settings → System Info.
 - **Pass**: Device count, routines count, documents count, latency measurements count all render without errors. Also verify the new **"Nearby speakers (mDNS)"** and **"Thermal state"** rows render with a live value rather than a placeholder.
