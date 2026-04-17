@@ -96,9 +96,11 @@ class LocaleManager @Inject constructor(
         Option("sl", "Slovenščina"),
         Option("sr", "Српски"),
         Option("sv", "Svenska"),
+        Option("ta", "தமிழ்"),
         Option("th", "ไทย"),
         Option("tr", "Türkçe"),
         Option("uk", "Українська"),
+        Option("ur", "اردو"),
         Option("vi", "Tiếng Việt"),
         Option("zh-CN", "简体中文"),
         Option("zh-TW", "繁體中文")
