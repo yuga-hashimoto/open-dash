@@ -1245,6 +1245,33 @@ object BroadcastGroupMatcher : FastPathMatcher {
 }
 
 /**
+ * "list nearby speakers" / "who's on the network" / "近くのスピーカー" → `list_peers`.
+ * Narrow token set so unrelated utterances pass through.
+ */
+object ListPeersMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""\blist\s+(?:nearby|paired|connected)\s+speakers?\b"""),
+        Regex("""\b(?:what|which)\s+speakers?\s+(?:are|do)\s+(?:nearby|connected|i\s+have)\b"""),
+        Regex("""\bwho(?:'s|\s+is)\s+on\s+the\s+network\b"""),
+        Regex("""\bnearby\s+speakers?\b""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""近(?:く|所)の\s*スピーカー"""),
+        Regex("""(?:周り|周辺|ペアリング済み)(?:の)?\s*スピーカー"""),
+        Regex("""スピーカー(?:を)?(?:一覧|リスト)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "list_peers", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
+/**
  * "broadcast X to all speakers" / "全スピーカーに [text] ってアナウンスして" →
  * `broadcast_tts` tool. Captures the message so we route to the tool with the
  * right argument; needs a non-trivial message or a bare "broadcast" falls

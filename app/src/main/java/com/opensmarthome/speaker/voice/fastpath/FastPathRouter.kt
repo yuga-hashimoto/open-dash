@@ -123,6 +123,9 @@ class DefaultFastPathRouter(
             // screen" doesn't get eaten; patterns are narrow (screen/lock/
             // tablet tokens) so unrelated utterances pass through.
             LockScreenMatcher,
+            // ListPeersMatcher before Broadcast*Matcher so "list nearby
+            // speakers" isn't captured by a broader broadcast pattern.
+            ListPeersMatcher,
             // BroadcastGroupMatcher must precede BroadcastTtsMatcher so
             // "broadcast X to the kitchen" routes via the group tool path
             // instead of being swallowed as "broadcast to everyone".
