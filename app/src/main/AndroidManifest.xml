@@ -68,6 +68,18 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
+        <!-- Quick Settings tile: one-tap voice session from the system QS panel. -->
+        <service
+            android:name=".service.VoiceTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/voice_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Boot receiver to auto-start voice service -->
         <receiver
             android:name=".service.BootReceiver"
