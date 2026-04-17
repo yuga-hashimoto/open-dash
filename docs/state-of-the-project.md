@@ -56,6 +56,7 @@ Legend: ✅ shipped · 🟡 scaffolding / partial · ❌ not started · 🚫 won
 | Media queue UI (source picker) | ✅ | Pick-and-play via HA media_player. |
 | Queue-by-track media control | 🚫 | HA does not expose per-track queue; out of scope. |
 | Idle wattage measurement UI | ❌ | Planned but not started. |
+| UI internationalisation | ✅ | Six shipped locales (en/ja/es/fr/de/zh-CN) + `LocaleManager` runtime override on Android 13+. See [i18n.md](i18n.md). |
 
 ### Device + system integration
 
