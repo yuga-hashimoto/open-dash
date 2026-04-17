@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
+    onOpenSpeakerGroups: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -352,6 +353,16 @@ fun SettingsScreen(
             viewModel.saveMultiroomSecret(value)
         }
         SettingsHint("Identical secret on every speaker. HMAC-SHA256 signs each envelope; mismatches are silently dropped. Minimum 16 chars recommended. QR-pair setup coming in a later release.")
+
+        if (onOpenSpeakerGroups != null) {
+            OutlinedButton(
+                onClick = onOpenSpeakerGroups,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text("Speaker groups…", color = MaterialTheme.colorScheme.onSurface)
+            }
+            SettingsHint("Name subsets of your discovered speakers (e.g. 'kitchen') so you can broadcast to only that room. Groups live on this device only — receivers aren't aware of them.")
+        }
 
         SettingsDivider()
 

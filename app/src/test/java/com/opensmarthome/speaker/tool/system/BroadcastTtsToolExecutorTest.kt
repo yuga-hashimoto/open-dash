@@ -6,6 +6,7 @@ import com.opensmarthome.speaker.multiroom.BroadcastResult
 import com.opensmarthome.speaker.multiroom.SendOutcome
 import com.opensmarthome.speaker.tool.ToolCall
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -16,15 +17,16 @@ class BroadcastTtsToolExecutorTest {
         BroadcastTtsToolExecutor(broadcaster)
 
     @Test
-    fun `availableTools exposes broadcast_tts with text + language params`() = runTest {
+    fun `availableTools exposes broadcast_tts with text + language + group params`() = runTest {
         val b = mockk<AnnouncementBroadcaster>()
         val schemas = executor(b).availableTools()
         assertThat(schemas).hasSize(1)
         val s = schemas.first()
         assertThat(s.name).isEqualTo("broadcast_tts")
-        assertThat(s.parameters.keys).containsExactly("text", "language")
+        assertThat(s.parameters.keys).containsExactly("text", "language", "group")
         assertThat(s.parameters["text"]?.required).isTrue()
         assertThat(s.parameters["language"]?.required).isFalse()
+        assertThat(s.parameters["group"]?.required).isFalse()
     }
 
     @Test
@@ -79,6 +81,59 @@ class BroadcastTtsToolExecutorTest {
         val r = executor(b).execute(ToolCall("1", "broadcast_tts", mapOf("text" to "hi")))
         assertThat(r.success).isFalse()
         assertThat(r.error).contains("no shared secret")
+    }
+
+    @Test
+    fun `group argument routes to broadcastTtsToGroup`() = runTest {
+        val b = mockk<AnnouncementBroadcaster>()
+        coEvery { b.broadcastTtsToGroup("kitchen", "dinner", "en") } returns BroadcastResult(2, emptyList())
+
+        val r = executor(b).execute(
+            ToolCall("1", "broadcast_tts", mapOf("text" to "dinner", "group" to "kitchen"))
+        )
+
+        assertThat(r.success).isTrue()
+        assertThat(r.data).contains("\"sent\":2")
+        assertThat(r.data).contains("group: kitchen")
+    }
+
+    @Test
+    fun `blank group falls through to unscoped broadcast`() = runTest {
+        val b = mockk<AnnouncementBroadcaster>()
+        coEvery { b.broadcastTts("hello", "en") } returns BroadcastResult(1, emptyList())
+
+        val r = executor(b).execute(
+            ToolCall("1", "broadcast_tts", mapOf("text" to "hello", "group" to "   "))
+        )
+
+        assertThat(r.success).isTrue()
+        coVerify(exactly = 1) { b.broadcastTts("hello", "en") }
+        coVerify(exactly = 0) { b.broadcastTtsToGroup(any(), any(), any()) }
+    }
+
+    @Test
+    fun `unknown group surfaces as a friendly failure`() = runTest {
+        val b = mockk<AnnouncementBroadcaster>()
+        coEvery { b.broadcastTtsToGroup("ghost", any(), any()) } returns BroadcastResult(
+            0,
+            listOf("missing" to SendOutcome.Other("unknown group: ghost"))
+        )
+        val r = executor(b).execute(
+            ToolCall("1", "broadcast_tts", mapOf("text" to "hi", "group" to "ghost"))
+        )
+        assertThat(r.success).isFalse()
+        assertThat(r.error).contains("unknown group")
+    }
+
+    @Test
+    fun `group with no reachable members returns helpful spoken message`() = runTest {
+        val b = mockk<AnnouncementBroadcaster>()
+        coEvery { b.broadcastTtsToGroup("kitchen", any(), any()) } returns BroadcastResult(0, emptyList())
+        val r = executor(b).execute(
+            ToolCall("1", "broadcast_tts", mapOf("text" to "hi", "group" to "kitchen"))
+        )
+        assertThat(r.success).isTrue()
+        assertThat(r.data).contains("No speakers in group 'kitchen'")
     }
 
     @Test

@@ -1161,6 +1161,90 @@ object ListTimersMatcher : FastPathMatcher {
  */
 /** "lock the screen", "screen off", "スクリーンロック" → `lock_screen` tool (P15.10). */
 /**
+ * "broadcast X to the kitchen (group)" / "キッチングループに X ってアナウンス" →
+ * `broadcast_tts` tool with a `group` argument. Must be registered
+ * **before** [BroadcastTtsMatcher] so group-scoped utterances win;
+ * unscoped "broadcast X to all speakers" then falls through to
+ * [BroadcastTtsMatcher].
+ *
+ * Capture layout: group 1 = message, group 2 = group name. Group names
+ * are arbitrary user-defined strings (matched case-insensitively in the
+ * repository), so the regex is deliberately permissive — it only
+ * requires a non-blank token after "to the".
+ */
+object BroadcastGroupMatcher : FastPathMatcher {
+    // English — "broadcast X to the kitchen", "announce X to upstairs speakers",
+    // "tell the bedroom speakers X". Group name captured as a bare word or a
+    // multi-word run before an optional "speakers"/"group" suffix.
+    private val englishMessageFirst = Regex(
+        "^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:the\\s+)?(.+?)(?:\\s+(?:speakers?|group))?\\.?$"
+    )
+    private val englishGroupFirst = Regex(
+        "^\\s*tell\\s+(?:the\\s+)?(.+?)\\s+(?:speakers?|group)\\s+(.+?)\\.?$"
+    )
+    private val japaneseGroupFirst = Regex(
+        "^(.+?)(?:グループ|ルーム)?(?:に|へ)(.+?)(?:って|を)(?:アナウンス|放送|伝えて|流して)\\s*$"
+    )
+    private val japaneseMessageFirst = Regex(
+        "^(.+?)って(.+?)(?:グループ|ルーム)(?:に|へ)(?:アナウンス|放送|伝えて|流して)\\s*$"
+    )
+
+    /**
+     * Reserved group tokens that [BroadcastTtsMatcher] already handles as
+     * "everyone" — keeping them here would steal broadcasts that the
+     * unscoped matcher is supposed to own.
+     */
+    private val allEveryoneTokens = setOf(
+        "all", "all speakers", "everyone", "every", "every speaker",
+        "全員", "みんな", "全スピーカー", "全部屋"
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishMessageFirst.find(normalized)?.let { m ->
+            val msg = m.groupValues[1].trim().trim('"')
+            val group = m.groupValues[2].trim().trim('"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "en")
+            }
+        }
+        englishGroupFirst.find(normalized)?.let { m ->
+            val group = m.groupValues[1].trim().trim('"')
+            val msg = m.groupValues[2].trim().trim('"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "en")
+            }
+        }
+        japaneseMessageFirst.find(normalized)?.let { m ->
+            val msg = m.groupValues[1].trim().trim('「', '」', '"')
+            val group = m.groupValues[2].trim().trim('「', '」', '"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "ja")
+            }
+        }
+        japaneseGroupFirst.find(normalized)?.let { m ->
+            val group = m.groupValues[1].trim().trim('「', '」', '"')
+            val msg = m.groupValues[2].trim().trim('「', '」', '"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "ja")
+            }
+        }
+        return null
+    }
+
+    private fun isValidGroup(token: String): Boolean =
+        token.isNotBlank() && token.lowercase() !in allEveryoneTokens
+
+    private fun buildMatch(text: String, group: String, language: String) = FastPathMatch(
+        toolName = "broadcast_tts",
+        arguments = mapOf(
+            "text" to text,
+            "language" to language,
+            "group" to group
+        )
+    )
+}
+
+/**
  * "broadcast X to all speakers" / "全スピーカーに [text] ってアナウンスして" →
  * `broadcast_tts` tool. Captures the message so we route to the tool with the
  * right argument; needs a non-trivial message or a bare "broadcast" falls

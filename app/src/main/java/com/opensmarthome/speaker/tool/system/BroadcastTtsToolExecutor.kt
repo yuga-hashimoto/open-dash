@@ -25,17 +25,26 @@ class BroadcastTtsToolExecutor(
     override suspend fun availableTools(): List<ToolSchema> = listOf(
         ToolSchema(
             name = "broadcast_tts",
-            description = "Speak a message on every OpenSmartSpeaker peer discovered on the LAN. " +
+            description = "Speak a message on OpenSmartSpeaker peers discovered on the LAN. " +
+                "When `group` is omitted, fans out to every discovered peer; when `group` " +
+                "is provided, targets only speakers that belong to that locally-defined group " +
+                "(e.g. 'kitchen', 'upstairs'). " +
                 "Requires multi-room broadcast to be enabled and a shared secret set in Settings.",
             parameters = mapOf(
                 "text" to ToolParameter(
                     type = "string",
-                    description = "The message to speak aloud on every peer.",
+                    description = "The message to speak aloud on each peer.",
                     required = true
                 ),
                 "language" to ToolParameter(
                     type = "string",
                     description = "BCP-47 language tag; defaults to en.",
+                    required = false
+                ),
+                "group" to ToolParameter(
+                    type = "string",
+                    description = "Optional name of a locally-defined speaker group. " +
+                        "When present, only speakers in that group receive the broadcast.",
                     required = false
                 )
             )
@@ -51,17 +60,27 @@ class BroadcastTtsToolExecutor(
             return ToolResult(call.id, false, "", "Missing text parameter")
         }
         val language = (call.arguments["language"] as? String)?.takeIf { it.isNotBlank() } ?: "en"
+        val group = (call.arguments["group"] as? String)?.trim()?.takeIf { it.isNotEmpty() }
         return try {
-            val result = broadcaster.broadcastTts(text = text, language = language)
+            val result = if (group != null) {
+                broadcaster.broadcastTtsToGroup(groupName = group, text = text, language = language)
+            } else {
+                broadcaster.broadcastTts(text = text, language = language)
+            }
             if (result.sentCount == 0 && result.failures.any { it.second is SendOutcome.Other }) {
                 val reason = (result.failures.first().second as SendOutcome.Other).reason
                 Timber.d("broadcast_tts refused: $reason")
                 return ToolResult(call.id, false, "", "Broadcast refused: $reason")
             }
+            val target = group?.let { " (group: $it)" } ?: ""
             val spoken = when {
+                result.sentCount == 0 && group != null ->
+                    "No speakers in group '$group' are currently reachable."
                 result.sentCount == 0 -> "No peers found to broadcast to."
-                result.failures.isEmpty() -> "Broadcast sent to ${result.sentCount} speaker${plural(result.sentCount)}."
-                else -> "Broadcast reached ${result.sentCount} of ${result.sentCount + result.failures.size} speakers."
+                result.failures.isEmpty() ->
+                    "Broadcast sent to ${result.sentCount} speaker${plural(result.sentCount)}$target."
+                else ->
+                    "Broadcast reached ${result.sentCount} of ${result.sentCount + result.failures.size} speakers$target."
             }
             ToolResult(
                 call.id, true,

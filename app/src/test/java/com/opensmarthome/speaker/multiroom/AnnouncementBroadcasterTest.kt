@@ -168,6 +168,109 @@ class AnnouncementBroadcasterTest {
     }
 
     @Test
+    fun `broadcastTtsToGroup only sends to members that are also discovered`() = runTest {
+        val peers = listOf(
+            DiscoveredSpeaker("speaker-kitchen", host = "10.0.0.2", port = 8421),
+            DiscoveredSpeaker("speaker-bedroom", host = "10.0.0.3", port = 8421),
+            DiscoveredSpeaker("speaker-office", host = "10.0.0.4", port = 8421)
+        )
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        coEvery { client.send(any(), any(), any(), any()) } returns SendOutcome.Ok
+
+        val group = SpeakerGroup(
+            name = "kitchen",
+            // includes one discovered peer + one that hasn't been seen
+            memberServiceNames = setOf("speaker-kitchen", "speaker-offline")
+        )
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self,
+            groupLookup = { name -> if (name == "kitchen") group else null }
+        )
+
+        val result = broadcaster.broadcastTtsToGroup("kitchen", "pizza", "en")
+
+        assertThat(result.sentCount).isEqualTo(1)
+        assertThat(result.failures).isEmpty()
+        coVerify(exactly = 1) { client.send("10.0.0.2", 8421, any(), any()) }
+        // Non-members must not receive a send.
+        coVerify(exactly = 0) { client.send("10.0.0.3", 8421, any(), any()) }
+        coVerify(exactly = 0) { client.send("10.0.0.4", 8421, any(), any()) }
+    }
+
+    @Test
+    fun `broadcastTtsToGroup returns unknown group failure when not persisted`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self,
+            groupLookup = { null }
+        )
+
+        val result = broadcaster.broadcastTtsToGroup("unknown", "hi", "en")
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures)
+            .containsExactly("missing" to SendOutcome.Other("unknown group: unknown"))
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `broadcastTtsToGroup still short-circuits when secret missing`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val group = SpeakerGroup("kitchen", setOf("k"))
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(null),
+            moshi = moshi,
+            selfServiceName = self,
+            groupLookup = { if (it == "kitchen") group else null }
+        )
+
+        val result = broadcaster.broadcastTtsToGroup("kitchen", "hi", "en")
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures)
+            .containsExactly("none" to SendOutcome.Other("no shared secret"))
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `broadcastTtsToGroup with no reachable members reports zero without failures`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("speaker-bedroom", host = "10.0.0.3", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val group = SpeakerGroup("kitchen", setOf("speaker-kitchen"))
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self,
+            groupLookup = { if (it == "kitchen") group else null }
+        )
+
+        val result = broadcaster.broadcastTtsToGroup("kitchen", "anyone?", "en")
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures).isEmpty()
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `broadcastTts falls back to default from when registered name is null`() = runTest {
         val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
         val (d, self) = discovery(peers, self = null)

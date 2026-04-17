@@ -197,14 +197,16 @@ object DeviceModule {
         discovery: com.opensmarthome.speaker.util.MulticastDiscovery,
         client: com.opensmarthome.speaker.multiroom.AnnouncementClient,
         securePreferences: com.opensmarthome.speaker.data.preferences.SecurePreferences,
-        moshi: Moshi
+        moshi: Moshi,
+        speakerGroupRepository: com.opensmarthome.speaker.multiroom.SpeakerGroupRepository
     ): com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster =
         com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster(
             discovery = discovery,
             client = client,
             securePreferences = securePreferences,
             moshi = moshi,
-            selfServiceName = { discovery.registeredName.value }
+            selfServiceName = { discovery.registeredName.value },
+            groupLookup = { name -> speakerGroupRepository.get(name) }
         )
 
     @Provides
