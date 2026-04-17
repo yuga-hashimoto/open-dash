@@ -29,7 +29,7 @@ class LocaleManagerTest {
         "", "en", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "es",
         "fa", "fi", "fil", "fr", "hi", "hr", "hu", "in", "it", "iw",
         "ja", "ko", "ms", "nb", "nl", "pl", "pt-BR", "ro", "ru", "sk",
-        "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
+        "sl", "sr", "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
     )
 
     @Test
@@ -43,7 +43,7 @@ class LocaleManagerTest {
             "", "en", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "es",
             "fa", "fi", "fil", "fr", "hi", "hr", "hu", "in", "it", "iw",
             "ja", "ko", "ms", "nb", "nl", "pl", "pt-BR", "ro", "ru", "sk",
-            "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
+            "sl", "sr", "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
         ).inOrder()
     }
 

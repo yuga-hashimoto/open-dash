@@ -89,6 +89,8 @@ class LocaleManager @Inject constructor(
         Option("ro", "Română"),
         Option("ru", "Русский"),
         Option("sk", "Slovenčina"),
+        Option("sl", "Slovenščina"),
+        Option("sr", "Српски"),
         Option("sv", "Svenska"),
         Option("th", "ไทย"),
         Option("tr", "Türkçe"),
