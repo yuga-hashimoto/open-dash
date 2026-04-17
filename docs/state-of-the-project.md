@@ -36,8 +36,8 @@ Legend: ✅ shipped · 🟡 scaffolding / partial · ❌ not started · 🚫 won
 | Local LLM via LiteRT-LM | ✅ | On-device Gemma-class model, hardware-aware init. |
 | `AssistantProvider` abstraction + Auto routing | ✅ | Embedded · OpenAI-compatible · OpenClaw. |
 | 50+ LLM-callable tools | ✅ | Catalog in [tools.md](tools.md). |
-| Fast-path router (24+ matchers) | ✅ | Sub-200ms deterministic path; see [fast-paths.md](fast-paths.md). |
-| Skills (bundled + install-from-URL) | ✅ | `SKILL.md` format + skill registry; see [skills.md](skills.md). |
+| Fast-path router (30+ matchers) | ✅ | Sub-200ms deterministic path; see [fast-paths.md](fast-paths.md). |
+| Skills (25+ bundled + install-from-URL) | ✅ | `SKILL.md` format + skill registry; see [skills.md](skills.md). |
 | Routines (Room-backed) | ✅ | Multi-step chains, persistent. |
 | Memory (Room + TF-IDF) | ✅ | `remember` / `recall` / `semantic_memory_search`. |
 | RAG (Room + chunked retrieval) | ✅ | TextChunker + TF-IDF over stored docs. |
