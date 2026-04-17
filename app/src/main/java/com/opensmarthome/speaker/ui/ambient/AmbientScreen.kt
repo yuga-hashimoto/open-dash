@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Speaker
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Thermostat
@@ -225,6 +226,21 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                         text = bucket.lowercase().replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            if (snapshot.nearbySpeakerCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Speaker,
+                        contentDescription = "Nearby speakers",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "${snapshot.nearbySpeakerCount}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

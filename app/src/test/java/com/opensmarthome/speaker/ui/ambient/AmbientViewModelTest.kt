@@ -7,6 +7,8 @@ import com.opensmarthome.speaker.device.model.DeviceState
 import com.opensmarthome.speaker.device.model.DeviceType
 import com.opensmarthome.speaker.util.BatteryMonitor
 import com.opensmarthome.speaker.util.BatteryStatus
+import com.opensmarthome.speaker.util.DiscoveredSpeaker
+import com.opensmarthome.speaker.util.MulticastDiscovery
 import com.opensmarthome.speaker.util.ThermalLevel
 import com.opensmarthome.speaker.util.ThermalMonitor
 import io.mockk.every
@@ -62,7 +64,9 @@ class AmbientViewModelTest {
             every { bm.status } returns MutableStateFlow(BatteryStatus(level = 100, isCharging = true))
             val tm = mockk<ThermalMonitor>()
             every { tm.status } returns MutableStateFlow(ThermalLevel.NORMAL)
-            AmbientViewModel(deviceManager, builder, te, bm, tm)
+            val md = mockk<MulticastDiscovery>()
+            every { md.speakers } returns MutableStateFlow(emptyList())
+            AmbientViewModel(deviceManager, builder, te, bm, tm, md)
         }
         advanceUntilIdle()
 
@@ -85,7 +89,9 @@ class AmbientViewModelTest {
             every { bm.status } returns MutableStateFlow(BatteryStatus(level = 100, isCharging = true))
             val tm = mockk<ThermalMonitor>()
             every { tm.status } returns MutableStateFlow(ThermalLevel.NORMAL)
-            AmbientViewModel(deviceManager, builder, te, bm, tm)
+            val md = mockk<MulticastDiscovery>()
+            every { md.speakers } returns MutableStateFlow(emptyList())
+            AmbientViewModel(deviceManager, builder, te, bm, tm, md)
         }
         advanceUntilIdle()
         assertThat(vm.snapshot.value.recentDeviceActivity).isEmpty()
@@ -114,8 +120,10 @@ class AmbientViewModelTest {
         every { bm.status } returns battery
         val tm = mockk<ThermalMonitor>()
         every { tm.status } returns MutableStateFlow(ThermalLevel.NORMAL)
+        val md = mockk<MulticastDiscovery>()
+        every { md.speakers } returns MutableStateFlow(emptyList())
 
-        val vm = AmbientViewModel(deviceManager, builder, te, bm, tm)
+        val vm = AmbientViewModel(deviceManager, builder, te, bm, tm, md)
         advanceUntilIdle()
 
         assertThat(vm.snapshot.value.batteryLevel).isEqualTo(42)
@@ -140,8 +148,10 @@ class AmbientViewModelTest {
         val thermal = MutableStateFlow(ThermalLevel.NORMAL)
         val tm = mockk<ThermalMonitor>()
         every { tm.status } returns thermal
+        val md = mockk<MulticastDiscovery>()
+        every { md.speakers } returns MutableStateFlow(emptyList())
 
-        val vm = AmbientViewModel(deviceManager, builder, te, bm, tm)
+        val vm = AmbientViewModel(deviceManager, builder, te, bm, tm, md)
         advanceUntilIdle()
         assertThat(vm.snapshot.value.thermalBucket).isNull()
 
@@ -156,5 +166,31 @@ class AmbientViewModelTest {
         thermal.value = ThermalLevel.NORMAL
         advanceUntilIdle()
         assertThat(vm.snapshot.value.thermalBucket).isNull()
+    }
+
+    @Test
+    fun `nearbySpeakerCount reflects MulticastDiscovery speakers list size`() = runTest {
+        val deviceManager: DeviceManager = mockk()
+        every { deviceManager.devices } returns MutableStateFlow(emptyMap())
+        val builder = AmbientSnapshotBuilder(clock = { 0L })
+        val te = io.mockk.mockk<com.opensmarthome.speaker.tool.ToolExecutor>(relaxed = true)
+        val bm = mockk<BatteryMonitor>()
+        every { bm.status } returns MutableStateFlow(BatteryStatus(level = 100, isCharging = true))
+        val tm = mockk<ThermalMonitor>()
+        every { tm.status } returns MutableStateFlow(ThermalLevel.NORMAL)
+        val peers = MutableStateFlow<List<DiscoveredSpeaker>>(emptyList())
+        val md = mockk<MulticastDiscovery>()
+        every { md.speakers } returns peers
+
+        val vm = AmbientViewModel(deviceManager, builder, te, bm, tm, md)
+        advanceUntilIdle()
+        assertThat(vm.snapshot.value.nearbySpeakerCount).isEqualTo(0)
+
+        peers.value = listOf(
+            DiscoveredSpeaker("peer-a"),
+            DiscoveredSpeaker("peer-b", "10.0.0.2", 8421)
+        )
+        advanceUntilIdle()
+        assertThat(vm.snapshot.value.nearbySpeakerCount).isEqualTo(2)
     }
 }
