@@ -58,6 +58,7 @@ analytics per call.
 | `take_photo` | CameraToolExecutor | Uses IntentCameraProvider (real capture) |
 | `start_screen_recording` / `stop_screen_recording` | ScreenRecorderToolExecutor | MediaProjection |
 | `read_screen` | ScreenToolExecutor | Needs Accessibility service |
+| `read_active_screen` | ReadActiveScreenToolExecutor | Markdown dump of foreground window via new-style A11y service (P15.2) |
 
 ## Agent memory
 

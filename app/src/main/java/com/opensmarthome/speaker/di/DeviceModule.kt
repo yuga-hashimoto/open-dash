@@ -38,6 +38,7 @@ import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
 import com.opensmarthome.speaker.assistant.routine.RoomRoutineStore
 import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
+import com.opensmarthome.speaker.tool.a11y.ReadActiveScreenToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.ToolUsageDao
@@ -286,7 +287,8 @@ object DeviceModule {
         screenRecorderHolder: ScreenRecorderHolder,
         toolUsageStats: PersistentToolUsageStats,
         timerManager: com.opensmarthome.speaker.tool.system.TimerManager,
-        notificationProvider: com.opensmarthome.speaker.tool.system.NotificationProvider
+        notificationProvider: com.opensmarthome.speaker.tool.system.NotificationProvider,
+        a11yServiceHolder: com.opensmarthome.speaker.a11y.A11yServiceHolder
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -346,6 +348,7 @@ object DeviceModule {
             ScreenToolExecutor(
                 AccessibilityScreenReader()
             ),
+            ReadActiveScreenToolExecutor(a11yServiceHolder),
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
