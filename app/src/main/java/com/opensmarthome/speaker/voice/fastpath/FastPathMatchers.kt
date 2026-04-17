@@ -1169,7 +1169,7 @@ object ListTimersMatcher : FastPathMatcher {
 object BroadcastTtsMatcher : FastPathMatcher {
     // Order matters: more specific first. Each regex captures group 1 = message.
     private val englishPatterns = listOf(
-        Regex("^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:all|everyone|every\\s+speaker)s?\\.?$"),
+        Regex("^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:all|everyone|every)(?:\\s+speakers?)?\\.?$"),
         Regex("^\\s*tell\\s+(?:all|every)\\s+speakers?\\s+(.+?)\\.?$")
     )
     private val japanesePatterns = listOf(
