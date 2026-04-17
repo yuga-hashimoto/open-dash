@@ -175,4 +175,67 @@ class SystemPromptBuilderTest {
         assertThat(result).contains("tool_call")
         assertThat(result).contains("arguments")
     }
+
+    @Test
+    fun `buildPrompt tool section includes IMPORTANT directive when web_search is available`() {
+        val tools = listOf(
+            ToolSchema(
+                name = "web_search",
+                description = "Search the web",
+                parameters = mapOf(
+                    "query" to ToolParameter("string", "Query", required = true)
+                )
+            )
+        )
+        val messages = listOf(AssistantMessage.User(content = "Search for Python"))
+
+        val result = builder.build("System", messages, tools)
+
+        assertThat(result).contains("IMPORTANT")
+        assertThat(result).contains("web_search")
+        // Make sure the directive actually tells the LLM to call the tool
+        assertThat(result).contains("MUST")
+    }
+
+    @Test
+    fun `buildPrompt tool section includes few-shot examples`() {
+        val tools = listOf(
+            ToolSchema(
+                name = "web_search",
+                description = "Search the web",
+                parameters = mapOf("query" to ToolParameter("string", "Query", required = true))
+            ),
+            ToolSchema(
+                name = "get_weather",
+                description = "Get weather",
+                parameters = mapOf("location" to ToolParameter("string", "Location", required = true))
+            )
+        )
+        val messages = listOf(AssistantMessage.User(content = "Hi"))
+
+        val result = builder.build("System", messages, tools)
+
+        assertThat(result).contains("Examples")
+        // Example should show a literal tool_call JSON for web_search so Gemma
+        // learns the pattern rather than hallucinating "I can't search".
+        assertThat(result).contains(""""tool_call"""")
+        assertThat(result).contains(""""name":"web_search"""")
+    }
+
+    @Test
+    fun `buildPrompt omits web_search directive when tool is absent`() {
+        val tools = listOf(
+            ToolSchema(
+                name = "set_timer",
+                description = "Set a timer",
+                parameters = mapOf("duration" to ToolParameter("string", "Duration", required = true))
+            )
+        )
+        val messages = listOf(AssistantMessage.User(content = "Set timer"))
+
+        val result = builder.build("System", messages, tools)
+
+        // No web_search => don't reference it in the directive (keeps prompt tight)
+        assertThat(result).doesNotContain("web_search")
+    }
 }

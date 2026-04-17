@@ -62,6 +62,20 @@ class SystemPromptBuilder(
         sb.appendLine("After a tool result is returned, continue reasoning and respond to the user.")
         sb.appendLine()
 
+        val toolNames = tools.map { it.name }.toSet()
+        if ("web_search" in toolNames) {
+            // Small on-device LLMs (e.g. Gemma 2B) often hallucinate "I can't
+            // search the web" even when web_search is listed. Spelling it out
+            // as an IMPORTANT directive makes the tool-use behavior reliable.
+            sb.appendLine(
+                "IMPORTANT: If the user asks you to search, look up, find information online, " +
+                    "ググって, 検索, について, とは, or similar open-ended information queries, " +
+                    "you MUST call the `web_search` tool. Do NOT say you cannot search — " +
+                    "the tool is available."
+            )
+            sb.appendLine()
+        }
+
         for (tool in tools) {
             sb.appendLine("### ${tool.name}")
             sb.appendLine(tool.description)
@@ -74,7 +88,43 @@ class SystemPromptBuilder(
                 }
             }
         }
+
+        // Few-shot examples help tool-poor small LLMs recognize that the tool
+        // list is actually callable rather than documentation.
+        val examples = buildExamples(toolNames)
+        if (examples.isNotEmpty()) {
+            sb.appendLine()
+            sb.appendLine("## Examples")
+            for (example in examples) {
+                sb.appendLine()
+                sb.appendLine("User: ${example.user}")
+                sb.appendLine("Assistant: ${example.assistantJson}")
+            }
+        }
         return sb.toString()
+    }
+
+    private data class ToolExample(val user: String, val assistantJson: String)
+
+    private fun buildExamples(toolNames: Set<String>): List<ToolExample> {
+        val examples = mutableListOf<ToolExample>()
+        if ("get_weather" in toolNames) {
+            examples += ToolExample(
+                user = "What's the weather in Tokyo?",
+                assistantJson = """{"tool_call":{"name":"get_weather","arguments":{"location":"Tokyo"}}}"""
+            )
+        }
+        if ("web_search" in toolNames) {
+            examples += ToolExample(
+                user = "Search the web for Python tutorials",
+                assistantJson = """{"tool_call":{"name":"web_search","arguments":{"query":"Python tutorials"}}}"""
+            )
+            examples += ToolExample(
+                user = "最新のニュースを検索して",
+                assistantJson = """{"tool_call":{"name":"web_search","arguments":{"query":"最新のニュース"}}}"""
+            )
+        }
+        return examples
     }
 
     private fun buildHistorySection(messages: List<AssistantMessage>): List<String> {
