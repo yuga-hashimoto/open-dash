@@ -152,6 +152,13 @@ class SettingsViewModel @Inject constructor(
     private val _voicevoxTermsAccepted = MutableStateFlow(false)
     val voicevoxTermsAccepted: StateFlow<Boolean> = _voicevoxTermsAccepted.asStateFlow()
 
+    /**
+     * User-chosen default location for the weather fast-path when the
+     * utterance has no explicit place ("what's the weather?").
+     */
+    private val _defaultLocation = MutableStateFlow("")
+    val defaultLocation: StateFlow<String> = _defaultLocation.asStateFlow()
+
     init {
         viewModelScope.launch { preferences.observe(PreferenceKeys.HA_BASE_URL).collect { _haBaseUrl.value = it ?: "" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.OPENCLAW_GATEWAY_URL).collect { _openClawUrl.value = it ?: "" } }
@@ -189,6 +196,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferences.observe(PreferenceKeys.VOICEVOX_BASE_URL).collect { _voicevoxBaseUrl.value = it ?: "http://localhost:50021" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.VOICEVOX_STYLE_ID).collect { _voicevoxSpeakerId.value = it ?: 3 } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.VOICEVOX_TERMS_ACCEPTED).collect { _voicevoxTermsAccepted.value = it ?: false } }
+        viewModelScope.launch { preferences.observe(PreferenceKeys.DEFAULT_LOCATION).collect { _defaultLocation.value = it ?: "" } }
         _openAiTtsApiKey.value = securePreferences.getString(SecurePreferences.KEY_OPENAI_TTS_API_KEY)
         _elevenLabsApiKey.value = securePreferences.getString(SecurePreferences.KEY_ELEVENLABS_API_KEY)
 
@@ -367,5 +375,13 @@ class SettingsViewModel @Inject constructor(
             preferences.set(PreferenceKeys.VOICEVOX_STYLE_ID, speakerId)
             preferences.set(PreferenceKeys.VOICEVOX_TERMS_ACCEPTED, termsAccepted)
         }
+    }
+
+    /**
+     * Persist the user's default weather location. Trimmed; an empty string
+     * means "no default, fall back to the provider's built-in default".
+     */
+    fun saveDefaultLocation(value: String) {
+        viewModelScope.launch { preferences.set(PreferenceKeys.DEFAULT_LOCATION, value.trim()) }
     }
 }

@@ -1065,4 +1065,83 @@ class FastPathRouterTest {
         val match = PickRandomMatcher.tryMatch("pick one of pizza")
         assertThat(match).isNull()
     }
+
+    // === Weather / Forecast location extraction ===
+    // Bug A (feat/weather-location-extract-and-default): "宗像市の天気教えて"
+    // was routing to get_weather with arguments=emptyMap(), forcing the
+    // provider to default to "Tokyo". The matcher must now pull the spoken
+    // location out of the utterance.
+
+    @Test
+    fun `weather matcher extracts japanese city`() {
+        val m = router.match("宗像市の天気教えて")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments?.get("location")).isEqualTo("宗像市")
+    }
+
+    @Test
+    fun `weather matcher extracts tokyo`() {
+        val m = router.match("東京の天気")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments?.get("location")).isEqualTo("東京")
+    }
+
+    @Test
+    fun `forecast matcher extracts japanese city with yohou`() {
+        val m = router.match("東京の予報を教えて")
+        assertThat(m?.toolName).isEqualTo("get_forecast")
+        assertThat(m?.arguments?.get("location")).isEqualTo("東京")
+    }
+
+    @Test
+    fun `weather matcher extracts english city with preposition`() {
+        val m = router.match("weather in Paris")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments?.get("location")).isEqualTo("paris")
+    }
+
+    @Test
+    fun `forecast matcher extracts english city with possessive`() {
+        val m = router.match("Osaka forecast")
+        assertThat(m?.toolName).isEqualTo("get_forecast")
+        assertThat(m?.arguments?.get("location")).isEqualTo("osaka")
+    }
+
+    @Test
+    fun `weather today leaves location empty for default fallback`() {
+        val m = router.match("weather today")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments).doesNotContainKey("location")
+    }
+
+    @Test
+    fun `today japanese weather does not capture the time word as location`() {
+        // "今日" is a time word, NOT a location. The extractor must reject it.
+        val m = router.match("今日の天気")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments).doesNotContainKey("location")
+    }
+
+    @Test
+    fun `tomorrow japanese forecast drops time word even with location`() {
+        // "明日の東京の天気" — must strip the "明日の" prefix and keep "東京".
+        val m = router.match("明日の東京の天気")
+        assertThat(m?.arguments?.get("location")).isEqualTo("東京")
+    }
+
+    @Test
+    fun `whats the weather has no location arg`() {
+        // Plain English utterance without a place must pass through as empty
+        // arguments so the downstream tool can fall back to the default.
+        val m = router.match("what's the weather")
+        assertThat(m?.toolName).isEqualTo("get_weather")
+        assertThat(m?.arguments).doesNotContainKey("location")
+    }
+
+    @Test
+    fun `forecast tomorrow has no location arg`() {
+        val m = router.match("what's the weather tomorrow")
+        assertThat(m?.toolName).isEqualTo("get_forecast")
+        assertThat(m?.arguments).doesNotContainKey("location")
+    }
 }

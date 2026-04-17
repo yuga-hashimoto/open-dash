@@ -75,6 +75,15 @@ object PreferenceKeys {
     /** When true, advertise this device on the LAN via mDNS so peers can discover it. */
     val MULTIROOM_BROADCAST_ENABLED = booleanPreferencesKey("multiroom_broadcast_enabled")
 
+    /**
+     * User-chosen default location for `get_weather` / `get_forecast` when
+     * the utterance does not explicitly name a place (e.g. "what's the
+     * weather?"). Empty / unset means the tool's provider falls back to its
+     * own built-in default (currently "Tokyo", preserved for backward
+     * compatibility with pre-setting installs).
+     */
+    val DEFAULT_LOCATION = stringPreferencesKey("default_location")
+
     // Setup
     val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
 

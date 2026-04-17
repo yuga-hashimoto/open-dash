@@ -897,6 +897,101 @@ object EveningBriefingMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * Time words that share the "Xの天気" / "Xの予報" syntactic slot with a
+ * real place name in Japanese. We must NOT misread these as locations when
+ * the user utters "今日の天気" / "明日の予報".
+ */
+private val WEATHER_JA_TIME_WORDS = setOf(
+    "今日", "きょう", "本日", "明日", "あした", "あす", "明後日", "あさって",
+    "今週", "来週", "週末", "今夜", "夜", "朝", "昼", "午後", "午前",
+    "これから", "今", "いま"
+)
+
+/**
+ * English words that must not be captured as a location when seen in the
+ * "<word> weather" / "<word> forecast" slot.
+ */
+private val WEATHER_EN_NON_LOCATIONS = setOf(
+    "the", "today", "tomorrow", "now", "outside", "weekend", "week",
+    "tonight", "this", "next", "morning", "evening", "current",
+    "my", "our"
+)
+
+/**
+ * Shared helper that tries to pull a location out of a weather-style
+ * utterance. Returns null if no location is present (the caller should
+ * then fall through to the default-location behaviour).
+ *
+ * Handles both Japanese ("宗像市の天気", "東京の予報") and English
+ * ("weather in Paris", "Osaka forecast", "Paris weather").
+ */
+internal object WeatherLocationExtractor {
+    // JA: "<loc>の(天気|てんき|気温|予報)"
+    private val japaneseLocRegex = Regex("""([\p{L}\p{N}ー・\s]+?)\s*の\s*(?:天気|てんき|気温|予報)""")
+
+    // EN (prepositional): "weather (in|for|at) <loc>" / "forecast (in|for|at) <loc>"
+    // <loc> is 1-3 word tokens; apostrophes and commas terminate the capture.
+    private val englishPrepRegex = Regex(
+        """(?:weather|forecast)\s+(?:in|for|at)\s+([a-z][a-z\-]*(?:\s+[a-z][a-z\-]*){0,2})\s*[!?.]*\s*$"""
+    )
+
+    // EN (possessive): "<loc> weather" / "<loc> forecast" — <loc> is a
+    // single word at utterance start. Multi-word locations like "new york"
+    // are handled through the prepositional form.
+    private val englishPossRegex = Regex(
+        """^\s*([a-z][a-z\-]{1,})\s+(?:weather|forecast)\b"""
+    )
+
+    fun extract(normalized: String): String? {
+        // Japanese pass — pick the last match (handles "明日の東京の天気")
+        val jaMatches = japaneseLocRegex.findAll(normalized).toList()
+        for (m in jaMatches.reversed()) {
+            val candidate = m.groupValues[1].trim()
+            val cleaned = stripLeadingTimeTokensJa(candidate)
+            if (cleaned.isNotBlank() && cleaned !in WEATHER_JA_TIME_WORDS) {
+                return cleaned
+            }
+        }
+
+        // English prepositional form
+        englishPrepRegex.find(normalized)?.let { m ->
+            val cand = m.groupValues[1].trim().trimEnd('.', ',', '!', '?')
+            if (cand.isNotBlank() && cand !in WEATHER_EN_NON_LOCATIONS) {
+                return cand
+            }
+        }
+
+        // English possessive form
+        englishPossRegex.find(normalized)?.let { m ->
+            val cand = m.groupValues[1].trim()
+            if (cand.isNotBlank() && cand !in WEATHER_EN_NON_LOCATIONS) {
+                return cand
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * "明日の東京" → "東京": drop any leading time-word prefix the JA regex
+     * may have swept up, so compound utterances like "明日の東京の天気"
+     * still yield "東京" as the location.
+     */
+    private fun stripLeadingTimeTokensJa(raw: String): String {
+        var s = raw
+        for (tw in WEATHER_JA_TIME_WORDS.sortedByDescending { it.length }) {
+            val prefix = "${tw}の"
+            if (s.startsWith(prefix)) {
+                s = s.removePrefix(prefix).trim()
+            } else if (s == tw) {
+                return ""
+            }
+        }
+        return s
+    }
+}
+
 /** "what's the weather", "today's weather", "今日の天気" */
 /**
  * Forecast queries — "what's the weather tomorrow", "this week's forecast",
@@ -910,7 +1005,13 @@ object ForecastMatcher : FastPathMatcher {
         Regex("""(?:what'?s\s+)?(?:the\s+)?weather\s+(?:tomorrow|this\s+(?:week|weekend)|for\s+(?:the\s+)?(?:week|weekend))"""),
         Regex("""(?:tomorrow'?s|this\s+week'?s|weekend'?s)\s+(?:weather|forecast)"""),
         Regex("""forecast(?:\s+for\s+(?:tomorrow|this\s+week|the\s+week|the\s+weekend))?"""),
-        Regex("""(?:will\s+it|is\s+it\s+going\s+to)\s+rain\s+(?:tomorrow|this\s+(?:week|weekend))""")
+        Regex("""(?:will\s+it|is\s+it\s+going\s+to)\s+rain\s+(?:tomorrow|this\s+(?:week|weekend))"""),
+        // Location-aware EN forms — these exist to make the forecast fast-path
+        // fire when the user mentions a place but no temporal token: "Osaka
+        // forecast" / "forecast in Paris". The non-locational cases above
+        // still catch "forecast" on its own.
+        Regex("""forecast\s+(?:in|for|at)\s+[a-z]"""),
+        Regex("""^[a-z][a-z\-]+\s+forecast\b""")
     )
     private val japanesePatterns = listOf(
         Regex("""明日\s*(?:の)?\s*(?:天気|てんき)"""),
@@ -923,7 +1024,9 @@ object ForecastMatcher : FastPathMatcher {
         if (englishPatterns.any { it.containsMatchIn(normalized) } ||
             japanesePatterns.any { it.containsMatchIn(normalized) }
         ) {
-            return FastPathMatch(toolName = "get_forecast", arguments = emptyMap())
+            val loc = WeatherLocationExtractor.extract(normalized)
+            val args = loc?.let { mapOf<String, Any?>("location" to it) } ?: emptyMap()
+            return FastPathMatch(toolName = "get_forecast", arguments = args)
         }
         return null
     }
@@ -933,14 +1036,26 @@ object WeatherMatcher : FastPathMatcher {
     private val patterns = listOf(
         Regex("""(?:what'?s\s+)?the\s+weather"""),
         Regex("""weather\s+(?:today|now|outside)?"""),
+        // "<city> weather" / "weather in <city>" — the LocationExtractor
+        // performs the filtering against non-location words, so the pattern
+        // can be permissive here.
+        Regex("""^[a-z][a-z\-]+\s+weather\b"""),
+        Regex("""weather\s+(?:in|for|at)\s+[a-z]"""),
         Regex("""(?:今日|きょう)\s*(?:の)?\s*(?:天気|てんき)"""),
-        Regex("""(?:天気|てんき)\s*(?:は|を教えて)""")
+        Regex("""(?:天気|てんき)\s*(?:は|を教えて)"""),
+        // Location-aware JA form: "<loc>の天気" where <loc> is not a
+        // time word. The extractor below decides whether the capture is
+        // real; the match itself only needs to confirm the utterance is
+        // weather-shaped.
+        Regex("""\S+\s*の\s*(?:天気|てんき|気温)""")
     )
 
     override fun tryMatch(normalized: String): FastPathMatch? {
         for (p in patterns) {
             if (p.containsMatchIn(normalized)) {
-                return FastPathMatch(toolName = "get_weather", arguments = emptyMap())
+                val loc = WeatherLocationExtractor.extract(normalized)
+                val args = loc?.let { mapOf<String, Any?>("location" to it) } ?: emptyMap()
+                return FastPathMatch(toolName = "get_weather", arguments = args)
             }
         }
         return null

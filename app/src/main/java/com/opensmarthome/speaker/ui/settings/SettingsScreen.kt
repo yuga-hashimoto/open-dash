@@ -278,6 +278,23 @@ fun SettingsScreen(
 
         SettingsDivider()
 
+        // === Weather ===
+        SectionHeader("Weather")
+        val defaultLocation by viewModel.defaultLocation.collectAsState()
+        SettingsTextField(
+            "Default weather location / 既定の天気の場所",
+            defaultLocation
+        ) { value ->
+            viewModel.saveDefaultLocation(value)
+        }
+        SettingsHint(
+            "Used when you ask for the weather without naming a place " +
+                "(\"what's the weather?\" / \"天気教えて\"). Leave empty " +
+                "to fall back to Tokyo."
+        )
+
+        SettingsDivider()
+
         // === App Language ===
         SectionHeader("App Language")
         LocalePickerRow()

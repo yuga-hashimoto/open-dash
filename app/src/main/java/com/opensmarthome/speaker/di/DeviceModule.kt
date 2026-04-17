@@ -48,6 +48,7 @@ import com.opensmarthome.speaker.tool.a11y.TypeTextToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.ToolUsageDao
+import com.opensmarthome.speaker.data.preferences.AppPreferences
 import com.opensmarthome.speaker.tool.analytics.PersistentToolUsageStats
 import com.opensmarthome.speaker.tool.analytics.ToolUsageRecorder
 import com.opensmarthome.speaker.data.db.MemoryDao
@@ -389,7 +390,8 @@ object DeviceModule {
         a11yServiceHolder: com.opensmarthome.speaker.a11y.A11yServiceHolder,
         announcementBroadcaster: com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster,
         multicastDiscovery: com.opensmarthome.speaker.util.MulticastDiscovery,
-        localeManager: com.opensmarthome.speaker.util.LocaleManager
+        localeManager: com.opensmarthome.speaker.util.LocaleManager,
+        appPreferences: AppPreferences
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -411,7 +413,8 @@ object DeviceModule {
                 AndroidAppLauncher(context)
             ),
             WeatherToolExecutor(
-                OpenMeteoWeatherProvider(client, moshi)
+                OpenMeteoWeatherProvider(client, moshi),
+                appPreferences
             ),
             SearchToolExecutor(
                 DuckDuckGoSearchProvider(client, moshi)
