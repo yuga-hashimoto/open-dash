@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">Chat</string>
+    <string name="tab_dashboard">Pannello</string>
+    <string name="tab_ambient">Ambiente</string>
+    <string name="tab_settings">Impostazioni</string>
+    <string name="accessibility_service_description">Consente all\'agente dello smart speaker di leggere il testo visualizzato sullo schermo e di automatizzare le azioni dell\'interfaccia per tuo conto.</string>
+    <string name="accessibility_service_summary">Attiva per permettere all\'agente sul dispositivo di vedere e controllare lo schermo.</string>
+    <string name="a11y_service_description">OpenSmartSpeaker utilizza questo servizio di accessibilità per leggere ciò che è sullo schermo e toccare i pulsanti per tuo conto quando lo richiedi. Nessun dato lascia il dispositivo. Puoi disattivarlo in qualsiasi momento dalle Impostazioni.</string>
+    <string name="voice_tile_label">Parla</string>
+    <string name="voice_tile_content_description">Avvia una sessione vocale con OpenSmartSpeaker</string>
+</resources>
