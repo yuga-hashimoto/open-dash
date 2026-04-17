@@ -20,7 +20,10 @@ class ToolFilterTest {
         ToolSchema("search_contacts", "Contacts", emptyMap()),
         ToolSchema("ingest_document", "Doc", emptyMap()),
         ToolSchema("retrieve_document", "Doc", emptyMap()),
-        ToolSchema("start_screen_recording", "ScreenRec", emptyMap())
+        ToolSchema("start_screen_recording", "ScreenRec", emptyMap()),
+        ToolSchema("web_search", "Web search", emptyMap()),
+        ToolSchema("fetch_webpage", "Fetch page", emptyMap()),
+        ToolSchema("get_news", "News", emptyMap())
     )
 
     @Test
@@ -87,5 +90,74 @@ class ToolFilterTest {
     fun `japanese current location keyword`() {
         val filtered = ToolFilter.filterByIntent(all, "現在地を教えて")
         assertThat(filtered.map { it.name }).contains("get_location")
+    }
+
+    @Test
+    fun `english what is question exposes web_search and filters out unrelated tools`() {
+        val filtered = ToolFilter.filterByIntent(all, "What is quantum computing?")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        // Prove the bucket actually matched (full fallback would include take_photo etc.)
+        assertThat(names).doesNotContain("take_photo")
+        assertThat(names).doesNotContain("start_screen_recording")
+    }
+
+    @Test
+    fun `english tell me about exposes web_search and filters unrelated tools`() {
+        val filtered = ToolFilter.filterByIntent(all, "Tell me about the Eiffel Tower")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `japanese about keyword exposes web_search and filters unrelated tools`() {
+        val filtered = ToolFilter.filterByIntent(all, "AIについて教えて")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).contains("fetch_webpage")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `japanese toha keyword exposes web_search and filters unrelated tools`() {
+        val filtered = ToolFilter.filterByIntent(all, "量子コンピューターとは")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `japanese kuwashiku keyword exposes web_search`() {
+        val filtered = ToolFilter.filterByIntent(all, "Pythonの最新情報を詳しく")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `japanese shiritai keyword exposes web_search`() {
+        val filtered = ToolFilter.filterByIntent(all, "Kotlin の最新情報を知りたい")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `english who is question exposes web_search`() {
+        val filtered = ToolFilter.filterByIntent(all, "Who is Ada Lovelace?")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("web_search")
+        assertThat(names).doesNotContain("take_photo")
+    }
+
+    @Test
+    fun `weather query still includes get_weather when weather keyword present`() {
+        // Weather already has its own bucket; verify we don't lose weather semantics
+        // just because "what is" also maps to search. Both buckets may contribute.
+        val filtered = ToolFilter.filterByIntent(all, "what is the weather in Tokyo")
+        val names = filtered.map { it.name }
+        assertThat(names).contains("get_weather")
+        // Adding web_search is fine — LLM will pick the right one.
     }
 }

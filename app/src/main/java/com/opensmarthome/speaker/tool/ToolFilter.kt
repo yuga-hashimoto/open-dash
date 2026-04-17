@@ -78,7 +78,16 @@ object ToolFilter {
             tools = setOf("get_skill", "list_skills", "install_skill_from_url")
         ),
         Bucket(
-            keywords = listOf("search", "google", "look up", "検索"),
+            keywords = listOf(
+                "search", "google", "look up", "検索",
+                // Open-ended information queries — small LLMs often say
+                // "I can't search" instead of calling web_search, so surface
+                // the tool on these very common triggers too.
+                "what is", "what's", "whats",
+                "who is", "who's", "whos",
+                "tell me about",
+                "について", "とは", "詳しく", "知りたい"
+            ),
             tools = setOf("web_search", "fetch_webpage", "get_news")
         ),
         Bucket(
