@@ -50,6 +50,7 @@ fun AmbientScreen(
     viewModel: AmbientViewModel = hiltViewModel()
 ) {
     val snapshot by viewModel.snapshot.collectAsState()
+    val activeTimers by viewModel.activeTimers.collectAsState()
     var tick by remember { mutableStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -93,9 +94,21 @@ fun AmbientScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp, end = 16.dp)
         )
         if (wide) {
-            TwoColumnLayout(snapshot = snapshot, now = now, modifier = Modifier.weight(1f))
+            TwoColumnLayout(
+                snapshot = snapshot,
+                now = now,
+                activeTimers = activeTimers,
+                onCancelTimer = viewModel::onCancelTimer,
+                modifier = Modifier.weight(1f)
+            )
         } else {
-            SingleColumnLayout(snapshot = snapshot, now = now, modifier = Modifier.weight(1f))
+            SingleColumnLayout(
+                snapshot = snapshot,
+                now = now,
+                activeTimers = activeTimers,
+                onCancelTimer = viewModel::onCancelTimer,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
@@ -131,6 +144,8 @@ private fun QuickActionChip(label: String, onClick: () -> Unit) {
 private fun SingleColumnLayout(
     snapshot: AmbientSnapshot,
     now: LocalDateTime,
+    activeTimers: List<com.opensmarthome.speaker.tool.system.TimerInfo>,
+    onCancelTimer: (String) -> Unit,
     modifier: Modifier
 ) {
     Column(
@@ -143,7 +158,10 @@ private fun SingleColumnLayout(
         WeatherStrip(snapshot)
         Spacer(modifier = Modifier.height(16.dp))
         CountsStrip(snapshot)
-        if (snapshot.nextTimerRemainingSeconds != null) {
+        if (activeTimers.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            ActiveTimersCard(timers = activeTimers, onCancelTimer = onCancelTimer)
+        } else if (snapshot.nextTimerRemainingSeconds != null) {
             Spacer(modifier = Modifier.height(8.dp))
             NextTimerLine(snapshot)
         }
@@ -158,6 +176,8 @@ private fun SingleColumnLayout(
 private fun TwoColumnLayout(
     snapshot: AmbientSnapshot,
     now: LocalDateTime,
+    activeTimers: List<com.opensmarthome.speaker.tool.system.TimerInfo>,
+    onCancelTimer: (String) -> Unit,
     modifier: Modifier
 ) {
     Row(
@@ -183,6 +203,10 @@ private fun TwoColumnLayout(
             WeatherStrip(snapshot)
             Spacer(Modifier.height(16.dp))
             CountsStrip(snapshot)
+            if (activeTimers.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                ActiveTimersCard(timers = activeTimers, onCancelTimer = onCancelTimer)
+            }
             if (snapshot.recentDeviceActivity.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 DeviceActivityCard(snapshot)
