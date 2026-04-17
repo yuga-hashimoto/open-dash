@@ -1627,3 +1627,57 @@ object FlipCoinMatcher : FastPathMatcher {
         return null
     }
 }
+
+/**
+ * "roll a d20", "roll 3d6", "roll d6", "サイコロを振って" —
+ * fast-paths straight to the `roll_dice` tool on
+ * [com.opensmarthome.speaker.tool.info.RandomToolExecutor].
+ *
+ * Defaults mirror the tool's own defaults: sides = 6, count = 1. The
+ * regex keeps the utterance strict (optional trailing period, no extra
+ * clauses) so compound sentences like "roll a d20 and tell me the
+ * weather" fall through to the LLM. Japanese variant is single-die
+ * 6-sided only — dice-notation in JA speech is uncommon, so we lean on
+ * the LLM for anything richer than "サイコロを振って".
+ */
+object RollDiceMatcher : FastPathMatcher {
+    // "roll [a|an] d20", "roll 3 d6" — count optional, sides required.
+    private val englishRegex = Regex(
+        """^\s*roll\s+(?:(\d+)\s*)?(?:a\s+|an\s+)?d(\d+)\s*\.?\s*$"""
+    )
+    // "roll 3d6" shorthand — count and sides glued together.
+    private val englishShorthand = Regex(
+        """^\s*roll\s+(\d+)d(\d+)\s*\.?\s*$"""
+    )
+    // Default single 6-sided die for casual Japanese.
+    private val japaneseRegex = Regex(
+        """^\s*(?:サイコロ|さいころ)(?:を)?振って\s*(?:ください|下さい)?\s*[。.]?\s*$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishShorthand.matchEntire(normalized)?.let { m ->
+            val count = m.groupValues[1].toIntOrNull() ?: return null
+            val sides = m.groupValues[2].toIntOrNull() ?: return null
+            return buildMatch(sides = sides, count = count)
+        }
+        englishRegex.matchEntire(normalized)?.let { m ->
+            val count = m.groupValues[1].takeIf { it.isNotEmpty() }?.toIntOrNull() ?: 1
+            val sides = m.groupValues[2].toIntOrNull() ?: return null
+            return buildMatch(sides = sides, count = count)
+        }
+        japaneseRegex.matchEntire(normalized)?.let {
+            return FastPathMatch(
+                toolName = "roll_dice",
+                arguments = mapOf("sides" to 6.0, "count" to 1.0),
+                spokenConfirmation = "サイコロを振ります。"
+            )
+        }
+        return null
+    }
+
+    private fun buildMatch(sides: Int, count: Int): FastPathMatch = FastPathMatch(
+        toolName = "roll_dice",
+        arguments = mapOf("sides" to sides.toDouble(), "count" to count.toDouble()),
+        spokenConfirmation = "Rolling $count d$sides…"
+    )
+}

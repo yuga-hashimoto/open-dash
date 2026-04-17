@@ -968,4 +968,44 @@ class FastPathRouterTest {
         val m = FlipCoinMatcher.tryMatch("flip coin")
         assertThat(m?.toolName).isEqualTo("flip_coin")
     }
+
+    @Test
+    fun `roll a d20`() {
+        val m = router.match("roll a d20")
+        assertThat(m?.toolName).isEqualTo("roll_dice")
+        assertThat(m?.arguments?.get("sides")).isEqualTo(20.0)
+        assertThat(m?.arguments?.get("count")).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `roll 3d6 shorthand`() {
+        val m = router.match("roll 3d6")
+        assertThat(m?.toolName).isEqualTo("roll_dice")
+        assertThat(m?.arguments?.get("sides")).isEqualTo(6.0)
+        assertThat(m?.arguments?.get("count")).isEqualTo(3.0)
+    }
+
+    @Test
+    fun `roll d6 defaults count to 1`() {
+        val m = router.match("roll d6")
+        assertThat(m?.toolName).isEqualTo("roll_dice")
+        assertThat(m?.arguments?.get("sides")).isEqualTo(6.0)
+        assertThat(m?.arguments?.get("count")).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `japanese roll dice`() {
+        val m = router.match("サイコロを振って")
+        assertThat(m?.toolName).isEqualTo("roll_dice")
+        assertThat(m?.arguments?.get("sides")).isEqualTo(6.0)
+        assertThat(m?.arguments?.get("count")).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `roll dice falls through on compound sentence`() {
+        // Compound sentence with extra clause must not be swallowed by the
+        // fast-path — the LLM handles "roll a d20 and tell me a joke".
+        val match = RollDiceMatcher.tryMatch("roll a d20 and tell me the weather")
+        assertThat(match).isNull()
+    }
 }
