@@ -144,6 +144,9 @@ class DefaultFastPathRouter(
             // "broadcast"/"announce"/"tell all speakers"/"全スピーカーに…" so
             // they're disjoint from every earlier matcher.
             BroadcastTtsMatcher,
+            // FlipCoinMatcher before DatetimeMatcher/Greeting/Help so
+            // "flip a coin" / "コイン投げて" don't fall through to pleasantries.
+            FlipCoinMatcher,
             DatetimeMatcher,
             GreetingMatcher,
             HelpMatcher

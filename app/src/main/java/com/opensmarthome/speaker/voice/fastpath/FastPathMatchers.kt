@@ -1593,3 +1593,37 @@ object BroadcastTimerMatcher : FastPathMatcher {
         else -> null
     }
 }
+
+/**
+ * "flip a coin" / "コインを投げて" — routes to the `flip_coin` tool from
+ * [com.opensmarthome.speaker.tool.info.RandomToolExecutor]. The fast
+ * path skips the LLM round-trip because the request is trivially
+ * unambiguous; the executor picks the side, the matcher only hands off
+ * a confirmation the TTS can speak while the result lands.
+ */
+object FlipCoinMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """^\s*(?:flip|toss)\s+(?:a\s+)?coin\.?\s*$"""
+    )
+    private val japaneseRegex = Regex(
+        """^\s*コイン(?:を)?(?:投げ|振っ)て\s*(?:ください|下さい)?\s*[。.]?\s*$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishRegex.containsMatchIn(normalized)) {
+            return FastPathMatch(
+                toolName = "flip_coin",
+                arguments = emptyMap(),
+                spokenConfirmation = "Flipping…"
+            )
+        }
+        if (japaneseRegex.containsMatchIn(normalized)) {
+            return FastPathMatch(
+                toolName = "flip_coin",
+                arguments = emptyMap(),
+                spokenConfirmation = "コインを投げます。"
+            )
+        }
+        return null
+    }
+}
