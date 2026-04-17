@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">محادثة</string>
+    <string name="tab_dashboard">لوحة التحكم</string>
+    <string name="tab_ambient">الوضع المحيط</string>
+    <string name="tab_settings">الإعدادات</string>
+    <string name="accessibility_service_description">يتيح هذا الإذن لوكيل السمّاعة الذكية قراءة النص الظاهر حاليًا على الشاشة وتنفيذ إجراءات واجهة المستخدم نيابةً عنك.</string>
+    <string name="accessibility_service_summary">فعِّل هذا الخيار للسماح للوكيل العامل على الجهاز برؤية الشاشة والتحكم فيها.</string>
+    <string name="a11y_service_description">يستخدم OpenSmartSpeaker خدمة إمكانية الوصول هذه لقراءة محتوى الشاشة والضغط على الأزرار نيابةً عنك عند الطلب. لا تغادر أي بيانات هذا الجهاز. يمكنك إيقاف هذه الخدمة في أي وقت من الإعدادات.</string>
+    <string name="voice_tile_label">تحدَّث</string>
+    <string name="voice_tile_content_description">ابدأ جلسة صوتية مع OpenSmartSpeaker</string>
+</resources>
