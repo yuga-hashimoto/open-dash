@@ -34,6 +34,7 @@ fun SystemInfoScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val nearby by viewModel.nearbySpeakers.collectAsStateWithLifecycle()
+    val registeredName by viewModel.registeredName.collectAsStateWithLifecycle()
 
     DisposableEffect(Unit) {
         viewModel.startDiscovery()
@@ -75,6 +76,7 @@ fun SystemInfoScreen(
             add("Latency budget violations" to "${state.totalBudgetViolations}")
             add("Latency measurements (lifetime)" to "${state.totalLatencyMeasurements}")
             add("Thermal state" to state.thermalLevel)
+            add("Broadcasting as" to (registeredName ?: "(not broadcasting)"))
             add("Nearby speakers (mDNS)" to if (nearby.isEmpty()) "(none)" else "${nearby.size}")
             nearby.forEach { speaker ->
                 val suffix = speaker.host?.let { host -> speaker.port?.let { " — $host:$it" } ?: " — $host" } ?: ""

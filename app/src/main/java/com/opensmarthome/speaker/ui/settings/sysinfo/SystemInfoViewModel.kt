@@ -45,6 +45,9 @@ class SystemInfoViewModel @Inject constructor(
     val nearbySpeakers: StateFlow<List<DiscoveredSpeaker>> = multicastDiscovery.speakers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val registeredName: StateFlow<String?> = multicastDiscovery.registeredName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** Start (idempotent) mDNS discovery. Callers trigger this when the screen is visible. */
     fun startDiscovery() = multicastDiscovery.start()
 
