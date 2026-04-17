@@ -1160,6 +1160,50 @@ object ListTimersMatcher : FastPathMatcher {
  * running". The patterns here require device/system/storage/memory context.
  */
 /** "lock the screen", "screen off", "スクリーンロック" → `lock_screen` tool (P15.10). */
+/**
+ * "broadcast X to all speakers" / "全スピーカーに [text] ってアナウンスして" →
+ * `broadcast_tts` tool. Captures the message so we route to the tool with the
+ * right argument; needs a non-trivial message or a bare "broadcast" falls
+ * through to the LLM.
+ */
+object BroadcastTtsMatcher : FastPathMatcher {
+    // Order matters: more specific first. Each regex captures group 1 = message.
+    private val englishPatterns = listOf(
+        Regex("^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:all|everyone|every)(?:\\s+speakers?)?\\.?$"),
+        Regex("^\\s*tell\\s+(?:all|every)\\s+speakers?\\s+(.+?)\\.?$")
+    )
+    private val japanesePatterns = listOf(
+        Regex("(?:全スピーカー|全員|みんな|全部屋)(?:に)?(?:アナウンス|放送)(?:して)?[:：]\\s*(.+?)[\\s。]*$"),
+        Regex("^(.+?)(?:って|を)(?:全員|みんな|全スピーカー)(?:に|へ)(?:伝えて|アナウンスして|放送して)$")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (regex in englishPatterns) {
+            regex.find(normalized)?.let { m ->
+                val msg = m.groupValues[1].trim().trim('"')
+                if (msg.isNotBlank()) {
+                    return FastPathMatch(
+                        toolName = "broadcast_tts",
+                        arguments = mapOf("text" to msg, "language" to "en")
+                    )
+                }
+            }
+        }
+        for (regex in japanesePatterns) {
+            regex.find(normalized)?.let { m ->
+                val msg = m.groupValues[1].trim().trim('「', '」', '"')
+                if (msg.isNotBlank()) {
+                    return FastPathMatch(
+                        toolName = "broadcast_tts",
+                        arguments = mapOf("text" to msg, "language" to "ja")
+                    )
+                }
+            }
+        }
+        return null
+    }
+}
+
 object LockScreenMatcher : FastPathMatcher {
     private val englishPatterns = listOf(
         Regex("""\block\s+(?:the\s+)?(?:screen|tablet|device|phone)\b"""),

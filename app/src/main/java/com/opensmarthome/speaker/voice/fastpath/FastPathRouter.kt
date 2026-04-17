@@ -119,6 +119,10 @@ class DefaultFastPathRouter(
             // screen" doesn't get eaten; patterns are narrow (screen/lock/
             // tablet tokens) so unrelated utterances pass through.
             LockScreenMatcher,
+            // BroadcastTtsMatcher before DatetimeMatcher. Patterns start with
+            // "broadcast"/"announce"/"tell all speakers"/"全スピーカーに…" so
+            // they're disjoint from every earlier matcher.
+            BroadcastTtsMatcher,
             DatetimeMatcher,
             GreetingMatcher,
             HelpMatcher
