@@ -93,6 +93,23 @@ speaker's owner; if the phrases match word-for-word, the secrets match
 byte-for-byte. Matches are deterministic — same secret on two devices
 always produces the same 4 words from the bundled 256-word list.
 
+## Reset traffic + rejection counters
+
+Settings → System info shows a **Clear multi-room counters** button at
+the bottom of the multi-room section when any counters are non-zero
+(PR #290). Tapping it zeros both the `multiroom_traffic` and
+`multiroom_rejections` Room tables in one go and refreshes the
+snapshot. Useful when:
+
+- Running a paired experiment (e.g. "reboot the mesh, watch rejections
+  rise from zero") without having to wipe the whole database.
+- Double-checking a clean handshake after rotating the shared secret —
+  you want the first post-rotation envelope to be counted visibly.
+- Showing someone else the live counters from a known-clean baseline.
+
+The button hides itself when both tables are empty so a healthy mesh
+doesn't show orphaned controls.
+
 ## Debugging
 
 `adb logcat | grep -E "Envelope rejected|mDNS"` on each device shows:
