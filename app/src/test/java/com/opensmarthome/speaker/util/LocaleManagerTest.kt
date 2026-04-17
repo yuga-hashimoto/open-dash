@@ -26,9 +26,10 @@ class LocaleManagerTest {
      * manager — that mirror keeps the regression surface narrow.
      */
     private val expectedTags = listOf(
-        "", "en", "ar", "cs", "de", "el", "es", "fi", "fr", "hi", "in",
-        "it", "iw", "ja", "ko", "nb", "nl", "pl", "pt-BR", "ru", "sv",
-        "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
+        "", "en", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "es",
+        "fa", "fi", "fil", "fr", "hi", "hr", "hu", "in", "it", "iw",
+        "ja", "ko", "ms", "nb", "nl", "pl", "pt-BR", "ro", "ru", "sk",
+        "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
     )
 
     @Test
@@ -39,9 +40,10 @@ class LocaleManagerTest {
         // LocaleManager.options must be updated in the same PR so the
         // picker never points at a resource that doesn't exist.
         assertThat(expectedTags).containsExactly(
-            "", "en", "ar", "cs", "de", "el", "es", "fi", "fr", "hi", "in",
-            "it", "iw", "ja", "ko", "nb", "nl", "pl", "pt-BR", "ru", "sv",
-            "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
+            "", "en", "ar", "bg", "bn", "ca", "cs", "da", "de", "el", "es",
+            "fa", "fi", "fil", "fr", "hi", "hr", "hu", "in", "it", "iw",
+            "ja", "ko", "ms", "nb", "nl", "pl", "pt-BR", "ro", "ru", "sk",
+            "sv", "th", "tr", "uk", "vi", "zh-CN", "zh-TW"
         ).inOrder()
     }
 
