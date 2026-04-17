@@ -88,6 +88,9 @@ class SettingsViewModel @Inject constructor(
     private val _silenceTimeoutMs = MutableStateFlow(1500L)
     val silenceTimeoutMs: StateFlow<Long> = _silenceTimeoutMs.asStateFlow()
 
+    private val _minSpeechMs = MutableStateFlow(400L)
+    val minSpeechMs: StateFlow<Long> = _minSpeechMs.asStateFlow()
+
     private val _mediaButtonEnabled = MutableStateFlow(false)
     val mediaButtonEnabled: StateFlow<Boolean> = _mediaButtonEnabled.asStateFlow()
 
@@ -162,6 +165,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferences.observe(PreferenceKeys.THINKING_SOUND).collect { _thinkingSound.value = it ?: true } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.BARGE_IN_ENABLED).collect { _bargeInEnabled.value = it ?: true } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.SILENCE_TIMEOUT_MS).collect { _silenceTimeoutMs.value = it ?: 1500L } }
+        viewModelScope.launch { preferences.observe(PreferenceKeys.MIN_SPEECH_MS).collect { _minSpeechMs.value = it ?: 400L } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.MEDIA_BUTTON_ENABLED).collect { _mediaButtonEnabled.value = it ?: false } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.STT_LANGUAGE).collect { _sttLanguage.value = it ?: "" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.STT_PROVIDER_TYPE).collect { _sttProviderType.value = it ?: "android" } }
@@ -276,6 +280,10 @@ class SettingsViewModel @Inject constructor(
 
     fun saveSilenceTimeout(ms: Long) {
         viewModelScope.launch { preferences.set(PreferenceKeys.SILENCE_TIMEOUT_MS, ms) }
+    }
+
+    fun saveMinSpeechMs(ms: Long) {
+        viewModelScope.launch { preferences.set(PreferenceKeys.MIN_SPEECH_MS, ms) }
     }
 
     fun saveMediaButtonEnabled(enabled: Boolean) {

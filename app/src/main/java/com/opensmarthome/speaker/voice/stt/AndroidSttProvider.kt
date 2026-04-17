@@ -36,6 +36,15 @@ class AndroidSttProvider(private val context: Context) : SpeechToText {
     var language: String? = null
     var silenceTimeoutMs: Long = 1500L
 
+    /**
+     * Minimum accepted speech length. Fed to SpeechRecognizer's
+     * `EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS` so brief noises below this
+     * threshold don't trigger a final result. Matches the VAD `min speech`
+     * knob that offline backends expose, so the user's single setting covers
+     * both paths.
+     */
+    var minSpeechMs: Long = 400L
+
     override fun startListening(): Flow<SttResult> = callbackFlow {
         val targetLanguage = language ?: Locale.getDefault().toLanguageTag()
 
@@ -144,8 +153,11 @@ class AndroidSttProvider(private val context: Context) : SpeechToText {
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, silenceTimeoutMs)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, silenceTimeoutMs)
-            // Unofficial extra for minimum speech length
-            putExtra("android.speech.extras.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS", silenceTimeoutMs)
+            // Unofficial extra for minimum speech length. Now wired to a
+            // separate preference (P14.2 VAD knob) rather than silenceTimeoutMs
+            // — collapsing the two meant that raising the silence window also
+            // required a longer utterance, which was surprising.
+            putExtra("android.speech.extras.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS", minSpeechMs)
         }
 
         // Start listening on Main thread (Android requirement)

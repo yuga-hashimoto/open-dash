@@ -31,6 +31,13 @@ object PreferenceKeys {
     val THINKING_SOUND = booleanPreferencesKey("thinking_sound")
     val BARGE_IN_ENABLED = booleanPreferencesKey("barge_in_enabled")
     val SILENCE_TIMEOUT_MS = longPreferencesKey("silence_timeout_ms")
+    /**
+     * Minimum detected speech length, in ms, before we accept the utterance as
+     * real input. Android's built-in `EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS`
+     * reads this today; the forthcoming offline VAD backend will also honour
+     * it to filter brief noises (chair squeaks, lip smacks).
+     */
+    val MIN_SPEECH_MS = longPreferencesKey("min_speech_ms")
     val MEDIA_BUTTON_ENABLED = booleanPreferencesKey("media_button_enabled")
 
     // STT
