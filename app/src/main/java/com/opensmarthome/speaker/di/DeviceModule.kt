@@ -16,6 +16,7 @@ import com.opensmarthome.speaker.homeassistant.client.HomeAssistantClient
 import com.opensmarthome.speaker.tool.CompositeToolExecutor
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.tool.info.CalculatorToolExecutor
+import com.opensmarthome.speaker.tool.info.DateToolExecutor
 import com.opensmarthome.speaker.tool.info.RandomToolExecutor
 import com.opensmarthome.speaker.tool.info.CurrencyToolExecutor
 import com.opensmarthome.speaker.voice.fastpath.DefaultFastPathRouter
@@ -416,6 +417,7 @@ object DeviceModule {
             WebFetchToolExecutor(HtmlWebFetcher(client)),
             UnitConverterToolExecutor(),
             CalculatorToolExecutor(),
+            DateToolExecutor(),
             RandomToolExecutor(),
             CurrencyToolExecutor(),
             NewsToolExecutor(
