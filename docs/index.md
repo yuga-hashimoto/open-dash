@@ -11,6 +11,7 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 
 ## Reference
 
+- **[Home dashboard](home-dashboard.md)** — Alexa-style landing layout, tile taxonomy, refresh cadences
 - **[Tools](tools.md)** — every LLM-callable tool and its parameters
 - **[Fast paths](fast-paths.md)** — voice utterances handled without the LLM
 - **[Random tools](random-tools.md)** — `flip_coin` / `roll_dice` / `pick_random` reference + example utterances
