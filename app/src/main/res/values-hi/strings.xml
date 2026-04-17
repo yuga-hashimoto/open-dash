@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">चैट</string>
+    <string name="tab_dashboard">डैशबोर्ड</string>
+    <string name="tab_ambient">परिवेश</string>
+    <string name="tab_settings">सेटिंग्स</string>
+    <string name="accessibility_service_description">स्मार्ट स्पीकर एजेंट को वर्तमान में दिखाई देने वाली स्क्रीन का टेक्स्ट पढ़ने और आपकी ओर से UI क्रियाओं को स्वचालित करने की अनुमति देता है।</string>
+    <string name="accessibility_service_summary">ऑन-डिवाइस एजेंट को स्क्रीन देखने और नियंत्रित करने की अनुमति देने के लिए सक्षम करें।</string>
+    <string name="a11y_service_description">OpenSmartSpeaker इस एक्सेसिबिलिटी सेवा का उपयोग यह पढ़ने के लिए करता है कि स्क्रीन पर क्या है और आपके अनुरोध पर आपकी ओर से बटन टैप करता है। कोई भी डेटा डिवाइस से बाहर नहीं जाता। आप इसे किसी भी समय सेटिंग्स में बंद कर सकते हैं।</string>
+    <string name="voice_tile_label">बोलें</string>
+    <string name="voice_tile_content_description">OpenSmartSpeaker के साथ वॉइस सत्र शुरू करें</string>
+</resources>
