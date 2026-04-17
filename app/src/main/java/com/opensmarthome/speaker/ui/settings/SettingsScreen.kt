@@ -115,6 +115,22 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
         )
 
+        val minSpeechMs by viewModel.minSpeechMs.collectAsState()
+        Text(
+            text = "Minimum Utterance: ${minSpeechMs} ms",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Slider(
+            value = minSpeechMs.toFloat(),
+            onValueChange = { viewModel.saveMinSpeechMs(it.toLong()) },
+            valueRange = 100f..2000f,
+            steps = 18,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+        )
+        SettingsHint("Ignore utterances shorter than this (filters chair squeaks and lip smacks). Raise if you hear false wakes firing the pipeline.")
+
         SettingsDivider()
 
         // === TTS Provider ===

@@ -572,9 +572,11 @@ class VoicePipeline(
         } ?: return
         val sttLang = preferences.observe(PreferenceKeys.STT_LANGUAGE).first()?.takeIf { it.isNotBlank() }
         val silence = preferences.observe(PreferenceKeys.SILENCE_TIMEOUT_MS).first() ?: 1500L
+        val minSpeech = preferences.observe(PreferenceKeys.MIN_SPEECH_MS).first() ?: 400L
         androidStt.language = sttLang
         androidStt.silenceTimeoutMs = silence
-        Timber.d("STT prefs applied: lang=$sttLang, silence=${silence}ms")
+        androidStt.minSpeechMs = minSpeech
+        Timber.d("STT prefs applied: lang=$sttLang, silence=${silence}ms, minSpeech=${minSpeech}ms")
     }
 
     private suspend fun applyTtsLanguagePreference() {
