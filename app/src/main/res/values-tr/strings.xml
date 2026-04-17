@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">Sohbet</string>
+    <string name="tab_dashboard">Gösterge Paneli</string>
+    <string name="tab_ambient">Ortam</string>
+    <string name="tab_settings">Ayarlar</string>
+    <string name="accessibility_service_description">Akıllı hoparlör aracısının o anda görünen ekran metnini okumasına ve sizin adınıza arayüz eylemlerini otomatikleştirmesine izin verir.</string>
+    <string name="accessibility_service_summary">Cihaz üzerindeki aracının ekranı görmesine ve kontrol etmesine izin vermek için etkinleştirin.</string>
+    <string name="a11y_service_description">OpenSmartSpeaker, istediğinizde ekranda ne olduğunu okumak ve sizin adınıza düğmelere dokunmak için bu erişilebilirlik hizmetini kullanır. Hiçbir veri cihazdan dışarı çıkmaz. Ayarlar\'dan istediğiniz zaman kapatabilirsiniz.</string>
+    <string name="voice_tile_label">Konuş</string>
+    <string name="voice_tile_content_description">OpenSmartSpeaker ile sesli oturum başlat</string>
+</resources>
