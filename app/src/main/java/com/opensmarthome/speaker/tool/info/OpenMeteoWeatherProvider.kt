@@ -1,6 +1,8 @@
 package com.opensmarthome.speaker.tool.info
 
 import com.squareup.moshi.Moshi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -21,7 +23,7 @@ class OpenMeteoWeatherProvider(
         private const val FORECAST_API = "https://api.open-meteo.com/v1/forecast"
     }
 
-    override suspend fun getCurrent(location: String?): WeatherInfo {
+    override suspend fun getCurrent(location: String?): WeatherInfo = withContext(Dispatchers.IO) {
         val coords = resolveCoordinates(location)
         val url = FORECAST_API.toHttpUrl().newBuilder().apply {
             addQueryParameter("latitude", coords.latitude.toString())
@@ -36,11 +38,11 @@ class OpenMeteoWeatherProvider(
                 throw RuntimeException("Weather API error: ${response.code}")
             }
             val body = response.body?.string() ?: throw RuntimeException("Empty response")
-            return parseCurrentWeather(body, coords.name)
+            parseCurrentWeather(body, coords.name)
         }
     }
 
-    override suspend fun getForecast(location: String?, days: Int): List<DayForecast> {
+    override suspend fun getForecast(location: String?, days: Int): List<DayForecast> = withContext(Dispatchers.IO) {
         val coords = resolveCoordinates(location)
         val url = FORECAST_API.toHttpUrl().newBuilder().apply {
             addQueryParameter("latitude", coords.latitude.toString())
@@ -56,13 +58,13 @@ class OpenMeteoWeatherProvider(
                 throw RuntimeException("Forecast API error: ${response.code}")
             }
             val body = response.body?.string() ?: throw RuntimeException("Empty response")
-            return parseForecast(body)
+            parseForecast(body)
         }
     }
 
     private data class Coords(val latitude: Double, val longitude: Double, val name: String)
 
-    private fun resolveCoordinates(location: String?): Coords {
+    private suspend fun resolveCoordinates(location: String?): Coords = withContext(Dispatchers.IO) {
         // If no location provided, default to Tokyo (could be enhanced with device location)
         val query = location?.takeIf { it.isNotBlank() } ?: "Tokyo"
         val url = "$GEO_API?name=${URLEncoder.encode(query, "UTF-8")}&count=1&language=en".toHttpUrl()
@@ -73,7 +75,7 @@ class OpenMeteoWeatherProvider(
                 throw RuntimeException("Geocoding error: ${response.code}")
             }
             val body = response.body?.string() ?: throw RuntimeException("Empty geocoding response")
-            return parseGeocoding(body, query)
+            parseGeocoding(body, query)
         }
     }
 

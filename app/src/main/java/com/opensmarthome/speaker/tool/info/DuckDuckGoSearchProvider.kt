@@ -1,6 +1,8 @@
 package com.opensmarthome.speaker.tool.info
 
 import com.squareup.moshi.Moshi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,7 +20,7 @@ class DuckDuckGoSearchProvider(
         private const val API = "https://api.duckduckgo.com/"
     }
 
-    override suspend fun search(query: String): SearchResult {
+    override suspend fun search(query: String): SearchResult = withContext(Dispatchers.IO) {
         val url = API.toHttpUrl().newBuilder().apply {
             addQueryParameter("q", query)
             addQueryParameter("format", "json")
@@ -32,7 +34,7 @@ class DuckDuckGoSearchProvider(
                 throw RuntimeException("Search API error: ${response.code}")
             }
             val body = response.body?.string() ?: throw RuntimeException("Empty response")
-            return parseResult(query, body)
+            parseResult(query, body)
         }
     }
 
