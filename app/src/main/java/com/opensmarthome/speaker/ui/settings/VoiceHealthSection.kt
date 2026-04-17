@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import android.content.Intent
+import com.opensmarthome.speaker.service.VoiceService
 import com.opensmarthome.speaker.ui.common.StatusIndicator
 import com.opensmarthome.speaker.ui.common.StatusIndicatorState
 import com.opensmarthome.speaker.voice.diagnostics.VoiceDiagnostics
@@ -65,6 +67,24 @@ fun VoiceHealthSection() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Refresh Diagnostics", color = MaterialTheme.colorScheme.onSurface)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        // Quick "does the mic work?" trigger that bypasses the wake word and
+        // opens an STT session through the same foreground-service path that
+        // a real wake would use. Useful when the user just changed the
+        // wake-word keyword / sensitivity and wants to verify mic + STT.
+        OutlinedButton(
+            onClick = {
+                val intent = Intent(context, VoiceService::class.java).apply {
+                    action = VoiceService.ACTION_START_LISTENING
+                }
+                try {
+                    context.startService(intent)
+                } catch (_: Exception) { /* ignore — startForegroundService policy may refuse */ }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Test Mic + STT Now", color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
