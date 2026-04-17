@@ -45,6 +45,9 @@ analytics per call.
 | `calculate` | CalculatorToolExecutor | MathEvaluator with unary-minus fix |
 | `convert_currency` | CurrencyToolExecutor | exchangerate.host daily rates |
 | `get_knowledge` | KnowledgeToolExecutor | User-defined Q&A |
+| `flip_coin` | RandomToolExecutor | Heads or tails (seeded `Random`) |
+| `roll_dice` | RandomToolExecutor | N-sided dice, 1..10 rolls, 2..100 sides |
+| `pick_random` | RandomToolExecutor | Uniform choice from comma-separated options |
 
 ## Communication / I/O
 

@@ -54,6 +54,7 @@ to the list.
 | `BroadcastGroupMatcher` | "broadcast X to kitchen", "キッチンに X ってアナウンス" | `broadcast_tts` (with group) | Routes via SpeakerGroupRepository; must precede BroadcastTtsMatcher |
 | `BroadcastTtsMatcher` | "broadcast X to all speakers", "tell all speakers X", "全スピーカーにアナウンス：X" | `broadcast_tts` | Captures the message; fans out to discovered mDNS peers |
 | `HandoffMatcher` | "move this to the kitchen speaker", "send this to bedroom", "キッチンにハンドオフ" | `handoff_session` | Captures target peer name; replaces local history on the target |
+| `FlipCoinMatcher` | "flip a coin", "toss a coin", "コインを投げて" | `flip_coin` | Narrow pattern — compound "flip a coin and order pizza" falls through to LLM |
 | `DatetimeMatcher` | "what's today's date", "今日は何日" | `get_datetime` | |
 | `GreetingMatcher` | "thanks", "hello", "ありがとう", "おはよう", "ごめん" | (speak-only) | Canned reply, no tool |
 | `HelpMatcher` | "help", "what can you do", "できることを教えて" | (speak-only) | Capability summary mentions timers, lights, weather, news, routines, memory, skills |
