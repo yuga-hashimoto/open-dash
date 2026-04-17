@@ -153,6 +153,111 @@ object TtsUtils {
     }
 
     /**
+     * Split text into small sentence-level chunks sized for the karaoke
+     * rolling-display UI.
+     *
+     * Why a second splitter: the main [splitIntoChunks] is sized for the
+     * Android TTS engine's `getMaxSpeechInputLength()` (~3600 chars) and
+     * will keep a whole paragraph in one chunk if it fits. That means the
+     * karaoke display only receives one `onStart` event per utterance — so
+     * the rolling display only flips once and the user sees just the first
+     * sentence. For the rolling UI we want one chunk per sentence so the
+     * display flips at natural speech boundaries.
+     *
+     * Rules:
+     *   - Target chunk size is ~[maxLength] chars (default 180) — enough for
+     *     most natural sentences without force-splitting short ones.
+     *   - A single long sentence (no internal boundaries) is kept intact up
+     *     to [sentenceHardCap] to preserve prosody, rather than force-cut
+     *     mid-word. The Android TTS engine's true limit is ~3900 chars, so
+     *     even a 500-char sentence is safe.
+     *   - Blank chunks are filtered out.
+     *
+     * Reused pieces: [findBestSplitPoint] handles paragraph > sentence >
+     * line > comma > whitespace priority just like [splitIntoChunks].
+     */
+    fun splitIntoKaraokeChunks(
+        text: String,
+        maxLength: Int = 180,
+        sentenceHardCap: Int = 500,
+    ): List<String> {
+        require(maxLength > 0) { "maxLength must be positive" }
+        require(sentenceHardCap >= maxLength) {
+            "sentenceHardCap must be >= maxLength"
+        }
+        if (text.isBlank()) return emptyList()
+
+        // Primary pass: always try to cut at a sentence boundary even when
+        // the whole text fits under maxLength — karaoke UI wants per-
+        // sentence flips, so "これは文A。これは文B。" must become two chunks
+        // even though it is only ~20 chars.
+        val chunks = mutableListOf<String>()
+        var remaining = text.trim()
+
+        while (remaining.isNotEmpty()) {
+            val nextBoundary = nextSentenceBoundary(remaining)
+
+            if (nextBoundary > 0 && nextBoundary <= sentenceHardCap) {
+                chunks += remaining.substring(0, nextBoundary).trim()
+                remaining = remaining.substring(nextBoundary).trim()
+                continue
+            }
+
+            // No sentence end found at all, or the next sentence is too
+            // long. Fall back to the general splitter so we still make
+            // progress at comma/whitespace/force-cut boundaries.
+            if (remaining.length <= maxLength) {
+                chunks += remaining
+                break
+            }
+
+            val window = remaining.substring(0, minOf(remaining.length, sentenceHardCap))
+            val splitIndex = findBestSplitPoint(window)
+
+            if (splitIndex > 0) {
+                chunks += remaining.substring(0, splitIndex).trim()
+                remaining = remaining.substring(splitIndex).trim()
+            } else if (remaining.length <= sentenceHardCap) {
+                // Single very long sentence with no internal boundary — keep
+                // it whole rather than chopping mid-word. Safe: the TTS
+                // engine's real limit (~3900) is far above sentenceHardCap.
+                chunks += remaining.trim()
+                break
+            } else {
+                // Truly huge unbroken run: force-cut at sentenceHardCap as a
+                // last resort so we never overflow the TTS engine.
+                chunks += remaining.substring(0, sentenceHardCap)
+                remaining = remaining.substring(sentenceHardCap).trim()
+            }
+        }
+
+        return chunks.filter { it.isNotBlank() }
+    }
+
+    /**
+     * Return the index just past the first sentence ender in [text], or -1
+     * if none is found. Prefers paragraph-break pass-through so multi-
+     * paragraph text still splits by paragraph even when the first
+     * paragraph contains only one sentence.
+     */
+    private fun nextSentenceBoundary(text: String): Int {
+        // Paragraph break counts as a boundary.
+        val paragraphIdx = text.indexOf("\n\n")
+        var best = if (paragraphIdx >= 0) paragraphIdx + 2 else -1
+
+        for (ender in SENTENCE_ENDERS) {
+            val pos = text.indexOf(ender)
+            if (pos >= 0) {
+                val endIdx = pos + ender.length
+                if (best < 0 || endIdx < best) {
+                    best = endIdx
+                }
+            }
+        }
+        return best
+    }
+
+    /**
      * Query the engine's actual max input length with a safe margin.
      *
      * Uses 9/10 of `TextToSpeech.getMaxSpeechInputLength()` (typically 4000,

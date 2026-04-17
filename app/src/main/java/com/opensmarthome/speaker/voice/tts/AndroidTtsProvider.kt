@@ -120,14 +120,13 @@ open class AndroidTtsProvider(context: Context) : TextToSpeech {
         val cleanText = TtsUtils.stripMarkdownForSpeech(text)
         if (cleanText.isBlank()) return
 
-        // Use the engine's reported max input length (90% margin) so chunks
-        // never overflow the TTS pipe and get silently truncated. This is
-        // especially important for long Japanese responses where the older
-        // 500-char fixed cap caused the tail of the answer to be dropped.
-        val maxChars = TtsUtils.getMaxInputLength(tts)
-        val chunks = TtsUtils.splitIntoChunks(cleanText, maxChars)
+        // Use sentence-level chunks so the karaoke display flips at every
+        // sentence boundary rather than once per 3600-char super-chunk.
+        // The engine's ~3900-char hard limit is still respected because our
+        // sentenceHardCap (500) is far below it.
+        val chunks = TtsUtils.splitIntoKaraokeChunks(cleanText)
         Timber.d(
-            "TTS: ${chunks.size} chunk(s), totalChars=${cleanText.length}, maxChars=$maxChars"
+            "TTS: ${chunks.size} chunk(s), totalChars=${cleanText.length}, mode=karaoke"
         )
 
         try {
