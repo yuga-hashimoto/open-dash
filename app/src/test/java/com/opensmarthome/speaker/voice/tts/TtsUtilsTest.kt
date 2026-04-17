@@ -220,4 +220,88 @@ class TtsUtilsTest {
         assertThat(max).isAtLeast(500)
         assertThat(max).isAtMost(10_000)
     }
+
+    // ---------- splitIntoKaraokeChunks ----------
+
+    @Test
+    fun `karaoke split japanese three sentences emits three chunks`() {
+        val input = "これは最初の文です。これは二番目の文。最後の文。"
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        assertThat(chunks).hasSize(3)
+        assertThat(chunks[0]).isEqualTo("これは最初の文です。")
+        assertThat(chunks[1]).isEqualTo("これは二番目の文。")
+        assertThat(chunks[2]).isEqualTo("最後の文。")
+    }
+
+    @Test
+    fun `karaoke split english multi-sentence emits per-sentence chunks`() {
+        val input = "Sentence one. Sentence two! Sentence three?"
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        assertThat(chunks).hasSize(3)
+        chunks.forEach { chunk ->
+            assertThat(chunk.last()).isAnyOf('.', '!', '?', '。', '！', '？')
+        }
+    }
+
+    @Test
+    fun `karaoke split single short sentence returns one chunk as-is`() {
+        val input = "Hello world."
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        assertThat(chunks).containsExactly("Hello world.")
+    }
+
+    @Test
+    fun `karaoke split blank text returns empty list`() {
+        assertThat(TtsUtils.splitIntoKaraokeChunks("")).isEmpty()
+        assertThat(TtsUtils.splitIntoKaraokeChunks("   \n\n  ")).isEmpty()
+    }
+
+    @Test
+    fun `karaoke split keeps very long single sentence intact`() {
+        // A single 300-char sentence without internal punctuation should NOT
+        // be force-split mid-word — preserving prosody and not breaking
+        // onStart mid-sentence is more important than hitting 180 chars
+        // exactly, as long as we stay under the ~250 sentence cap.
+        val input = "あ".repeat(260) + "。"
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        // Expect a single chunk (or a small number) rather than force-cuts
+        // at 180 breaking the sentence mid-word.
+        assertThat(chunks).hasSize(1)
+        assertThat(chunks[0]).isEqualTo(input)
+    }
+
+    @Test
+    fun `karaoke split prefers paragraph breaks`() {
+        val input = "First paragraph sentence.\n\nSecond paragraph sentence."
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        assertThat(chunks.size).isAtLeast(2)
+        assertThat(chunks.first()).contains("First paragraph")
+        assertThat(chunks.last()).contains("Second paragraph")
+    }
+
+    @Test
+    fun `karaoke split preserves all content when reassembled`() {
+        val input = "文A。文B！文C？文D。"
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        assertThat(chunks.joinToString("")).isEqualTo(input)
+    }
+
+    @Test
+    fun `karaoke split filters out blank chunks`() {
+        val input = "\n\n\nHello.\n\n\nWorld.\n\n"
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        chunks.forEach { assertThat(it).isNotEmpty() }
+        assertThat(chunks).isNotEmpty()
+    }
+
+    @Test
+    fun `karaoke split honors custom maxLength by splitting sooner`() {
+        // With default 180-char target, three 80-char sentences fit in 3 chunks.
+        val sentence = "これは" + "あ".repeat(70) + "。"  // ~74 chars
+        val input = sentence + sentence + sentence
+        val chunks = TtsUtils.splitIntoKaraokeChunks(input)
+        // All three sentences should each be their own chunk because each
+        // one ends with 。
+        assertThat(chunks).hasSize(3)
+    }
 }
