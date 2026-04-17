@@ -149,6 +149,11 @@ class DefaultFastPathRouter(
             FlipCoinMatcher,
             DatetimeMatcher,
             GreetingMatcher,
+            // RollDiceMatcher uses matchEntire anchors so it's safe this low —
+            // any earlier, more permissive matcher would already have bitten.
+            // Placed before HelpMatcher because "help" is a containsMatchIn
+            // pattern on "what can you do" and doesn't overlap dice.
+            RollDiceMatcher,
             HelpMatcher
         )
     }
