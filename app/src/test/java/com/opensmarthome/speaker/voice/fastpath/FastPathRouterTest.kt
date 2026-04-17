@@ -928,4 +928,44 @@ class FastPathRouterTest {
         val match = DeviceHealthMatcher.tryMatch("what time is it")
         assertThat(match).isNull()
     }
+
+    @Test
+    fun `flip a coin routes to flip_coin`() {
+        val m = router.match("flip a coin")
+        assertThat(m?.toolName).isEqualTo("flip_coin")
+        assertThat(m?.arguments).isEmpty()
+    }
+
+    @Test
+    fun `toss a coin also routes to flip_coin`() {
+        val m = router.match("toss a coin")
+        assertThat(m?.toolName).isEqualTo("flip_coin")
+    }
+
+    @Test
+    fun `japanese coin flip`() {
+        val m = router.match("コインを投げて")
+        assertThat(m?.toolName).isEqualTo("flip_coin")
+    }
+
+    @Test
+    fun `japanese coin flip polite`() {
+        val m = router.match("コイン投げてください")
+        assertThat(m?.toolName).isEqualTo("flip_coin")
+    }
+
+    @Test
+    fun `flip a coin and order pizza falls through to LLM`() {
+        // Narrow pattern — compound requests must not be captured by the
+        // fast path, because the follow-on "order pizza" needs the LLM's
+        // planning.
+        val m = FlipCoinMatcher.tryMatch("flip a coin and order pizza")
+        assertThat(m).isNull()
+    }
+
+    @Test
+    fun `flip coin without article still matches`() {
+        val m = FlipCoinMatcher.tryMatch("flip coin")
+        assertThat(m?.toolName).isEqualTo("flip_coin")
+    }
 }
