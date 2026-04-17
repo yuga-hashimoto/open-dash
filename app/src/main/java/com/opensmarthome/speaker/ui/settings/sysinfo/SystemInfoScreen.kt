@@ -111,6 +111,7 @@ fun SystemInfoScreen(
                 }
             }
         }
+        val showClearCounters = state.multiroomTraffic.isNotEmpty() || state.rejections.isNotEmpty()
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
@@ -118,6 +119,17 @@ fun SystemInfoScreen(
         ) {
             items(rows, key = { it.first }) { row ->
                 InfoRow(label = row.first, value = row.second)
+            }
+            if (showClearCounters) {
+                // Only render the clear action when something is actually
+                // accumulated — hiding it on a clean mesh keeps the screen
+                // free of orphan controls the user has no reason to tap.
+                item(key = "clear-multiroom-counters") {
+                    TextButton(
+                        onClick = { viewModel.clearMultiroomCounters() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Clear multi-room counters") }
+                }
             }
         }
     }
