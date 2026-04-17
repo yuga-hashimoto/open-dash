@@ -38,6 +38,7 @@ class VoiceService : Service() {
     @Inject lateinit var preferences: AppPreferences
     @Inject lateinit var batteryMonitor: com.opensmarthome.speaker.util.BatteryMonitor
     @Inject lateinit var thermalMonitor: com.opensmarthome.speaker.util.ThermalMonitor
+    @Inject lateinit var multicastDiscovery: com.opensmarthome.speaker.util.MulticastDiscovery
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeWordDetector: VoskWakeWordDetector? = null
@@ -111,6 +112,14 @@ class VoiceService : Service() {
             registerReceiver(controlReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(controlReceiver, filter)
+        }
+
+        // Opt-in multi-room broadcast — advertises this device over mDNS so
+        // peers' discovery flow surfaces it. No server is actually listening
+        // on the advertised port yet (see MulticastDiscovery class doc).
+        scope.launch {
+            val enabled = preferences.observe(PreferenceKeys.MULTIROOM_BROADCAST_ENABLED).first() ?: false
+            if (enabled) multicastDiscovery.register()
         }
     }
 
@@ -249,6 +258,8 @@ class VoiceService : Service() {
         wakeWordDetector?.stop()
         voicePipeline.stopSpeaking()
         voicePipeline.destroy()
+        // Safe to call even if we never registered — unregister() is a no-op in that case.
+        runCatching { multicastDiscovery.unregister() }
         super.onDestroy()
         Timber.d("VoiceService destroyed")
     }

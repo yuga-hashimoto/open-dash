@@ -343,6 +343,10 @@ fun SettingsScreen(
         SettingsToggle("Battery Saver", batterySaver) { viewModel.saveBatterySaverEnabled(it) }
         SettingsHint("Pause wake-word detection when battery <= 20 % and the device is unplugged.")
 
+        val multiroomOn by viewModel.multiroomBroadcastEnabled.collectAsState()
+        SettingsToggle("Multi-room broadcast", multiroomOn) { viewModel.saveMultiroomBroadcastEnabled(it) }
+        SettingsHint("Advertise this device on the LAN via mDNS so other OpenSmartSpeaker instances can find it. Registration is the signal only — the broadcast protocol is still in development.")
+
         SettingsDivider()
 
         // === Connections ===

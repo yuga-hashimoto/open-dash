@@ -59,6 +59,9 @@ class SettingsViewModel @Inject constructor(
     private val _batterySaverEnabled = MutableStateFlow(false)
     val batterySaverEnabled: StateFlow<Boolean> = _batterySaverEnabled.asStateFlow()
 
+    private val _multiroomBroadcastEnabled = MutableStateFlow(false)
+    val multiroomBroadcastEnabled: StateFlow<Boolean> = _multiroomBroadcastEnabled.asStateFlow()
+
     // TTS settings
     private val _ttsSpeechRate = MutableStateFlow(1.0f)
     val ttsSpeechRate: StateFlow<Float> = _ttsSpeechRate.asStateFlow()
@@ -157,6 +160,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferences.observe(PreferenceKeys.WAKE_WORD).collect { _wakeWord.value = it ?: "hey speaker" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.WAKE_WORD_SENSITIVITY).collect { _wakeWordSensitivity.value = it ?: 0.6f } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.BATTERY_SAVER_ENABLED).collect { _batterySaverEnabled.value = it ?: false } }
+        viewModelScope.launch { preferences.observe(PreferenceKeys.MULTIROOM_BROADCAST_ENABLED).collect { _multiroomBroadcastEnabled.value = it ?: false } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_SPEECH_RATE).collect { _ttsSpeechRate.value = it ?: 1.0f } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_PITCH).collect { _ttsPitch.value = it ?: 1.0f } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.TTS_ENGINE).collect { _ttsEngine.value = it ?: "" } }
@@ -233,6 +237,10 @@ class SettingsViewModel @Inject constructor(
 
     fun saveBatterySaverEnabled(enabled: Boolean) {
         viewModelScope.launch { preferences.set(PreferenceKeys.BATTERY_SAVER_ENABLED, enabled) }
+    }
+
+    fun saveMultiroomBroadcastEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferences.set(PreferenceKeys.MULTIROOM_BROADCAST_ENABLED, enabled) }
     }
 
     fun saveSttProviderType(type: String) {
