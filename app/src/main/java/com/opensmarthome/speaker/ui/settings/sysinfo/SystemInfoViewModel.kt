@@ -70,6 +70,25 @@ class SystemInfoViewModel @Inject constructor(
     fun stopDiscovery() = multicastDiscovery.stop()
 
     /**
+     * Clear the lifetime traffic + rejection counter tables, then refresh
+     * the snapshot so the UI collapses the now-empty sections. Useful for
+     * running a clean experiment (reboot the mesh, watch the counters
+     * populate from zero) without rerunning Room migrations or wiping the
+     * whole database.
+     *
+     * Fire-and-forget — persistence failures are logged inside Room and
+     * the recorders, and the refresh runs regardless so the user gets
+     * immediate feedback.
+     */
+    fun clearMultiroomCounters() {
+        viewModelScope.launch {
+            runCatching { multiroomTrafficDao.clear() }
+            runCatching { multiroomRejectionDao.clear() }
+            refresh()
+        }
+    }
+
+    /**
      * One row per observed envelope type in the lifetime
      * [MultiroomTrafficEntity] table. [inbound] / [outbound] are
      * independent counters (different DB rows), collapsed here for UI
