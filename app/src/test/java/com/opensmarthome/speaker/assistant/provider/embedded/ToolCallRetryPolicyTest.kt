@@ -102,4 +102,36 @@ class ToolCallRetryPolicyTest {
         assertThat(retries).isEqualTo(0)
         assertThat(result.toolCalls).isEmpty()
     }
+
+    // --- Bug B: leaked Gemma role markers must never reach TTS ---
+
+    @Test
+    fun `leaked User role marker is stripped from plain answer`() = runTest {
+        val first = "User..."
+
+        val result = policy.finalize(first, tools) { "never" }
+
+        assertThat(result.toolCalls).isEmpty()
+        // After stripping the bare "User..." role-marker leak, content must
+        // not contain "User" — otherwise TTS announces "User..." to the user.
+        assertThat(result.content).doesNotContain("User")
+    }
+
+    @Test
+    fun `leaked User colon prefix keeps body but drops marker`() = runTest {
+        val first = "User: Hello there"
+
+        val result = policy.finalize(first, tools) { "never" }
+
+        assertThat(result.content).isEqualTo("Hello there")
+    }
+
+    @Test
+    fun `leaked assistant marker is stripped`() = runTest {
+        val first = "<|assistant|>\nThe weather is sunny."
+
+        val result = policy.finalize(first, tools) { "never" }
+
+        assertThat(result.content).isEqualTo("The weather is sunny.")
+    }
 }

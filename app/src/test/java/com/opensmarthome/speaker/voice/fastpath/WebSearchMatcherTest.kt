@@ -115,4 +115,38 @@ class WebSearchMatcherTest {
         assertThat(WebSearchMatcher.cleanQuery("天気について。"))
             .isEqualTo("天気")
     }
+
+    // --- Bug A: particle-less / space-separated Japanese web-search phrasings ---
+
+    @Test
+    fun `japanese particle-less space separated ウェブで検索して extracts query`() {
+        val m = WebSearchMatcher.tryMatch("LINE レンジャー ウェブで検索して")
+        assertThat(m?.toolName).isEqualTo("web_search")
+        assertThat(m?.arguments?.get("query")).isEqualTo("LINE レンジャー")
+    }
+
+    @Test
+    fun `japanese particle-less web で検索して extracts query`() {
+        val m = WebSearchMatcher.tryMatch("Google pixel 14 Web で検索して")
+        assertThat(m?.toolName).isEqualTo("web_search")
+        assertThat(m?.arguments?.get("query")).isEqualTo("Google pixel 14")
+    }
+
+    @Test
+    fun `japanese particle-less ネットで調べて extracts query`() {
+        val m = WebSearchMatcher.tryMatch("トマト ネットで調べて")
+        assertThat(m?.toolName).isEqualTo("web_search")
+        assertThat(m?.arguments?.get("query")).isEqualTo("トマト")
+    }
+
+    @Test
+    fun `japanese existing particle form still works with optional particle`() {
+        // Re-assert coverage on existing phrasings to guard against regression.
+        assertThat(
+            WebSearchMatcher.tryMatch("Androidを検索して")?.arguments?.get("query")
+        ).isEqualTo("Android")
+        assertThat(
+            WebSearchMatcher.tryMatch("Pythonについて調べて")?.arguments?.get("query")
+        ).isEqualTo("Python")
+    }
 }

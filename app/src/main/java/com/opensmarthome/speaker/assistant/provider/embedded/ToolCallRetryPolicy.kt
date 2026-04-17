@@ -52,9 +52,17 @@ class ToolCallRetryPolicy(
         return assistant(fallbackText, emptyList())
     }
 
+    /**
+     * Build the final `AssistantMessage.Assistant`. Runs the content through
+     * [AssistantReplyCleaner] so leaked Gemma role markers (`User:`,
+     * `<|assistant|>`, bare `User...`) never reach TTS — Bug B fix.
+     */
     private fun assistant(
         content: String,
         toolCalls: List<ToolCallRequest>
     ): AssistantMessage.Assistant =
-        AssistantMessage.Assistant(content = content, toolCalls = toolCalls)
+        AssistantMessage.Assistant(
+            content = AssistantReplyCleaner.cleanContent(content),
+            toolCalls = toolCalls
+        )
 }

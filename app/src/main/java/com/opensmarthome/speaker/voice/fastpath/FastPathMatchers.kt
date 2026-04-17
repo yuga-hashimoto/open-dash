@@ -1105,18 +1105,22 @@ object WebSearchMatcher : FastPathMatcher {
         Regex("""^\s*(?:look\s*up|google)\s+(.+?)\s*[!?.]*\s*$"""),
         Regex("""^\s*search\s+(.+?)\s*[!?.]*\s*$""")
     )
-    // "Xを検索して / ググって / について調べて".
+    // "Xを検索して / ググって / について調べて / X ウェブで検索して".
     // The verb suffix after 検索/ググ/調べ can be any (possibly empty) tail —
     // "して", "って", "る", "て", punctuation, etc. We permit any run of
     // chars there so conjugations like "検索して" / "ググって" / "調べてよ" all
     // match without enumerating every ending.
+    //
+    // Bug A: both the topic connector (を/について/に関して) AND the
+    // "Web で / ウェブ で / ネット で" filler are optional, so particle-less
+    // STT output like "LINE レンジャー ウェブで検索して" still captures
+    // "LINE レンジャー" as the query. At least one of those optional
+    // parts must be present (guaranteed by the body of the utterance
+    // still containing the 検索/ググ/調べ verb), so we don't accidentally
+    // match random prose — the trailing verb anchor keeps this specific.
     private val japanesePatterns = listOf(
-        // Accept optional "Web で / ウェブ で / ネット で" filler between the
-        // topic connector (を/について/に関して) and the search verb so
-        // STT output like "Google pixel 14について Web で検索して" still
-        // captures only "Google pixel 14".
         Regex(
-            """^\s*(.+?)\s*(?:を|について|に関して)\s*""" +
+            """^\s*(.+?)\s*(?:を|について|に関して)?\s*""" +
                 """(?:(?:web|ウェブ|ネット)\s*で?\s*)?""" +
                 """(?:検索|ググ|調べ).*$""",
             RegexOption.IGNORE_CASE
