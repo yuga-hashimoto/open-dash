@@ -372,6 +372,12 @@ class VoicePipeline(
                         val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
                         if (ttsEnabled) {
                             _state.value = VoicePipelineState.Speaking
+                            // Barge-in: re-arm wake word BEFORE we start speaking
+                            // so the user can interrupt TTS playback by calling
+                            // the wake word (Alexa/Nest parity). When detected,
+                            // VoiceService → voicePipeline.startListening() will
+                            // hit the `state is Speaking` branch and tts.stop().
+                            resumeWakeWordForBargeInIfEnabled()
                             try {
                                 latencyRecorder.startSpan(LatencyRecorder.Span.TTS_PREPARATION)
                                 tts.speak(response.content)
@@ -559,6 +565,25 @@ class VoicePipeline(
         VoiceService.resumeHotword(context)
     }
 
+    /**
+     * Re-arm the wake-word detector during TTS playback so users can say
+     * "hey speaker" to interrupt a reply (barge-in). VoiceService handles the
+     * actual detector lifecycle: ACTION_RESUME_HOTWORD flips isSessionActive
+     * back to false and re-starts the Vosk detector on a 500ms delay. When
+     * the detector fires mid-speech, its callback calls
+     * voicePipeline.startListening(), which catches `state is Speaking` and
+     * stops TTS before entering the STT turn — identical to the existing
+     * mic-tap barge-in path.
+     *
+     * No-op when BARGE_IN_ENABLED=false so users who dislike interruptions
+     * keep the legacy "wake word off during TTS" behaviour.
+     */
+    private suspend fun resumeWakeWordForBargeInIfEnabled() {
+        val bargeInEnabled = preferences.observe(PreferenceKeys.BARGE_IN_ENABLED).first() ?: true
+        if (!bargeInEnabled) return
+        VoiceService.resumeHotword(context)
+    }
+
     // --- Preference Application ---
 
     private suspend fun applySttPreferences() {
@@ -640,6 +665,10 @@ class VoicePipeline(
             val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
             if (ttsEnabled) {
                 _state.value = VoicePipelineState.Speaking
+                // Barge-in on fast-path too: re-arm wake word before speaking
+                // so short fast-path confirmations ("Timer set for 5 minutes.")
+                // are interruptible just like LLM replies.
+                resumeWakeWordForBargeInIfEnabled()
                 try {
                     tts.speak(spoken)
                 } catch (e: Exception) {

@@ -7,6 +7,8 @@ import com.opensmarthome.speaker.assistant.provider.AssistantProvider
 import com.opensmarthome.speaker.assistant.router.ConversationRouter
 import com.opensmarthome.speaker.assistant.router.RoutingPolicy
 import com.opensmarthome.speaker.data.preferences.AppPreferences
+import com.opensmarthome.speaker.data.preferences.PreferenceKeys
+import com.opensmarthome.speaker.service.VoiceService
 import com.opensmarthome.speaker.tool.ToolCall
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.tool.ToolResult
@@ -18,8 +20,14 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.Runs
+import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -206,5 +214,119 @@ class VoicePipelineTest {
             spoken,
             "expected classifier copy, not the raw tool error string"
         )
+    }
+
+    // --- Wake-word barge-in during TTS playback ---
+
+    /**
+     * Record calls to VoiceService.resumeHotword by mocking the companion
+     * object. Intent and Context.sendBroadcast don't mock reliably in plain
+     * unit tests (no Robolectric on this test class), so we intercept one
+     * level higher where the call goes through a Kotlin static method.
+     */
+    @Test
+    fun `barge-in enabled wake word resumed before TTS speak during assistant reply`() = runTest {
+        mockkObject(VoiceService.Companion)
+        try {
+            every { VoiceService.resumeHotword(any()) } just Runs
+            every { VoiceService.pauseHotword(any()) } just Runs
+
+            every { preferences.observe(PreferenceKeys.BARGE_IN_ENABLED) } returns flowOf(true)
+            every { preferences.observe(PreferenceKeys.TTS_ENABLED) } returns flowOf(true)
+            coEvery { router.resolveProvider(any()) } returns provider
+            coEvery { provider.startSession(any()) } returns AssistantSession(providerId = "test")
+            coEvery { provider.send(any(), any(), any()) } returns
+                AssistantMessage.Assistant(content = "Sure, here you go.")
+
+            pipeline.processUserInput("Hi")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Order must be: resumeHotword (barge-in re-arm) → tts.speak → resumeHotword (post-turn).
+            coVerifyOrder {
+                VoiceService.resumeHotword(any())
+                tts.speak(any())
+            }
+            verify(atLeast = 1) { VoiceService.resumeHotword(any()) }
+            coVerify { tts.speak("Sure, here you go.") }
+        } finally {
+            unmockkObject(VoiceService.Companion)
+        }
+    }
+
+    @Test
+    fun `barge-in disabled wake word is NOT resumed before TTS speak`() = runTest {
+        mockkObject(VoiceService.Companion)
+        try {
+            every { VoiceService.resumeHotword(any()) } just Runs
+            every { VoiceService.pauseHotword(any()) } just Runs
+
+            every { preferences.observe(PreferenceKeys.BARGE_IN_ENABLED) } returns flowOf(false)
+            every { preferences.observe(PreferenceKeys.TTS_ENABLED) } returns flowOf(true)
+            coEvery { router.resolveProvider(any()) } returns provider
+            coEvery { provider.startSession(any()) } returns AssistantSession(providerId = "test")
+            coEvery { provider.send(any(), any(), any()) } returns
+                AssistantMessage.Assistant(content = "Quiet reply.")
+
+            // Capture the ordered events so we can assert NO resumeHotword
+            // occurred BEFORE the first speak call when barge-in is disabled.
+            val calls = mutableListOf<String>()
+            every { VoiceService.resumeHotword(any()) } answers { calls.add("resume") }
+            coEvery { tts.speak(any()) } coAnswers { calls.add("speak") }
+
+            pipeline.processUserInput("Be quiet")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val firstSpeak = calls.indexOf("speak")
+            assertTrue(firstSpeak >= 0, "tts.speak should have been invoked; calls=$calls")
+            val resumesBeforeSpeak = calls.take(firstSpeak).count { it == "resume" }
+            assertEquals(
+                0,
+                resumesBeforeSpeak,
+                "barge-in disabled: no resumeHotword should fire before tts.speak(); calls=$calls"
+            )
+        } finally {
+            unmockkObject(VoiceService.Companion)
+        }
+    }
+
+    @Test
+    fun `barge-in enabled on fast-path wake word resumed before TTS speak`() = runTest {
+        mockkObject(VoiceService.Companion)
+        try {
+            every { VoiceService.resumeHotword(any()) } just Runs
+            every { VoiceService.pauseHotword(any()) } just Runs
+
+            every { preferences.observe(PreferenceKeys.BARGE_IN_ENABLED) } returns flowOf(true)
+            every { preferences.observe(PreferenceKeys.TTS_ENABLED) } returns flowOf(true)
+
+            val fastPathRouter = mockk<FastPathRouter>()
+            every { fastPathRouter.match(any()) } returns FastPathMatch(
+                toolName = null,
+                arguments = emptyMap(),
+                spokenConfirmation = "Here's help."
+            )
+
+            pipeline = VoicePipeline(
+                context = context,
+                stt = stt,
+                tts = tts,
+                router = router,
+                toolExecutor = toolExecutor,
+                moshi = moshi,
+                preferences = preferences,
+                fastPathRouter = fastPathRouter
+            )
+
+            pipeline.processUserInput("help")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerifyOrder {
+                VoiceService.resumeHotword(any())
+                tts.speak(any())
+            }
+            coVerify { tts.speak("Here's help.") }
+        } finally {
+            unmockkObject(VoiceService.Companion)
+        }
     }
 }
