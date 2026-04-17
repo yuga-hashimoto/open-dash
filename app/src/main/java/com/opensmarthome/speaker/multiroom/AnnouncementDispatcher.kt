@@ -2,6 +2,7 @@ package com.opensmarthome.speaker.multiroom
 
 import com.opensmarthome.speaker.assistant.model.AssistantMessage
 import com.opensmarthome.speaker.assistant.session.ConversationHistoryManager
+import com.opensmarthome.speaker.tool.system.TimerManager
 import com.opensmarthome.speaker.voice.tts.TextToSpeech
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,21 +13,32 @@ import timber.log.Timber
 /**
  * Routes a parsed [AnnouncementEnvelope] to its effect. Today: `tts_broadcast`
  * speaks, `heartbeat` is ack'd, `session_handoff` seeds local conversation
- * history. Unknown types are logged and ignored so receivers tolerate newer
- * senders gracefully.
+ * history, `start_timer` fans a peer timer into the local [TimerManager].
+ * Unknown types are logged and ignored so receivers tolerate newer senders
+ * gracefully.
  *
  * Keeping this headless (no Context) makes the dispatcher unit-testable
- * without Android plumbing; TTS and history are both already abstracted.
+ * without Android plumbing; TTS, history, and timer are all abstracted.
  *
- * [historyProvider] is a lambda returning the live [ConversationHistoryManager]
- * so the dispatcher doesn't pin its owner's lifecycle. It's null in tests
- * where history seeding isn't exercised.
+ * [historyProvider] / [timerManagerProvider] are lambdas so the dispatcher
+ * doesn't pin its owner's lifecycle. Either can return null in tests where
+ * the corresponding effect isn't exercised.
  */
 class AnnouncementDispatcher(
     private val tts: TextToSpeech,
-    private val historyProvider: () -> ConversationHistoryManager? = { null }
+    private val historyProvider: () -> ConversationHistoryManager? = { null },
+    private val timerManagerProvider: () -> TimerManager? = { null }
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /**
+     * Maximum timer duration a cross-speaker `start_timer` envelope can
+     * request. 24 hours — anything larger is almost certainly a bad payload
+     * (overflow, unit confusion) and would pin a timer on every peer for
+     * days. The local `set_timer` tool accepts any value; this cap exists
+     * specifically because the source of truth is another device.
+     */
+    private val maxSeconds = 86_400
 
     /**
      * Handle an incoming envelope. Returns a short tag describing the outcome
@@ -37,11 +49,37 @@ class AnnouncementDispatcher(
             AnnouncementType.TTS_BROADCAST -> handleTtsBroadcast(envelope)
             AnnouncementType.HEARTBEAT -> DispatchOutcome.AcknowledgedHeartbeat
             AnnouncementType.SESSION_HANDOFF -> handleSessionHandoff(envelope)
+            AnnouncementType.START_TIMER -> handleStartTimer(envelope)
             else -> {
                 Timber.d("Dispatcher: ignoring unhandled type '${envelope.type}' from ${envelope.from}")
                 DispatchOutcome.Unhandled(envelope.type)
             }
         }
+    }
+
+    /**
+     * Parse + validate a `start_timer` envelope and kick off the local
+     * [TimerManager.setTimer]. Returns synchronously with a [DispatchOutcome];
+     * the actual setTimer call runs on the dispatcher's background scope
+     * (same pattern as tts_broadcast).
+     */
+    private fun handleStartTimer(envelope: AnnouncementEnvelope): DispatchOutcome {
+        val seconds = when (val raw = envelope.payload["seconds"]) {
+            is Number -> raw.toInt()
+            is String -> raw.toIntOrNull() ?: return DispatchOutcome.Rejected("start_timer invalid seconds")
+            else -> return DispatchOutcome.Rejected("start_timer invalid seconds")
+        }
+        if (seconds <= 0 || seconds > maxSeconds) {
+            return DispatchOutcome.Rejected("start_timer invalid seconds")
+        }
+        val label = (envelope.payload["label"] as? String)?.takeIf { it.isNotBlank() }
+        val tm = timerManagerProvider()
+            ?: return DispatchOutcome.Rejected("no timer manager available")
+        scope.launch {
+            runCatching { tm.setTimer(seconds, label ?: "") }
+                .onFailure { Timber.w(it, "setTimer from announcement failed") }
+        }
+        return DispatchOutcome.TimerStarted(seconds, label)
     }
 
     private fun handleTtsBroadcast(envelope: AnnouncementEnvelope): DispatchOutcome {
@@ -115,5 +153,12 @@ class AnnouncementDispatcher(
 
         /** session_handoff (mode=conversation) seeded [count] messages into local history. */
         data class HandoffSeeded(val count: Int) : DispatchOutcome
+
+        /**
+         * start_timer accepted: a peer requested that every speaker start a
+         * timer for [seconds] with optional [label]. The local [TimerManager]
+         * has been invoked asynchronously.
+         */
+        data class TimerStarted(val seconds: Int, val label: String?) : DispatchOutcome
     }
 }

@@ -382,6 +382,119 @@ class AnnouncementBroadcasterTest {
     }
 
     @Test
+    fun `broadcastTimer builds signed start_timer envelope and fans out`() = runTest {
+        val peers = listOf(
+            DiscoveredSpeaker("speaker-kitchen", host = "10.0.0.2", port = 8421),
+            DiscoveredSpeaker("speaker-bedroom", host = "10.0.0.3", port = 8421)
+        )
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val lineSlot = slot<String>()
+        coEvery { client.send(any(), any(), capture(lineSlot), any()) } returns SendOutcome.Ok
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self,
+            clock = { 3_000L },
+            idGenerator = { "id-timer" }
+        )
+
+        val result = broadcaster.broadcastTimer(seconds = 300, label = "tea")
+
+        assertThat(result.sentCount).isEqualTo(2)
+        assertThat(result.failures).isEmpty()
+        coVerify(exactly = 1) { client.send("10.0.0.2", 8421, any(), any()) }
+        coVerify(exactly = 1) { client.send("10.0.0.3", 8421, any(), any()) }
+
+        @Suppress("UNCHECKED_CAST")
+        val envelope = mapAdapter.fromJson(lineSlot.captured) as Map<String, Any?>
+        assertThat(envelope["type"]).isEqualTo(AnnouncementType.START_TIMER)
+        assertThat(envelope["id"]).isEqualTo("id-timer")
+        @Suppress("UNCHECKED_CAST")
+        val payload = envelope["payload"] as Map<String, Any?>
+        assertThat((payload["seconds"] as Number).toInt()).isEqualTo(300)
+        assertThat(payload["label"]).isEqualTo("tea")
+
+        // HMAC must be present and non-blank — the broadcaster's signing path
+        // is already covered end-to-end by the TTS envelope test above; we
+        // only need to verify the timer path actually signs what it sends.
+        assertThat(envelope["hmac"] as? String).isNotEmpty()
+    }
+
+    @Test
+    fun `broadcastTimer without label emits null label in payload`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+        val lineSlot = slot<String>()
+        coEvery { client.send(any(), any(), capture(lineSlot), any()) } returns SendOutcome.Ok
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastTimer(seconds = 60)
+        assertThat(result.sentCount).isEqualTo(1)
+
+        @Suppress("UNCHECKED_CAST")
+        val envelope = mapAdapter.fromJson(lineSlot.captured) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val payload = envelope["payload"] as Map<String, Any?>
+        assertThat((payload["seconds"] as Number).toInt()).isEqualTo(60)
+        // Null label: Moshi drops null entries on (de)serialization by default,
+        // so we only require that no non-null label leaks into the wire payload.
+        assertThat(payload["label"]).isNull()
+    }
+
+    @Test
+    fun `broadcastTimer rejects non-positive seconds without sending`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(secret),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastTimer(seconds = 0)
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures).hasSize(1)
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `broadcastTimer short-circuits when shared secret missing`() = runTest {
+        val peers = listOf(DiscoveredSpeaker("k", host = "10.0.0.2", port = 8421))
+        val (d, self) = discovery(peers)
+        val client = mockk<AnnouncementClient>()
+
+        val broadcaster = AnnouncementBroadcaster(
+            discovery = d,
+            client = client,
+            securePreferences = securePrefs(null),
+            moshi = moshi,
+            selfServiceName = self
+        )
+
+        val result = broadcaster.broadcastTimer(seconds = 60, label = "tea")
+        assertThat(result.sentCount).isEqualTo(0)
+        assertThat(result.failures)
+            .containsExactly("none" to SendOutcome.Other("no shared secret"))
+        coVerify(exactly = 0) { client.send(any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `handoffConversation returns failure when no shared secret`() = runTest {
         val peers = listOf(DiscoveredSpeaker("speaker-kitchen", host = "10.0.0.2", port = 8421))
         val (d, self) = discovery(peers)

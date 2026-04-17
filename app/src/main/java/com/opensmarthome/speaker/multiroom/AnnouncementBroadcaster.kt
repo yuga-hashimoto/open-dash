@@ -98,6 +98,42 @@ class AnnouncementBroadcaster @Inject constructor(
         securePreferences.getString(SecurePreferences.KEY_MULTIROOM_SECRET)
             .takeIf { it.isNotBlank() }
 
+    /**
+     * Broadcast a `start_timer` envelope to every resolved peer. Cross-speaker
+     * timer sync — saying "set a 5-minute timer on every speaker" fires the
+     * same `set_timer` effect on each peer so all devices alert in unison.
+     *
+     * Seconds must be > 0. Label is optional; when present it tags the timer
+     * consistently across peers.
+     */
+    suspend fun broadcastTimer(
+        seconds: Int,
+        label: String? = null
+    ): BroadcastResult {
+        if (seconds <= 0) {
+            return BroadcastResult(
+                sentCount = 0,
+                failures = listOf("invalid" to SendOutcome.Other("timer seconds must be positive"))
+            )
+        }
+        val secret = requireSecret()
+            ?: return BroadcastResult(
+                sentCount = 0,
+                failures = listOf("none" to SendOutcome.Other("no shared secret"))
+            )
+
+        val payload: Map<String, Any?> = mapOf(
+            "seconds" to seconds,
+            "label" to label
+        )
+        val line = buildEnvelopeLine(
+            type = AnnouncementType.START_TIMER,
+            payload = payload,
+            secret = secret
+        )
+        return fanOut(line, filter = null)
+    }
+
     private fun buildTtsLine(text: String, language: String, secret: String): String {
         val payload: Map<String, Any?> = mapOf(
             "text" to text,

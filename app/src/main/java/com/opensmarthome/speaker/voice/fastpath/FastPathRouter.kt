@@ -58,6 +58,11 @@ class DefaultFastPathRouter(
         val DEFAULT_MATCHERS: List<FastPathMatcher> = listOf(
             // CancelAllTimersMatcher must precede TimerMatcher because "cancel timer" contains "timer".
             CancelAllTimersMatcher,
+            // BroadcastTimerMatcher must precede TimerMatcher: the JA variant
+            // "全スピーカーで5分タイマー" contains "5分タイマー" which
+            // TimerMatcher's JA regex would otherwise eat (routing to the local
+            // set_timer instead of the cross-speaker broadcast_timer).
+            BroadcastTimerMatcher,
             TimerMatcher,
             // AlarmMatcher must sit AFTER TimerMatcher — if the utterance
             // contains "timer" (duration-based) TimerMatcher wins; otherwise

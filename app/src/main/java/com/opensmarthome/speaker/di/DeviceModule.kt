@@ -194,14 +194,16 @@ object DeviceModule {
     @Provides
     @Singleton
     fun provideAnnouncementDispatcher(
-        tts: com.opensmarthome.speaker.voice.tts.TextToSpeech
+        tts: com.opensmarthome.speaker.voice.tts.TextToSpeech,
+        timerManager: com.opensmarthome.speaker.tool.system.TimerManager
     ): com.opensmarthome.speaker.multiroom.AnnouncementDispatcher =
         com.opensmarthome.speaker.multiroom.AnnouncementDispatcher(
             tts = tts,
             // TODO(P17.5 follow-up): wire historyProvider to the live
             // ConversationHistoryManager once VoicePipeline exposes it so
             // session_handoff messages can actually seed future turns.
-            historyProvider = { null }
+            historyProvider = { null },
+            timerManagerProvider = { timerManager }
         )
 
     @Provides
@@ -406,6 +408,7 @@ object DeviceModule {
             OpenUrlToolExecutor(context),
             com.opensmarthome.speaker.tool.system.LockScreenToolExecutor(context),
             com.opensmarthome.speaker.tool.system.BroadcastTtsToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.BroadcastTimerToolExecutor(announcementBroadcaster),
             com.opensmarthome.speaker.tool.multiroom.ListPeersToolExecutor(multicastDiscovery),
             PhotosToolExecutor(
                 AndroidPhotosProvider(context)

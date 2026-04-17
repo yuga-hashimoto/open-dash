@@ -1511,3 +1511,56 @@ object HelpMatcher : FastPathMatcher {
         return null
     }
 }
+
+/**
+ * "set a 5 minute timer on all speakers", "全スピーカーで5分タイマー".
+ *
+ * Must sit immediately after [TimerMatcher] in the router order — this
+ * matcher's regexes demand the explicit "on all speakers" / "全スピーカー"
+ * qualifier, so plain "set timer 5 minutes" still falls through to
+ * [TimerMatcher] which routes to the local `set_timer`.
+ */
+object BroadcastTimerMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """set\s+(?:a\s+|the\s+)?(\d+)\s+(seconds?|minutes?|hours?|min|sec|hr)\s+timer\s+on\s+(?:all|every)\s+speakers?"""
+    )
+    private val japaneseRegex = Regex(
+        """全スピーカー(?:で|に)(\d+)\s*(秒|分|時間)(?:の)?タイマー"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishRegex.find(normalized)?.let { m ->
+            val n = m.groupValues[1].toInt()
+            val unit = m.groupValues[2].lowercase()
+            val seconds = toSeconds(n, unit) ?: return null
+            return FastPathMatch(
+                toolName = "broadcast_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = "Setting a $n ${unit.trimEnd('s')}${if (n != 1) "s" else ""} timer on every speaker."
+            )
+        }
+        japaneseRegex.find(normalized)?.let { m ->
+            val n = m.groupValues[1].toInt()
+            val unit = m.groupValues[2]
+            val seconds = when (unit) {
+                "秒" -> n
+                "分" -> n * 60
+                "時間" -> n * 3600
+                else -> return null
+            }
+            return FastPathMatch(
+                toolName = "broadcast_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = "全スピーカーで${n}${unit}のタイマーを設定します。"
+            )
+        }
+        return null
+    }
+
+    private fun toSeconds(n: Int, unit: String): Int? = when {
+        unit.startsWith("sec") || unit == "s" -> n
+        unit.startsWith("min") -> n * 60
+        unit.startsWith("hour") || unit == "hr" -> n * 3600
+        else -> null
+    }
+}
