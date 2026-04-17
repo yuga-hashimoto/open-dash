@@ -115,6 +115,10 @@ class DefaultFastPathRouter(
             // through to pleasantries. Patterns are scoped to device/system/
             // storage/memory terms so unrelated utterances still pass through.
             DeviceHealthMatcher,
+            // LockScreenMatcher before Datetime/Greeting/Help so "lock the
+            // screen" doesn't get eaten; patterns are narrow (screen/lock/
+            // tablet tokens) so unrelated utterances pass through.
+            LockScreenMatcher,
             DatetimeMatcher,
             GreetingMatcher,
             HelpMatcher

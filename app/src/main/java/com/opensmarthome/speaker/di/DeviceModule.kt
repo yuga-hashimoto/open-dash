@@ -351,6 +351,7 @@ object DeviceModule {
             ),
             OpenSettingsToolExecutor(context),
             OpenUrlToolExecutor(context),
+            com.opensmarthome.speaker.tool.system.LockScreenToolExecutor(context),
             PhotosToolExecutor(
                 AndroidPhotosProvider(context)
             ),

@@ -128,38 +128,28 @@ Design principle: **never require root**. Any capability reachable via a11y / no
 device-admin (opt-in) / launcher / intent stays supported; anything that genuinely needs
 root goes on a "won't do" list.
 
-- [ ] P15.1: AccessibilityService skeleton — `OpenSmartSpeakerA11yService` listening for
-  `TYPE_VIEW_CLICKED` + `TYPE_WINDOW_STATE_CHANGED`; exposes `currentWindowDump()` + `click(nodeId)`
-  + `scroll(direction)` + `inputText(text)` helpers. User grants via Settings → Accessibility
-  once; explanation screen on first run. Ref: **SwiftSlate** (Musheer360, 231★) —
-  a11y for AI text transformation; **Android-Accessibility-Utilities** (48★) — wrapper
-- [ ] P15.2: `read_active_screen` tool — dumps the top window's AccessibilityNode tree as
-  a flat `Text -> role -> bounds` list; LLM can reason about what's on screen. Builds on P15.1
-- [ ] P15.3: `tap_by_text` tool — Finds an accessibility node matching user's natural-language
-  target ("tap the blue save button"), dispatches a GestureDescription click at its centre
-- [ ] P15.4: `scroll_screen` + `swipe` tools — GestureDescription-based, direction + optional
-  container target
-- [ ] P15.5: `type_text` tool — Focuses an EditText via a11y and pastes text (ACTION_SET_TEXT
-  where supported, clipboard + paste fallback)
-- [ ] P15.6: Fuzzy app launcher — existing LaunchAppMatcher hard-matches; add Levenshtein /
-  token-set lookup across PackageManager.queryIntentActivities so "open whatever weather app
-  I have" works. JP: 「天気アプリ開いて」
-- [ ] P15.7: Android Settings deep-links — `open_settings_page` tool dispatching
-  `Settings.ACTION_WIFI_SETTINGS` / `ACTION_BLUETOOTH_SETTINGS` / `ACTION_DISPLAY_SETTINGS` /
-  `ACTION_ACCESSIBILITY_SETTINGS` etc. Voice triggers: "Wi-Fi の設定", "明るさ変えたい"
-- [ ] P15.8: Notification reply — extend NotificationListenerService to expose
-  `reply_to_notification(notificationKey, text)` using `Notification.Action.RemoteInput`.
-  "LINE の XX さんに「今から帰る」って返して"
-- [ ] P15.9: Quick Settings TileService — "Talk to Speaker" tile surfaces wake via system
-  quick settings, useful on non-voice-capable Bluetooth (headless tablet mount)
-- [ ] P15.10: Device admin opt-in (lock screen, wake screen) — minimal policy, transparent UI.
-  Only enabled if user toggles "Power actions" in Settings
-- [ ] P15.11: App shortcut provider — advertise dynamic shortcuts for the top 5 most-used
-  routines (e.g. "Run morning routine" pinnable to home screen)
-- [ ] P15.12: `open_url` tool via standard ACTION_VIEW — single tool, URL-safety checked
-  (http/https only; content:// banned; intent:// requires extra confirmation)
-- [ ] P15.13: Permissions walkthrough update — extend OnboardingScreen with the two new
-  special permissions (Accessibility, Notification access) and explain what each enables
+**Status:** 13/13 shipped. A11y + NotificationListener + DeviceAdmin skeletons
+are live; voice-first tablet control is functionally complete (modulo real-device
+smoke testing).
+
+- [x] P15.1: AccessibilityService skeleton — `OpenSmartSpeakerA11yService` +
+  `A11yServiceHolder` + Accessibility special-grant in PermissionCatalog (PR #230)
+- [x] P15.2: `read_active_screen` tool — BFS node tree dump, markdown output (PR #233)
+- [x] P15.3: `tap_by_text` tool — GestureDescription click at matched node centre (PR #238)
+- [x] P15.4: `scroll_screen` / swipe tool — GestureDescription-based directional swipe (PR #238)
+- [x] P15.5: `type_text` tool — ACTION_SET_TEXT with clipboard+paste fallback (PR #238)
+- [x] P15.6: Fuzzy app launcher — AppNameMatcher with hint-strip + token-set + Levenshtein (PR #229)
+- [x] P15.7: Settings deep-links — `open_settings_page` tool + SettingsMatcher (PR #231)
+- [x] P15.8: Notification reply — `reply_to_notification` via RemoteInput (PR #237)
+- [x] P15.9: Quick Settings TileService — one-tap voice session from QS panel (PR #235)
+- [x] P15.10: Device admin opt-in — `lock_screen` tool + DeviceAdminReceiver (force-lock only) +
+  LockScreenMatcher. Opt-in: user grants in Settings → Security → Device admin apps. No other
+  policies requested (no password forcing, no wipe)
+- [x] P15.11: App shortcut provider — RoutineShortcutPublisher publishes top-4 routines as
+  dynamic launcher shortcuts (PR #232)
+- [x] P15.12: `open_url` tool — http/https allow-list, fast-path URL capture (PR #234)
+- [x] P15.13: Permissions walkthrough — PermissionManager accepts multiple a11y / listener
+  classes so either grant satisfies onboarding (PR #236)
 
 ## Phase 16 — Priority 2: Local LLM / offline completion
 完全オフライン化。Wake / STT / LLM / TTS / tool execution 全てを on-device で完結。

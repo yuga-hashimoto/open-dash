@@ -1159,6 +1159,29 @@ object ListTimersMatcher : FastPathMatcher {
  * pleasantries like "how is it going" don't swallow "how is the device
  * running". The patterns here require device/system/storage/memory context.
  */
+/** "lock the screen", "screen off", "スクリーンロック" → `lock_screen` tool (P15.10). */
+object LockScreenMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""\block\s+(?:the\s+)?(?:screen|tablet|device|phone)\b"""),
+        Regex("""\bscreen\s+off\b"""),
+        Regex("""\bgo\s+to\s+lock\s+screen\b""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""(?:画面|スクリーン)(?:を)?ロック"""),
+        Regex("""ロック(?:して|してください)"""),
+        Regex("""画面(?:を)?消して""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "lock_screen", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
 object DeviceHealthMatcher : FastPathMatcher {
     private val englishPatterns = listOf(
         Regex("""\bsystem\s+status\b"""),
