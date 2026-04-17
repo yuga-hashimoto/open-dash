@@ -120,6 +120,91 @@ would each warrant its own implementation phase:
 - [ ] P14.8: Power/thermal profile — **battery saver + thermal throttle done**: BatteryMonitor + ThermalMonitor @Singletons; BATTERY_SAVER_ENABLED preference gates both; VoiceService skips wake word on low battery OR WARM/HOT thermal state. Idle wattage measurement + saver UI indicator still TODO
 - [ ] P14.9: Neural TTS option — **scaffolding done**: PiperTtsProvider placeholder delegates to AndroidTtsProvider and logs a warning; TtsManager routes `TTS_PROVIDER = "piper"` to it; Settings radio gains "Piper neural (offline) — coming soon" option. Actual piper-cpp JNI + voice-model download flow still TODO. Ref: piper
 
+## Phase 15 — Priority 1: Full tablet control through voice (no root)
+タブレットをスマートスピーカー経由で「完璧に使いこなせる」ゴール。AccessibilityService +
+NotificationListenerService + Intent-based settings で Root なしに実現する。
+
+Design principle: **never require root**. Any capability reachable via a11y / notification /
+device-admin (opt-in) / launcher / intent stays supported; anything that genuinely needs
+root goes on a "won't do" list.
+
+- [ ] P15.1: AccessibilityService skeleton — `OpenSmartSpeakerA11yService` listening for
+  `TYPE_VIEW_CLICKED` + `TYPE_WINDOW_STATE_CHANGED`; exposes `currentWindowDump()` + `click(nodeId)`
+  + `scroll(direction)` + `inputText(text)` helpers. User grants via Settings → Accessibility
+  once; explanation screen on first run. Ref: **SwiftSlate** (Musheer360, 231★) —
+  a11y for AI text transformation; **Android-Accessibility-Utilities** (48★) — wrapper
+- [ ] P15.2: `read_active_screen` tool — dumps the top window's AccessibilityNode tree as
+  a flat `Text -> role -> bounds` list; LLM can reason about what's on screen. Builds on P15.1
+- [ ] P15.3: `tap_by_text` tool — Finds an accessibility node matching user's natural-language
+  target ("tap the blue save button"), dispatches a GestureDescription click at its centre
+- [ ] P15.4: `scroll_screen` + `swipe` tools — GestureDescription-based, direction + optional
+  container target
+- [ ] P15.5: `type_text` tool — Focuses an EditText via a11y and pastes text (ACTION_SET_TEXT
+  where supported, clipboard + paste fallback)
+- [ ] P15.6: Fuzzy app launcher — existing LaunchAppMatcher hard-matches; add Levenshtein /
+  token-set lookup across PackageManager.queryIntentActivities so "open whatever weather app
+  I have" works. JP: 「天気アプリ開いて」
+- [ ] P15.7: Android Settings deep-links — `open_settings_page` tool dispatching
+  `Settings.ACTION_WIFI_SETTINGS` / `ACTION_BLUETOOTH_SETTINGS` / `ACTION_DISPLAY_SETTINGS` /
+  `ACTION_ACCESSIBILITY_SETTINGS` etc. Voice triggers: "Wi-Fi の設定", "明るさ変えたい"
+- [ ] P15.8: Notification reply — extend NotificationListenerService to expose
+  `reply_to_notification(notificationKey, text)` using `Notification.Action.RemoteInput`.
+  "LINE の XX さんに「今から帰る」って返して"
+- [ ] P15.9: Quick Settings TileService — "Talk to Speaker" tile surfaces wake via system
+  quick settings, useful on non-voice-capable Bluetooth (headless tablet mount)
+- [ ] P15.10: Device admin opt-in (lock screen, wake screen) — minimal policy, transparent UI.
+  Only enabled if user toggles "Power actions" in Settings
+- [ ] P15.11: App shortcut provider — advertise dynamic shortcuts for the top 5 most-used
+  routines (e.g. "Run morning routine" pinnable to home screen)
+- [ ] P15.12: `open_url` tool via standard ACTION_VIEW — single tool, URL-safety checked
+  (http/https only; content:// banned; intent:// requires extra confirmation)
+- [ ] P15.13: Permissions walkthrough update — extend OnboardingScreen with the two new
+  special permissions (Accessibility, Notification access) and explain what each enables
+
+## Phase 16 — Priority 2: Local LLM / offline completion
+完全オフライン化。Wake / STT / LLM / TTS / tool execution 全てを on-device で完結。
+
+- [ ] P16.1: whisper.cpp JNI — add `whisper.cpp` as submodule; CMake wire-up; WhisperSttProvider
+  reads AudioRecord PCM, runs `whisper_full()`, emits `SttResult.Partial` + `Final`.
+  Replace the existing OfflineSttStub. Ref: ggml-org/whisper.cpp
+- [ ] P16.2: Silero VAD (ONNX) — `VadEngine` interface + SileroVadProvider via ONNX Runtime.
+  Gates AudioRecord into speech/silence windows feeding WhisperSttProvider. Ref:
+  sherpa-onnx silero-vad binding; snakers4/silero-vad
+- [ ] P16.3: Piper TTS JNI — `piper-cpp` submodule + voice-model downloader; replace
+  PiperTtsProvider fallback path with real inference. Ref: rhasspy/piper
+- [ ] P16.4: Semantic memory embeddings upgrade — replace TF-IDF with MiniLM (all-MiniLM-L6-v2
+  ONNX) for `semantic_memory_search`. Ref: shubham0204/Sentence-Embeddings-Android
+- [ ] P16.5: Local knowledge base — bundled Wikipedia-lite (compressed) + SQLite FTS5 for
+  `knowledge` tool offline fallback when no network
+- [ ] P16.6: Model hot-swap — switch between Gemma / Qwen / Phi without relaunch;
+  invalidate VoicePipeline engine reference, warm the new one on background thread
+- [ ] P16.7: OpenClaw-level agent loop — parallel tool calls (multiple tool_calls per turn),
+  tool result re-entry without reparsing the whole prompt, early stop on `answer:` marker.
+  Ref: openclaw-assistant
+
+## Phase 17 — Priority 4: Multi-room RPC protocol
+複数スピーカーの連携。P14.5 で相互発見 + 配信登録まで済み、その上のプロトコル層。
+
+- [ ] P17.1: Wire format decision — JSON over WebSocket (bidirectional, low ceremony) on
+  TCP/8421 (already advertised). Define `envelope { type, id, from, payload }` schema.
+  Ref: OVOS message bus
+- [ ] P17.2: `AnnouncementServer` + `AnnouncementClient` — listens on DEFAULT_PORT; when
+  a peer sends `{"type":"tts_broadcast", "text":"..."}` it speaks on this device.
+  Opt-in via new Settings toggle
+- [ ] P17.3: Timer sync — when user says "set a timer on all speakers 5 minutes",
+  fan out to discovered peers with `{"type":"start_timer", "seconds":300}`
+- [ ] P17.4: Speaker groups — user-named subsets of discovered peers for room-level routing
+- [ ] P17.5: Session handoff — "move this to the kitchen speaker" transfers the active
+  media device + conversation context via the bus
+- [ ] P17.6: Authentication — shared-secret QR pairing between peers; reject unpaired
+  message senders (protects against random LAN guests)
+
+## Won't do — requires root (design boundary)
+- OEM modifications (CarrierConfig, RIL overrides)
+- System-wide audio routing beyond MediaSession
+- Low-level thermal/power-rail telemetry (we rely on PowerManager)
+- Replacing the system launcher (users can pin us as default, but we don't require it)
+
 ---
 
 ## Legacy Phase 1-7 (kept for history)

@@ -56,6 +56,9 @@ Located at `/Users/y-c-hashimoto/Documents/GitHub/open-smart-speaker参考リポ
 - **willow** (tovera) — ESP32-S3-based hardware voice assistant; reference for wake-word + VAD + STT pipeline sequencing
 - **openWakeWord** (dscripka) — open-source wake-word engine with custom-keyword training; alternative to Vosk keyword-spotting
 - **home-assistant/android** — official HA companion app; reference for deep HA integration (media controls, sensors, location)
+- **SwiftSlate** (Musheer360, 231★) — Android AccessibilityService that dispatches LLM text transformations on any EditText. Reference for Phase 15 a11y-based tablet control
+- **mycroft-core** + **mycroft-precise** — pre-OVOS code; Mycroft intent parser patterns, Precise RNN wake-word
+- **ovos-personal-backend** — self-hosted per-device config & telemetry backend reference for P17 multi-room config sync
 
 Every PR that steals from one of these should say "stolen from X" in the commit message.
 
