@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">צ׳אט</string>
+    <string name="tab_dashboard">לוח בקרה</string>
+    <string name="tab_ambient">תצוגת סביבה</string>
+    <string name="tab_settings">הגדרות</string>
+    <string name="accessibility_service_description">מאפשר לסוכן הרמקול החכם לקרוא את הטקסט המוצג במסך ולבצע פעולות ממשק באופן אוטומטי בשמך.</string>
+    <string name="accessibility_service_summary">הפעל כדי לאפשר לסוכן המקומי במכשיר לראות את המסך ולשלוט בו.</string>
+    <string name="a11y_service_description">OpenSmartSpeaker משתמש בשירות נגישות זה כדי לקרוא את תוכן המסך וללחוץ על כפתורים בשמך לפי בקשתך. אין יציאת נתונים מהמכשיר. ניתן לכבות זאת בכל עת בהגדרות.</string>
+    <string name="voice_tile_label">דבר</string>
+    <string name="voice_tile_content_description">התחל שיחה קולית עם OpenSmartSpeaker</string>
+    <string name="locale_picker_title">שפה</string>
+    <string name="locale_picker_system_default">ברירת מחדל של המערכת</string>
+    <string name="locale_picker_requires_android_13">דורש Android 13 ומעלה</string>
+    <string name="locale_picker_close">סגור</string>
+</resources>
