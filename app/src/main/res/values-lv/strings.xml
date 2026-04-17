@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSmartSpeaker</string>
+    <string name="tab_chat">Tērzēšana</string>
+    <string name="tab_dashboard">Informācijas panelis</string>
+    <string name="tab_ambient">Fona režīms</string>
+    <string name="tab_settings">Iestatījumi</string>
+    <string name="accessibility_service_description">Ļauj viedā skaļruņa aģentam nolasīt pašlaik redzamo ekrāna tekstu un jūsu vārdā automatizēt darbības lietotāja saskarnē.</string>
+    <string name="accessibility_service_summary">Iespējojiet, lai ierīcē esošais aģents varētu redzēt un vadīt ekrānu.</string>
+    <string name="a11y_service_description">OpenSmartSpeaker izmanto šo pieejamības pakalpojumu, lai pēc jūsu lūguma nolasītu ekrānā redzamo un jūsu vārdā piespiestu pogas. Neviens dati neatstāj ierīci. To jebkurā brīdī varat izslēgt iestatījumos.</string>
+    <string name="voice_tile_label">Runāt</string>
+    <string name="voice_tile_content_description">Sākt balss sesiju ar OpenSmartSpeaker</string>
+    <string name="locale_picker_title">Valoda</string>
+    <string name="locale_picker_system_default">Sistēmas noklusējums</string>
+    <string name="locale_picker_requires_android_13">Nepieciešams Android 13+</string>
+    <string name="locale_picker_close">Aizvērt</string>
+</resources>
