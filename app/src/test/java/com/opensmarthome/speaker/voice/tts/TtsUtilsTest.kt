@@ -111,6 +111,12 @@ class TtsUtilsTest {
     }
 
     @Test
+    fun `text under maxChars returns a single chunk even when maxChars is small`() {
+        val chunks = TtsUtils.splitIntoChunks("Hi.", maxChars = 100)
+        assertThat(chunks).containsExactly("Hi.")
+    }
+
+    @Test
     fun `long text is split at sentence boundaries`() {
         val input = "Sentence one. Sentence two. Sentence three. Sentence four."
         val chunks = TtsUtils.splitIntoChunks(input, maxChars = 20)
@@ -129,11 +135,89 @@ class TtsUtilsTest {
     }
 
     @Test
-    fun `no sentence larger than maxChars stays whole`() {
-        // Single extremely-long sentence — splitter keeps it as one chunk
-        // rather than mid-sentence splitting.
-        val input = "This is one very long sentence without any punctuation until the end here"
+    fun `japanese bang and question mark terminators split correctly`() {
+        val input = "すごい！本当に？はい、そうです。"
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = 6)
+        assertThat(chunks.size).isAtLeast(2)
+        // Reassembling all chunks preserves content (modulo whitespace trimming).
+        assertThat(chunks.joinToString("").replace(" ", ""))
+            .isEqualTo(input.replace(" ", ""))
+    }
+
+    @Test
+    fun `paragraphs split on double newline boundary`() {
+        val longParaA = "This paragraph has enough content to count. " +
+            "And it continues with more words here. "
+        val longParaB = "Second paragraph also has sufficient length. " +
+            "It ends eventually with a final sentence. "
+        val input = "$longParaA\n\n$longParaB"
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = longParaA.length + 10)
+        assertThat(chunks.size).isAtLeast(2)
+        assertThat(chunks.first()).contains("This paragraph")
+        assertThat(chunks.last()).contains("Second paragraph")
+    }
+
+    @Test
+    fun `comma fallback splits text when no sentence end in range`() {
+        // Long phrase with many Japanese commas but only one period at the
+        // very end — the splitter should use the commas as secondary
+        // boundaries rather than waiting for the terminal `。`.
+        val input = "りんご、みかん、バナナ、ぶどう、もも、すいか、いちご、メロン、なし、柿。"
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = 12)
+        assertThat(chunks.size).isAtLeast(2)
+        assertThat(chunks.joinToString("").replace(" ", ""))
+            .isEqualTo(input.replace(" ", ""))
+    }
+
+    @Test
+    fun `space fallback splits english text with no punctuation`() {
+        // No sentence or comma terminators. The chunker must still make
+        // progress at word boundaries rather than emitting a single long
+        // utterance that would overflow the TTS engine.
+        val input = "one two three four five six seven eight nine ten eleven twelve"
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = 15)
+        assertThat(chunks.size).isAtLeast(2)
+        chunks.forEach { assertThat(it.length).isAtMost(15) }
+    }
+
+    @Test
+    fun `force cut applies when no boundary available within range`() {
+        // A single unbroken string with no whitespace or punctuation: the
+        // splitter must still chop it up rather than produce a giant chunk
+        // the TTS engine would silently truncate.
+        val input = "A".repeat(40)
         val chunks = TtsUtils.splitIntoChunks(input, maxChars = 10)
-        assertThat(chunks).hasSize(1)
+        assertThat(chunks.size).isAtLeast(2)
+        chunks.forEach { assertThat(it.length).isAtMost(10) }
+        assertThat(chunks.joinToString("")).isEqualTo(input)
+    }
+
+    @Test
+    fun `blank chunks are filtered out`() {
+        // Multiple blank lines followed by content — the splitter must not
+        // emit empty strings that would be handed to TTS.speak().
+        val input = "\n\n\n\nHello.\n\n\n"
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = 50)
+        assertThat(chunks).isNotEmpty()
+        chunks.forEach { assertThat(it).isNotEmpty() }
+    }
+
+    @Test
+    fun `chunks are trimmed of leading and trailing whitespace`() {
+        val input = "First sentence.   Second sentence.   Third sentence."
+        val chunks = TtsUtils.splitIntoChunks(input, maxChars = 20)
+        chunks.forEach {
+            assertThat(it).isEqualTo(it.trim())
+        }
+    }
+
+    // ---------- getMaxInputLength ----------
+
+    @Test
+    fun `getMaxInputLength returns safe fallback when tts is null`() {
+        val max = TtsUtils.getMaxInputLength(null)
+        // Fallback is a sane positive value well below typical engine limit.
+        assertThat(max).isAtLeast(500)
+        assertThat(max).isAtMost(10_000)
     }
 }

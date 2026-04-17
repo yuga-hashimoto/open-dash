@@ -117,9 +117,15 @@ class AndroidTtsProvider(context: Context) : TextToSpeech {
         val cleanText = TtsUtils.stripMarkdownForSpeech(text)
         if (cleanText.isBlank()) return
 
-        // Split long responses into sentence-bounded chunks for better prosody + timeout handling
-        val chunks = TtsUtils.splitIntoChunks(cleanText)
-        Timber.d("TTS: ${chunks.size} chunk(s), totalChars=${cleanText.length}")
+        // Use the engine's reported max input length (90% margin) so chunks
+        // never overflow the TTS pipe and get silently truncated. This is
+        // especially important for long Japanese responses where the older
+        // 500-char fixed cap caused the tail of the answer to be dropped.
+        val maxChars = TtsUtils.getMaxInputLength(tts)
+        val chunks = TtsUtils.splitIntoChunks(cleanText, maxChars)
+        Timber.d(
+            "TTS: ${chunks.size} chunk(s), totalChars=${cleanText.length}, maxChars=$maxChars"
+        )
 
         for ((i, chunk) in chunks.withIndex()) {
             val queueMode = if (i == 0) AndroidTts.QUEUE_FLUSH else AndroidTts.QUEUE_ADD
@@ -128,7 +134,11 @@ class AndroidTtsProvider(context: Context) : TextToSpeech {
     }
 
     private suspend fun speakSingle(text: String, queueMode: Int) {
-        val timeoutMs = (30_000L + text.length * 15L).coerceAtMost(120_000L)
+        // Long-form responses (multi-paragraph Japanese especially) need a
+        // generous timeout: ~5cps JP speaking rate × ~3600 char chunks can
+        // legitimately take ~3 minutes. Formula matches the revised
+        // openclaw-assistant bounds: 30s base + 30ms/char, capped at 5 min.
+        val timeoutMs = (30_000L + text.length * 30L).coerceAtMost(300_000L)
 
         withTimeoutOrNull(timeoutMs) {
             suspendCancellableCoroutine { cont ->
@@ -156,6 +166,11 @@ class AndroidTtsProvider(context: Context) : TextToSpeech {
                 }
 
                 if (isInitialized) {
+                    // Re-apply voice/locale/rate/pitch on every chunk so the
+                    // engine cannot drift between chunks (some engines
+                    // reset state between utterances, which would otherwise
+                    // cause the second chunk to fall back to English).
+                    setupVoice()
                     tts?.setOnUtteranceProgressListener(listener)
                     val result = tts?.speak(text, queueMode, null, utteranceId)
                     if (result != AndroidTts.SUCCESS) {
@@ -166,6 +181,7 @@ class AndroidTtsProvider(context: Context) : TextToSpeech {
                 } else {
                     Timber.d("TTS not ready, queuing speak")
                     pendingSpeak = {
+                        setupVoice()
                         tts?.setOnUtteranceProgressListener(listener)
                         tts?.speak(text, queueMode, null, utteranceId)
                     }
