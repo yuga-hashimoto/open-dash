@@ -51,7 +51,8 @@ class VoicePipeline(
     private val messageDao: MessageDao? = null,
     private val wakeWordDetector: WakeWordDetector? = null,
     private val fastPathRouter: FastPathRouter? = null,
-    private val latencyRecorder: LatencyRecorder = LatencyRecorder()
+    private val latencyRecorder: LatencyRecorder = LatencyRecorder(),
+    private val fastPathLlmPolisher: FastPathLlmPolisher = FastPathLlmPolisher()
 ) {
     /** Exposed for diagnostics / Settings debug screen. */
     fun latencySummary() = latencyRecorder.summarize()
@@ -653,8 +654,28 @@ class VoicePipeline(
                     // Every other success case stays on "Done." to preserve
                     // the previous short-confirmation feel.
                     val ttsLang = preferences.observe(PreferenceKeys.TTS_LANGUAGE).first()
-                    FastPathResultFormatter.format(
-                        toolName = match.toolName ?: "",
+                    val toolName = match.toolName ?: ""
+                    // Try LLM polishing first for info tools — gives natural
+                    // language replies (translates Open-Meteo conditions,
+                    // avoids "Tokyo 18 Clear 65% 12 km/h"). Falls back to the
+                    // regex formatter on timeout / error / non-info tool.
+                    val polished = if (toolName in FastPathLlmPolisher.SUPPORTED_TOOLS) {
+                        try {
+                            val provider = router.resolveProvider(userInput = userText)
+                            fastPathLlmPolisher.polish(
+                                provider = provider,
+                                toolName = toolName,
+                                userText = userText,
+                                resultData = result.data,
+                                ttsLanguageTag = ttsLang
+                            )
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to resolve provider for LLM polish")
+                            null
+                        }
+                    } else null
+                    polished ?: FastPathResultFormatter.format(
+                        toolName = toolName,
                         data = result.data,
                         ttsLanguageTag = ttsLang
                     )

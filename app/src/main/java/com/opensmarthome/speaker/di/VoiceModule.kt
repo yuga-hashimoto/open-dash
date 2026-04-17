@@ -8,6 +8,7 @@ import com.opensmarthome.speaker.data.preferences.AppPreferences
 import com.opensmarthome.speaker.tool.ToolExecutor
 import com.opensmarthome.speaker.voice.fastpath.FastPathRouter
 import com.opensmarthome.speaker.voice.metrics.LatencyRecorder
+import com.opensmarthome.speaker.voice.pipeline.FastPathLlmPolisher
 import com.opensmarthome.speaker.voice.pipeline.VoicePipeline
 import com.opensmarthome.speaker.voice.stt.AndroidSttProvider
 import com.opensmarthome.speaker.voice.stt.DelegatingSttProvider
@@ -60,7 +61,8 @@ object VoiceModule {
         sessionDao: SessionDao,
         messageDao: MessageDao,
         fastPathRouter: FastPathRouter,
-        latencyRecorder: LatencyRecorder
+        latencyRecorder: LatencyRecorder,
+        fastPathLlmPolisher: FastPathLlmPolisher
     ): VoicePipeline = VoicePipeline(
         context = context,
         stt = stt,
@@ -72,10 +74,15 @@ object VoiceModule {
         sessionDao = sessionDao,
         messageDao = messageDao,
         fastPathRouter = fastPathRouter,
-        latencyRecorder = latencyRecorder
+        latencyRecorder = latencyRecorder,
+        fastPathLlmPolisher = fastPathLlmPolisher
     )
 
     @Provides
     @Singleton
     fun provideLatencyRecorder(): LatencyRecorder = LatencyRecorder()
+
+    @Provides
+    @Singleton
+    fun provideFastPathLlmPolisher(): FastPathLlmPolisher = FastPathLlmPolisher()
 }
