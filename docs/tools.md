@@ -30,6 +30,8 @@ analytics per call.
 | `get_datetime` | SystemToolExecutor | Resolves `now` / `today` |
 | `find_device` | FindDeviceTool | Rings + vibrates 10s — needs VIBRATE |
 | `get_device_health` | DeviceHealthToolExecutor | battery / storage / memory |
+| `open_settings_page` | OpenSettingsToolExecutor | `{ page }` — wifi/bluetooth/display/brightness/sound/volume/accessibility/notifications/apps/battery/home |
+| `open_url` | OpenUrlToolExecutor | `{ url }` — http/https only; intent://, content://, javascript:, file:// rejected |
 
 ## Information
 
@@ -52,11 +54,16 @@ analytics per call.
 | `search_contacts` / `list_contacts` | ContactsToolExecutor | Needs READ_CONTACTS |
 | `get_location` | LocationToolExecutor | Needs ACCESS_COARSE_LOCATION |
 | `list_notifications` / `clear_notifications` | NotificationToolExecutor | Needs Notification Listener |
+| `reply_to_notification` | NotificationReplyToolExecutor | Sends text reply via `RemoteInput` on the notification's reply action (LINE, Messenger, SMS, ...). `{ key, text }`. Fails gracefully when the notification exposes no reply action. |
 | `get_calendar_events` | CalendarToolExecutor | Needs READ_CALENDAR |
 | `list_recent_photos` | PhotosToolExecutor | Needs READ_MEDIA_IMAGES |
 | `take_photo` | CameraToolExecutor | Uses IntentCameraProvider (real capture) |
 | `start_screen_recording` / `stop_screen_recording` | ScreenRecorderToolExecutor | MediaProjection |
 | `read_screen` | ScreenToolExecutor | Needs Accessibility service |
+| `read_active_screen` | ReadActiveScreenToolExecutor | Markdown dump of foreground window via new-style A11y service (P15.2) |
+| `tap_by_text` | TapByTextToolExecutor | `{ text }` — taps clickable node whose text/desc contains query via GestureDescription (P15.3) |
+| `scroll_screen` | ScrollScreenToolExecutor | `{ direction }` — up/down/left/right swipe across window centre (P15.4) |
+| `type_text` | TypeTextToolExecutor | `{ text }` — ACTION_SET_TEXT on focused input; clipboard paste fallback (P15.5) |
 
 ## Agent memory
 
@@ -86,6 +93,23 @@ analytics per call.
 |---|---|---|
 | `get_skill` / `list_skills` | SkillToolExecutor | |
 | `install_skill_from_url` | SkillInstaller | Downloads + validates SKILL.md |
+
+## Multi-room
+
+Bus-routed tools that fan out across every mDNS-discovered OpenSmartSpeaker
+peer (or a named subset). All require **Multi-room broadcast** enabled in
+Settings and a matching HMAC shared secret on every paired device. See
+[multi-room-quickstart](multi-room-quickstart.md) for onboarding and
+[multi-room-protocol](multi-room-protocol.md) for the wire format.
+
+| Tool | Source | Notes |
+|---|---|---|
+| `broadcast_tts` | BroadcastTtsToolExecutor | `{ text, language?, group? }` — speaks on every peer (or just members of the named group). Returns `sent` + `failed` counts |
+| `broadcast_timer` | BroadcastTimerToolExecutor | `{ seconds, label? }` — starts a timer on every peer. Clamped 1..86400 |
+| `broadcast_cancel_timer` | BroadcastCancelTimerToolExecutor | `{ id? }` — cancels timer(s) on every peer. Missing / blank / `"all"` cancels every active timer; specific id narrows to one timer per peer |
+| `broadcast_announcement` | BroadcastAnnouncementToolExecutor | `{ text, ttl_seconds? }` — speaks once AND pins a banner on the Ambient screen for ttl_seconds (default 60, clamped 5..3600). New in P17 follow-up |
+| `handoff_session` | HandoffToolExecutor | `{ target }` — transfers the current conversation to the named peer (replace semantics). Media handoff stubbed |
+| `list_peers` | ListPeersToolExecutor | No args — snapshot of `MulticastDiscovery.speakers` as JSON |
 
 ## Composite tools
 

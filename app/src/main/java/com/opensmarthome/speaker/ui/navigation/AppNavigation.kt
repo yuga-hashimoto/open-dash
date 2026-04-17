@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.opensmarthome.speaker.ui.settings.SettingsScreen
+import com.opensmarthome.speaker.ui.settings.multiroom.SettingsSpeakerGroupsScreen
 
 @Composable
 fun AppNavigation(
@@ -18,7 +19,13 @@ fun AppNavigation(
         modifier = modifier
     ) {
         composable(AppRoute.Settings.route) {
-            SettingsScreen(onBack = { navController.popBackStack() })
+            SettingsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenSpeakerGroups = { navController.navigate(AppRoute.SpeakerGroups.route) }
+            )
+        }
+        composable(AppRoute.SpeakerGroups.route) {
+            SettingsSpeakerGroupsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

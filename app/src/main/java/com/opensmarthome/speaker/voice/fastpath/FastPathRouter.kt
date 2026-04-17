@@ -56,9 +56,24 @@ class DefaultFastPathRouter(
 
     companion object {
         val DEFAULT_MATCHERS: List<FastPathMatcher> = listOf(
+            // BroadcastCancelTimerMatcher must precede CancelAllTimersMatcher:
+            // its patterns are a scoped superset ("cancel timers on all speakers"
+            // contains "cancel timers"), so the scoped multi-room variant has to
+            // win whenever the qualifier is present.
+            BroadcastCancelTimerMatcher,
             // CancelAllTimersMatcher must precede TimerMatcher because "cancel timer" contains "timer".
             CancelAllTimersMatcher,
+            // BroadcastTimerMatcher must precede TimerMatcher: the JA variant
+            // "全スピーカーで5分タイマー" contains "5分タイマー" which
+            // TimerMatcher's JA regex would otherwise eat (routing to the local
+            // set_timer instead of the cross-speaker broadcast_timer).
+            BroadcastTimerMatcher,
             TimerMatcher,
+            // AlarmMatcher must sit AFTER TimerMatcher — if the utterance
+            // contains "timer" (duration-based) TimerMatcher wins; otherwise
+            // wall-clock "set an alarm for 7am" / "wake me up at 6:30" / "7時にアラーム"
+            // fall through to AlarmMatcher.
+            AlarmMatcher,
             TimeQueryMatcher,
             VolumeMatcher,
             ThermostatMatcher,
@@ -74,6 +89,16 @@ class DefaultFastPathRouter(
             MediaControlMatcher,
             // RunRoutineMatcher must precede LaunchAppMatcher because "run X" overlaps.
             RunRoutineMatcher,
+            // SettingsMatcher must precede LaunchAppMatcher — "open wifi settings"
+            // would otherwise be eaten as a launch_app("wifi settings") call.
+            SettingsMatcher,
+            // OpenUrlMatcher must precede LaunchAppMatcher so "open example.com"
+            // and "open https://..." route to open_url instead of launch_app.
+            OpenUrlMatcher,
+            // HandoffMatcher owns "move this to <peer>" / "send to <peer>" /
+            // "キッチンにハンドオフ" — narrow enough that it doesn't swallow
+            // smart-home move verbs, but still before LaunchAppMatcher.
+            HandoffMatcher,
             LaunchAppMatcher,
             FindDeviceMatcher,
             // GoodnightMatcher must precede the GreetingMatcher's "good night"
@@ -99,6 +124,26 @@ class DefaultFastPathRouter(
             ListMemoryMatcher,
             ListDevicesMatcher,
             ListTimersMatcher,
+            // DeviceHealthMatcher must precede DatetimeMatcher / GreetingMatcher /
+            // HelpMatcher so "system status", "診断", "storage space" don't fall
+            // through to pleasantries. Patterns are scoped to device/system/
+            // storage/memory terms so unrelated utterances still pass through.
+            DeviceHealthMatcher,
+            // LockScreenMatcher before Datetime/Greeting/Help so "lock the
+            // screen" doesn't get eaten; patterns are narrow (screen/lock/
+            // tablet tokens) so unrelated utterances pass through.
+            LockScreenMatcher,
+            // ListPeersMatcher before Broadcast*Matcher so "list nearby
+            // speakers" isn't captured by a broader broadcast pattern.
+            ListPeersMatcher,
+            // BroadcastGroupMatcher must precede BroadcastTtsMatcher so
+            // "broadcast X to the kitchen" routes via the group tool path
+            // instead of being swallowed as "broadcast to everyone".
+            BroadcastGroupMatcher,
+            // BroadcastTtsMatcher before DatetimeMatcher. Patterns start with
+            // "broadcast"/"announce"/"tell all speakers"/"全スピーカーに…" so
+            // they're disjoint from every earlier matcher.
+            BroadcastTtsMatcher,
             DatetimeMatcher,
             GreetingMatcher,
             HelpMatcher

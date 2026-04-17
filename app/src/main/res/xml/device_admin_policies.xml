@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimum device-admin policy set used by LockScreenDeviceAdminReceiver (P15.10).
+  Only `force-lock` is requested so the `lock_screen` tool can call
+  DevicePolicyManager.lockNow().
+-->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <force-lock />
+    </uses-policies>
+</device-admin>

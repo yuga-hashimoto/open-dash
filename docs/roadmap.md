@@ -91,15 +91,128 @@ Make it feel like Alexa/Google Home first.
 ## Phase 14 — Priority 1: Smart speaker production gaps
 Roadmapがチェック済みでも、実機でアレクサ相当にはならない。以下は実装ゼロ or 薄い:
 
+**Closeout summary** (as of the current session): every P14 item has at least
+scaffolding merged. Remaining work is ネイティブ JNI / new model wiring that
+would each warrant its own implementation phase:
+
+- **P14.1 offline STT**: provider-selection plumbing + Settings UI done via
+  `DelegatingSttProvider` + `OfflineSttStub`. Real whisper.cpp / Vosk JNI = Phase 15.
+- **P14.2 VAD**: silence-timeout + min-speech knobs split; Silero VAD backend = Phase 15.
+- **P14.3 wake-word UI**: keyword + sensitivity shipped end-to-end. Done.
+- **P14.4 media depth**: volume / shuffle / repeat / source-picker bottom sheet shipped. HA integrations don't expose a uniform track queue, so per-track queue UI is out of scope.
+- **P14.5 multi-room**: mDNS discover + register + Settings opt-in toggle shipped.
+  Broadcast RPC protocol = Phase 15.
+- **P14.6 DL resume**: HTTP Range end-to-end with full test coverage. Done.
+- **P14.7 smoke-test doc**: real-device checklist shipped (10 scripted steps +
+  multi-room section). Done.
+- **P14.8 power/thermal**: BatteryMonitor + ThermalMonitor with ambient UI chips
+  and VoiceService gating done. Idle wattage measurement still TODO.
+- **P14.9 neural TTS**: PiperTtsProvider placeholder + Settings route shipped.
+  piper-cpp JNI + voice-model download = Phase 15.
+
 - [ ] P14.1: Offline STT provider — **scaffolding done**: SttProviderType enum (ANDROID / VOSK / WHISPER) + `STT_PROVIDER_TYPE` preference + DelegatingSttProvider that routes by preference at startListening time; OfflineSttStub emits a spoken "coming soon" Error so pipeline's ErrorClassifier surfaces it; Settings UI shows the three options with "coming soon" badges on offline. Actual whisper.cpp / Vosk JNI wiring still TODO. Ref: whisper.cpp, sherpa-onnx, SmolChat-Android
 - [ ] P14.2: VAD / endpoint detection — **parameters exposed**: separated `MIN_SPEECH_MS` from `SILENCE_TIMEOUT_MS` (previously both used the same value, which was surprising); new slider under Voice Interaction; AndroidSttProvider wires both into `EXTRA_SPEECH_INPUT_*`. Offline Silero/WebRTC VAD integration still TODO. Ref: sherpa-onnx silero-vad binding
 - [x] P14.3: Wake word customization UI — Sensitivity slider (0.0-1.0) in SettingsScreen alongside existing keyword text field; WAKE_WORD_SENSITIVITY preference; VoiceService loads into WakeWordConfig; VoskWakeWordDetector uses sensitivity to gate partial-result matching (threshold 0.5 = partial vs final-only). Unit tests cover the gate. Keyword customization was already shipped
-- [ ] P14.4: Media deeper control — **volume + shuffle + repeat done**: volume slider (0-100 %), shuffle toggle, repeat cycle (off→all→one) via HA `volume_set` / `shuffle_set` / `repeat_set`. Queue/playlist list-view still TODO. Ref: home-assistant/android media controls
-- [ ] P14.5: Multi-room broadcast — **discovery skeleton done**: MulticastDiscovery @Singleton wraps NsdManager for `_opensmartspeaker._tcp`; async resolveService fills host/port; SystemInfoScreen lifecycle-binds start/stop and lists nearby instances. Service *registration* + broadcast protocol (timers, announcements) still TODO. Ref: OVOS message bus
+- [x] P14.4: Media deeper control — **all media controls shipped**: volume slider (0-100 %), shuffle toggle, repeat cycle (off→all→one), source/playlist picker bottom sheet (`media_player.select_source`). Per-track queue view out of scope: HA doesn't expose a uniform queue attribute across integrations. Ref: home-assistant/android media controls
+- [ ] P14.5: Multi-room broadcast — **discovery skeleton done**: MulticastDiscovery @Singleton wraps NsdManager for `_opensmartspeaker._tcp`; async resolveService fills host/port; SystemInfoScreen lifecycle-binds start/stop and lists nearby instances. **Registration wiring done (no UI yet)**: `register(port, instanceName)` / `unregister()` + `registeredName: StateFlow<String?>` advertise this device on DEFAULT_PORT=8421 (Build.MODEL fallback) — no caller wired yet, Settings toggle lands in a follow-up PR. Broadcast protocol handshake (timers, announcements) still TODO. Ref: OVOS message bus
 - [x] P14.6: Model download resume — ModelDownloader now sends `Range: bytes=N-` when a `.downloading` temp file exists and appends on 206 Partial Content. Falls back cleanly to full download when server returns 200. Failure path preserves partial file for next retry. Unit tests cover Range header, 206 append, 200-fallback, and post-failure survival
 - [x] P14.7: Real-device smoke test checklist — docs/real-device-smoke-test.md with wake→STT→LLM→TTS end-to-end steps + latency targets; 10 scripted steps (cold start → wake latency → fast path → tool call → barge-in → offline → tablet → onboarding → 30-min stability → system info) + power/thermal note + dated-run template
 - [ ] P14.8: Power/thermal profile — **battery saver + thermal throttle done**: BatteryMonitor + ThermalMonitor @Singletons; BATTERY_SAVER_ENABLED preference gates both; VoiceService skips wake word on low battery OR WARM/HOT thermal state. Idle wattage measurement + saver UI indicator still TODO
 - [ ] P14.9: Neural TTS option — **scaffolding done**: PiperTtsProvider placeholder delegates to AndroidTtsProvider and logs a warning; TtsManager routes `TTS_PROVIDER = "piper"` to it; Settings radio gains "Piper neural (offline) — coming soon" option. Actual piper-cpp JNI + voice-model download flow still TODO. Ref: piper
+
+## Phase 15 — Priority 1: Full tablet control through voice (no root)
+タブレットをスマートスピーカー経由で「完璧に使いこなせる」ゴール。AccessibilityService +
+NotificationListenerService + Intent-based settings で Root なしに実現する。
+
+Design principle: **never require root**. Any capability reachable via a11y / notification /
+device-admin (opt-in) / launcher / intent stays supported; anything that genuinely needs
+root goes on a "won't do" list.
+
+**Status:** 13/13 shipped. A11y + NotificationListener + DeviceAdmin skeletons
+are live; voice-first tablet control is functionally complete (modulo real-device
+smoke testing).
+
+- [x] P15.1: AccessibilityService skeleton — `OpenSmartSpeakerA11yService` +
+  `A11yServiceHolder` + Accessibility special-grant in PermissionCatalog (PR #230)
+- [x] P15.2: `read_active_screen` tool — BFS node tree dump, markdown output (PR #233)
+- [x] P15.3: `tap_by_text` tool — GestureDescription click at matched node centre (PR #238)
+- [x] P15.4: `scroll_screen` / swipe tool — GestureDescription-based directional swipe (PR #238)
+- [x] P15.5: `type_text` tool — ACTION_SET_TEXT with clipboard+paste fallback (PR #238)
+- [x] P15.6: Fuzzy app launcher — AppNameMatcher with hint-strip + token-set + Levenshtein (PR #229)
+- [x] P15.7: Settings deep-links — `open_settings_page` tool + SettingsMatcher (PR #231)
+- [x] P15.8: Notification reply — `reply_to_notification` via RemoteInput (PR #237)
+- [x] P15.9: Quick Settings TileService — one-tap voice session from QS panel (PR #235)
+- [x] P15.10: Device admin opt-in — `lock_screen` tool + DeviceAdminReceiver (force-lock only) +
+  LockScreenMatcher. Opt-in: user grants in Settings → Security → Device admin apps. No other
+  policies requested (no password forcing, no wipe)
+- [x] P15.11: App shortcut provider — RoutineShortcutPublisher publishes top-4 routines as
+  dynamic launcher shortcuts (PR #232)
+- [x] P15.12: `open_url` tool — http/https allow-list, fast-path URL capture (PR #234)
+- [x] P15.13: Permissions walkthrough — PermissionManager accepts multiple a11y / listener
+  classes so either grant satisfies onboarding (PR #236)
+
+## Phase 16 — Priority 2: Local LLM / offline completion
+完全オフライン化。Wake / STT / LLM / TTS / tool execution 全てを on-device で完結。
+
+- [ ] P16.1: whisper.cpp JNI — add `whisper.cpp` as submodule; CMake wire-up; WhisperSttProvider
+  reads AudioRecord PCM, runs `whisper_full()`, emits `SttResult.Partial` + `Final`.
+  Replace the existing OfflineSttStub. Ref: ggml-org/whisper.cpp
+- [ ] P16.2: Silero VAD (ONNX) — `VadEngine` interface + SileroVadProvider via ONNX Runtime.
+  Gates AudioRecord into speech/silence windows feeding WhisperSttProvider. Ref:
+  sherpa-onnx silero-vad binding; snakers4/silero-vad
+- [ ] P16.3: Piper TTS JNI — `piper-cpp` submodule + voice-model downloader; replace
+  PiperTtsProvider fallback path with real inference. Ref: rhasspy/piper
+- [ ] P16.4: Semantic memory embeddings upgrade — replace TF-IDF with MiniLM (all-MiniLM-L6-v2
+  ONNX) for `semantic_memory_search`. Ref: shubham0204/Sentence-Embeddings-Android
+- [ ] P16.5: Local knowledge base — bundled Wikipedia-lite (compressed) + SQLite FTS5 for
+  `knowledge` tool offline fallback when no network
+- [ ] P16.6: Model hot-swap — switch between Gemma / Qwen / Phi without relaunch;
+  invalidate VoicePipeline engine reference, warm the new one on background thread
+- [ ] P16.7: OpenClaw-level agent loop — parallel tool calls (multiple tool_calls per turn),
+  tool result re-entry without reparsing the whole prompt, early stop on `answer:` marker.
+  Ref: openclaw-assistant
+
+## Phase 17 — Priority 4: Multi-room RPC protocol
+複数スピーカーの連携。P14.5 で相互発見 + 配信登録まで済み、その上のプロトコル層。
+
+- [x] P17.1: Wire format decision — ADR shipped at `docs/multi-room-protocol.md` (PR #239);
+  JSON envelopes on TCP/8421, WebSocket primary with NDJSON fallback, HMAC-SHA256 auth,
+  30-second replay window. Ref: OVOS message bus
+- [x] P17.2: `AnnouncementServer` — **receiver done**, NDJSON path + RFC 6455 WebSocket
+  upgrade (`GET /bus HTTP/1.1`, hand-rolled handshake / framing, no new deps).
+  `HmacSigner` + `AnnouncementParser` + `AnnouncementDispatcher` +
+  `AnnouncementServer` all shipped with unit tests. `MULTIROOM_SECRET` stored in
+  SecurePreferences. VoiceService lifecycle starts/stops the server behind the existing
+  `MULTIROOM_BROADCAST_ENABLED` toggle. `tts_broadcast` and `heartbeat` are wired; other
+  message types parse cleanly but dispatch as `Unhandled`. **Client / sender** side is P17.3+
+- [x] P17.3: **Sender side shipped** — `AnnouncementClient` (NDJSON) +
+  `AnnouncementWebSocketClient` (OkHttp, WS-first with NDJSON fallback) +
+  `AnnouncementBroadcaster` with fan-out across discovered peers; `BroadcastTtsToolExecutor`
+  + `BroadcastTtsMatcher` provide the user-facing path. `broadcast_timer` envelope wiring
+  for cross-speaker timer fan-out is a small follow-up on top of this (same broadcaster,
+  different envelope type)
+- [x] P17.4: Speaker groups — `SpeakerGroupEntity` + `SpeakerGroupRepository` persist client-side
+  subsets; `AnnouncementBroadcaster.broadcastTtsToGroup` intersects with discovered peers;
+  `BroadcastGroupMatcher` routes "broadcast X to kitchen" ahead of the unscoped matcher;
+  `SettingsSpeakerGroupsScreen` manages add/remove/delete. Per ADR, groups stay client-side
+  and never appear on the wire
+- [x] P17.5: Session handoff — `AnnouncementType.SESSION_HANDOFF` envelope + dispatcher path
+  seeds `ConversationHistoryManager` on receive (replace semantics — the user said "move
+  this", not "also add this"); `HandoffMatcher` + `HandoffToolExecutor` on the send side.
+  Media handoff stubbed as Unhandled with a TODO (requires active-MediaSession + position
+  transfer, out of scope for P17.5)
+- [x] P17.6: Pairing fingerprint — **shipped as word-phrase, not QR**. `PairingFingerprint`
+  hashes the shared secret and maps the first 4 bytes against a bundled 256-word list;
+  `SettingsMultiroomPairingCard` displays the 4-word phrase so users verify both speakers
+  agree by reading to each other. Camera-based QR pairing intentionally deferred (camera dep,
+  marginal UX gain over word-phrase). Full challenge-response handshake is a future-work
+  item on the ADR backlog
+
+## Won't do — requires root (design boundary)
+- OEM modifications (CarrierConfig, RIL overrides)
+- System-wide audio routing beyond MediaSession
+- Low-level thermal/power-rail telemetry (we rely on PowerManager)
+- Replacing the system launcher (users can pin us as default, but we don't require it)
 
 ---
 

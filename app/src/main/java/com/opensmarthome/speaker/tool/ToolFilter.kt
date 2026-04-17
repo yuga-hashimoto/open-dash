@@ -22,7 +22,11 @@ object ToolFilter {
     private val buckets = listOf(
         Bucket(
             keywords = listOf("timer", "alarm", "remind", "アラーム", "タイマー"),
-            tools = setOf("set_timer", "cancel_timer", "cancel_all_timers", "get_timers", "remember", "recall")
+            tools = setOf(
+                "set_timer", "cancel_timer", "cancel_all_timers", "get_timers",
+                "broadcast_timer", "broadcast_cancel_timer",
+                "remember", "recall"
+            )
         ),
         Bucket(
             keywords = listOf(

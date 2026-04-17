@@ -34,6 +34,8 @@ fun SystemInfoScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val nearby by viewModel.nearbySpeakers.collectAsStateWithLifecycle()
+    val registeredName by viewModel.registeredName.collectAsStateWithLifecycle()
+    val freshness by viewModel.peerFreshness.collectAsStateWithLifecycle()
 
     DisposableEffect(Unit) {
         viewModel.startDiscovery()
@@ -75,10 +77,29 @@ fun SystemInfoScreen(
             add("Latency budget violations" to "${state.totalBudgetViolations}")
             add("Latency measurements (lifetime)" to "${state.totalLatencyMeasurements}")
             add("Thermal state" to state.thermalLevel)
+            add("Broadcasting as" to (registeredName ?: "(not broadcasting)"))
             add("Nearby speakers (mDNS)" to if (nearby.isEmpty()) "(none)" else "${nearby.size}")
             nearby.forEach { speaker ->
-                val suffix = speaker.host?.let { host -> speaker.port?.let { " — $host:$it" } ?: " — $host" } ?: ""
-                add("  • ${speaker.serviceName}" to suffix.trimStart(' ', '—', ' '))
+                val hostSuffix = speaker.host?.let { host ->
+                    speaker.port?.let { " — $host:$it" } ?: " — $host"
+                } ?: ""
+                val freshnessSuffix = when (freshness[speaker.serviceName]) {
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Fresh -> " · fresh"
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Stale -> " · stale"
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Gone -> " · gone"
+                    null -> ""
+                }
+                val value = (hostSuffix + freshnessSuffix).trimStart(' ', '—', ' ')
+                add("  • ${speaker.serviceName}" to value)
+            }
+            if (state.multiroomTraffic.isNotEmpty()) {
+                // Collapsed `{in}/{out}` counter per envelope type — lets the
+                // user sanity-check that the mesh is actually exchanging
+                // traffic without paging through logs.
+                add("Multi-room traffic" to "")
+                state.multiroomTraffic.forEach { row ->
+                    add("  • ${row.type}" to "${row.outbound} out · ${row.inbound} in")
+                }
             }
         }
         LazyColumn(

@@ -1,5 +1,7 @@
 package com.opensmarthome.speaker.voice.fastpath
 
+import java.time.LocalDateTime
+
 /**
  * All bundled FastPathMatcher implementations.
  *
@@ -55,6 +57,97 @@ object TimerMatcher : FastPathMatcher {
         unit.startsWith("hour") || unit == "hr" -> n * 3600
         else -> null
     }
+}
+
+/**
+ * Alarm at a wall-clock time: "set an alarm for 7am", "wake me up at 6:30",
+ * "7時にアラーム". Must sit AFTER [TimerMatcher] in the router order — if
+ * the utterance is a duration-based "timer", TimerMatcher wins first and
+ * this matcher never runs.
+ *
+ * No dedicated `set_alarm` tool exists on-device, so the matcher computes
+ * the remaining seconds until the requested wall-clock time (rolls to
+ * tomorrow if the target has already passed today) and dispatches
+ * `set_timer` with that payload.
+ *
+ * `nowProvider` is injected for deterministic tests; production uses
+ * [LocalDateTime.now].
+ */
+class AlarmMatcherImpl(
+    private val nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
+) : FastPathMatcher {
+    private val englishSetAlarm = Regex(
+        """set\s+(?:an?\s+|the\s+)?alarm\s+(?:for\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"""
+    )
+    private val englishWakeMeUp = Regex(
+        """wake\s+me\s+up\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?"""
+    )
+    private val japaneseRegex = Regex(
+        """(\d{1,2})時(?:(\d{1,2})分?)?\s*(?:に)?\s*(?:アラーム|目覚まし|起こして)"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        // English variants
+        val enMatch = englishSetAlarm.find(normalized) ?: englishWakeMeUp.find(normalized)
+        if (enMatch != null) {
+            val rawHour = enMatch.groupValues[1].toIntOrNull() ?: return null
+            val minute = enMatch.groupValues[2].toIntOrNull() ?: 0
+            val amPm = enMatch.groupValues[3].takeIf { it.isNotEmpty() }
+            val hour = AlarmTimeCalculator.normalizeHour(rawHour, amPm) ?: return null
+            if (minute !in 0..59) return null
+            val seconds = AlarmTimeCalculator.secondsUntil(nowProvider(), hour, minute)
+            return FastPathMatch(
+                toolName = "set_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = englishConfirmation(hour, minute, amPm)
+            )
+        }
+        // Japanese
+        japaneseRegex.find(normalized)?.let { m ->
+            val rawHour = m.groupValues[1].toIntOrNull() ?: return null
+            val minute = m.groupValues[2].toIntOrNull() ?: 0
+            if (rawHour !in 0..23 || minute !in 0..59) return null
+            val seconds = AlarmTimeCalculator.secondsUntil(nowProvider(), rawHour, minute)
+            val label = if (minute == 0) "${rawHour}時" else "${rawHour}時${minute}分"
+            return FastPathMatch(
+                toolName = "set_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = "${label}のアラームを設定しました。"
+            )
+        }
+        return null
+    }
+
+    private fun englishConfirmation(hour: Int, minute: Int, originalAmPm: String?): String {
+        // Echo back the user's chosen format when possible.
+        val suffix = originalAmPm?.lowercase()
+        val displayHour: Int
+        val displaySuffix: String
+        if (suffix != null) {
+            displayHour = when {
+                hour == 0 -> 12
+                hour > 12 -> hour - 12
+                else -> hour
+            }
+            displaySuffix = if (hour < 12) "am" else "pm"
+        } else {
+            displayHour = hour
+            displaySuffix = ""
+        }
+        val minStr = if (minute == 0) "" else ":%02d".format(minute)
+        val trailing = if (displaySuffix.isEmpty()) "" else " $displaySuffix"
+        return "Alarm set for $displayHour$minStr$trailing."
+    }
+}
+
+/**
+ * Singleton default [AlarmMatcherImpl] with real system time, registered
+ * in [DefaultFastPathRouter.DEFAULT_MATCHERS]. Tests should construct a
+ * fresh [AlarmMatcherImpl] with a fixed `nowProvider`.
+ */
+object AlarmMatcher : FastPathMatcher {
+    private val delegate = AlarmMatcherImpl()
+    override fun tryMatch(normalized: String): FastPathMatch? = delegate.tryMatch(normalized)
 }
 
 /** "cancel all timers", "stop all timers", "タイマー全部止めて" */
@@ -490,6 +583,117 @@ object RunRoutineMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * Deep-links into system Settings screens: "open wifi settings", "bluetooth
+ * settings", "brightness settings", "Wi-Fiの設定", "明るさ", "音量", "設定を開いて" …
+ * → `open_settings_page` with a `page` slug matching
+ * [com.opensmarthome.speaker.tool.system.OpenSettingsToolExecutor] enum.
+ *
+ * Must sit BEFORE [LaunchAppMatcher] — otherwise utterances like "open wifi
+ * settings" fall through to launch_app and try to start a non-existent
+ * "wifi settings" app.
+ */
+object SettingsMatcher : FastPathMatcher {
+    private data class Rule(val regex: Regex, val slug: String, val spoken: String)
+
+    private val rules = listOf(
+        // English — order matters: most specific first so "open settings" doesn't
+        // swallow "open wifi settings".
+        Rule(Regex("""\bopen\s+wi-?fi\s+settings\b"""), "wifi", "Opening Wi-Fi settings."),
+        Rule(Regex("""\bwi-?fi\s+settings\b"""), "wifi", "Opening Wi-Fi settings."),
+        Rule(Regex("""\b(?:open\s+)?bluetooth\s+settings\b"""), "bluetooth", "Opening Bluetooth settings."),
+        Rule(Regex("""\bbrightness\s+settings\b"""), "brightness", "Opening display settings."),
+        Rule(Regex("""\bdisplay\s+settings\b"""), "display", "Opening display settings."),
+        Rule(Regex("""\bsound\s+settings\b"""), "sound", "Opening sound settings."),
+        Rule(Regex("""\bvolume\s+settings\b"""), "volume", "Opening sound settings."),
+        Rule(Regex("""\baccessibility\s+settings\b"""), "accessibility", "Opening accessibility settings."),
+        Rule(Regex("""\bnotification\s+settings\b"""), "notifications", "Opening notification settings."),
+        Rule(Regex("""\bapp\s+(?:settings|list)\b"""), "apps", "Opening app settings."),
+        Rule(Regex("""\bbattery\s+(?:saver\s+)?settings\b"""), "battery", "Opening battery settings."),
+        // "settings" / "open settings" / "system settings" — catch-all last.
+        Rule(Regex("""^\s*(?:open\s+|system\s+)?settings\s*[!?.]*\s*$"""), "home", "Opening settings."),
+        // Japanese
+        Rule(Regex("""wi-?fi\s*の?\s*設定"""), "wifi", "Wi-Fi設定を開きます。"),
+        Rule(Regex("""(?:ブルートゥース|ブルートゥ|ブルー\s*トゥース)\s*の?\s*設定"""), "bluetooth", "Bluetooth設定を開きます。"),
+        Rule(Regex("""明るさ(?:\s*の?\s*設定)?"""), "brightness", "明るさの設定を開きます。"),
+        Rule(Regex("""音量(?:\s*の?\s*設定)?"""), "volume", "音量の設定を開きます。"),
+        Rule(Regex("""アクセシビリティ(?:\s*の?\s*設定)?"""), "accessibility", "アクセシビリティ設定を開きます。"),
+        Rule(Regex("""通知\s*の?\s*設定"""), "notifications", "通知設定を開きます。"),
+        Rule(Regex("""アプリ\s*の?\s*設定"""), "apps", "アプリ設定を開きます。"),
+        Rule(Regex("""バッテリー\s*の?\s*設定"""), "battery", "バッテリー設定を開きます。"),
+        Rule(
+            Regex("""^\s*(?:システム\s*)?設定(?:を)?\s*(?:開いて|ひらいて)?\s*[!?.]*\s*$"""),
+            "home",
+            "設定を開きました。"
+        )
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (rule in rules) {
+            if (rule.regex.containsMatchIn(normalized)) {
+                return FastPathMatch(
+                    toolName = "open_settings_page",
+                    arguments = mapOf("page" to rule.slug),
+                    spokenConfirmation = rule.spoken
+                )
+            }
+        }
+        return null
+    }
+}
+
+/**
+ * Opens an explicit http/https URL, or "open <domain>.<tld>" utterances, via
+ * the `open_url` tool. Must sit BEFORE [LaunchAppMatcher] so that utterances
+ * like "open example.com" resolve to a URL open instead of a launch_app
+ * search for an app called "example.com".
+ *
+ * Two forms:
+ * 1. Literal URL in the utterance — e.g. "open https://example.com/path".
+ * 2. Bare domain — e.g. "open example.com" / "open the site example.com" —
+ *    gets an `https://` prefix before dispatch.
+ *
+ * Only `http` / `https` are considered here; any other scheme (file://,
+ * intent://, content://, javascript:) is never emitted because the regex
+ * won't capture it. The executor defends the same allow-list regardless.
+ */
+object OpenUrlMatcher : FastPathMatcher {
+    private val explicitUrlRegex = Regex("""(https?://\S+)""")
+    private val openDomainRegex = Regex(
+        """(?:^|\s)open\s+(?:the\s+)?(?:website\s+|page\s+|site\s+)?([a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:/\S*)?)"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        explicitUrlRegex.find(normalized)?.let { m ->
+            val url = m.groupValues[1].trimEnd('.', ',', '!', '?', ')', ']')
+            val host = hostOf(url)
+            return FastPathMatch(
+                toolName = "open_url",
+                arguments = mapOf("url" to url),
+                spokenConfirmation = host?.let { "Opening $it." }
+            )
+        }
+        openDomainRegex.find(normalized)?.let { m ->
+            val captured = m.groupValues[1].trimEnd('.', ',', '!', '?', ')', ']')
+            val host = captured.substringBefore('/')
+            val url = "https://$captured"
+            return FastPathMatch(
+                toolName = "open_url",
+                arguments = mapOf("url" to url),
+                spokenConfirmation = "Opening $host."
+            )
+        }
+        return null
+    }
+
+    private fun hostOf(url: String): String? {
+        val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
+        if (afterScheme.isEmpty()) return null
+        val hostPort = afterScheme.substringBefore('/').substringBefore('?').substringBefore('#')
+        return hostPort.ifEmpty { null }
+    }
+}
+
 /** "open X" / "launch X" / "Xを開いて" — forwards to launch_app. */
 object LaunchAppMatcher : FastPathMatcher {
     private val englishRegex = Regex("""(?:open|launch|start|run)\s+(?:the\s+)?(.+?)(?:\s+app)?\s*[!?.]*\s*$""")
@@ -510,7 +714,10 @@ object LaunchAppMatcher : FastPathMatcher {
         "thermostat", "ac", "air conditioner",
         "fan", "tv", "television",
         "speaker", "music", "playlist",
-        "oven", "microwave"
+        "oven", "microwave",
+        // settings deep-links are owned by SettingsMatcher; guard so an
+        // unmatched "open wifi settings" doesn't accidentally launch_app.
+        "settings", "wifi", "wi-fi", "bluetooth", "brightness"
     )
     private val japaneseReservedSubstrings = listOf(
         "ドア", "扉", "玄関",
@@ -943,6 +1150,220 @@ object ListTimersMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * "system status", "device health", "how much storage", "診断", "ストレージ残り" →
+ * get_device_health. The tool itself produces the spoken answer, so this
+ * matcher sets no spokenConfirmation.
+ *
+ * Registered before [DatetimeMatcher] / [GreetingMatcher] / [HelpMatcher] so
+ * pleasantries like "how is it going" don't swallow "how is the device
+ * running". The patterns here require device/system/storage/memory context.
+ */
+/** "lock the screen", "screen off", "スクリーンロック" → `lock_screen` tool (P15.10). */
+/**
+ * "broadcast X to the kitchen (group)" / "キッチングループに X ってアナウンス" →
+ * `broadcast_tts` tool with a `group` argument. Must be registered
+ * **before** [BroadcastTtsMatcher] so group-scoped utterances win;
+ * unscoped "broadcast X to all speakers" then falls through to
+ * [BroadcastTtsMatcher].
+ *
+ * Capture layout: group 1 = message, group 2 = group name. Group names
+ * are arbitrary user-defined strings (matched case-insensitively in the
+ * repository), so the regex is deliberately permissive — it only
+ * requires a non-blank token after "to the".
+ */
+object BroadcastGroupMatcher : FastPathMatcher {
+    // English — "broadcast X to the kitchen", "announce X to upstairs speakers",
+    // "tell the bedroom speakers X". Group name captured as a bare word or a
+    // multi-word run before an optional "speakers"/"group" suffix.
+    private val englishMessageFirst = Regex(
+        "^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:the\\s+)?(.+?)(?:\\s+(?:speakers?|group))?\\.?$"
+    )
+    private val englishGroupFirst = Regex(
+        "^\\s*tell\\s+(?:the\\s+)?(.+?)\\s+(?:speakers?|group)\\s+(.+?)\\.?$"
+    )
+    private val japaneseGroupFirst = Regex(
+        "^(.+?)(?:グループ|ルーム)?(?:に|へ)(.+?)(?:って|を)(?:アナウンス|放送|伝えて|流して)\\s*$"
+    )
+    private val japaneseMessageFirst = Regex(
+        "^(.+?)って(.+?)(?:グループ|ルーム)(?:に|へ)(?:アナウンス|放送|伝えて|流して)\\s*$"
+    )
+
+    /**
+     * Reserved group tokens that [BroadcastTtsMatcher] already handles as
+     * "everyone" — keeping them here would steal broadcasts that the
+     * unscoped matcher is supposed to own.
+     */
+    private val allEveryoneTokens = setOf(
+        "all", "all speakers", "everyone", "every", "every speaker",
+        "全員", "みんな", "全スピーカー", "全部屋"
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishMessageFirst.find(normalized)?.let { m ->
+            val msg = m.groupValues[1].trim().trim('"')
+            val group = m.groupValues[2].trim().trim('"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "en")
+            }
+        }
+        englishGroupFirst.find(normalized)?.let { m ->
+            val group = m.groupValues[1].trim().trim('"')
+            val msg = m.groupValues[2].trim().trim('"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "en")
+            }
+        }
+        japaneseMessageFirst.find(normalized)?.let { m ->
+            val msg = m.groupValues[1].trim().trim('「', '」', '"')
+            val group = m.groupValues[2].trim().trim('「', '」', '"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "ja")
+            }
+        }
+        japaneseGroupFirst.find(normalized)?.let { m ->
+            val group = m.groupValues[1].trim().trim('「', '」', '"')
+            val msg = m.groupValues[2].trim().trim('「', '」', '"')
+            if (msg.isNotBlank() && isValidGroup(group)) {
+                return buildMatch(msg, group, language = "ja")
+            }
+        }
+        return null
+    }
+
+    private fun isValidGroup(token: String): Boolean =
+        token.isNotBlank() && token.lowercase() !in allEveryoneTokens
+
+    private fun buildMatch(text: String, group: String, language: String) = FastPathMatch(
+        toolName = "broadcast_tts",
+        arguments = mapOf(
+            "text" to text,
+            "language" to language,
+            "group" to group
+        )
+    )
+}
+
+/**
+ * "list nearby speakers" / "who's on the network" / "近くのスピーカー" → `list_peers`.
+ * Narrow token set so unrelated utterances pass through.
+ */
+object ListPeersMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""\blist\s+(?:nearby|paired|connected)\s+speakers?\b"""),
+        Regex("""\b(?:what|which)\s+speakers?\s+(?:are|do)\s+(?:nearby|connected|i\s+have)\b"""),
+        Regex("""\bwho(?:'s|\s+is)\s+on\s+the\s+network\b"""),
+        Regex("""\bnearby\s+speakers?\b""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""近(?:く|所)の\s*スピーカー"""),
+        Regex("""(?:周り|周辺|ペアリング済み)(?:の)?\s*スピーカー"""),
+        Regex("""スピーカー(?:を)?(?:一覧|リスト)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "list_peers", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
+/**
+ * "broadcast X to all speakers" / "全スピーカーに [text] ってアナウンスして" →
+ * `broadcast_tts` tool. Captures the message so we route to the tool with the
+ * right argument; needs a non-trivial message or a bare "broadcast" falls
+ * through to the LLM.
+ */
+object BroadcastTtsMatcher : FastPathMatcher {
+    // Order matters: more specific first. Each regex captures group 1 = message.
+    private val englishPatterns = listOf(
+        Regex("^\\s*(?:broadcast|announce)\\s+(.+?)\\s+to\\s+(?:all|everyone|every)(?:\\s+speakers?)?\\.?$"),
+        Regex("^\\s*tell\\s+(?:all|every)\\s+speakers?\\s+(.+?)\\.?$")
+    )
+    private val japanesePatterns = listOf(
+        Regex("(?:全スピーカー|全員|みんな|全部屋)(?:に)?(?:アナウンス|放送)(?:して)?[:：]\\s*(.+?)[\\s。]*$"),
+        Regex("^(.+?)(?:って|を)(?:全員|みんな|全スピーカー)(?:に|へ)(?:伝えて|アナウンスして|放送して)$")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        for (regex in englishPatterns) {
+            regex.find(normalized)?.let { m ->
+                val msg = m.groupValues[1].trim().trim('"')
+                if (msg.isNotBlank()) {
+                    return FastPathMatch(
+                        toolName = "broadcast_tts",
+                        arguments = mapOf("text" to msg, "language" to "en")
+                    )
+                }
+            }
+        }
+        for (regex in japanesePatterns) {
+            regex.find(normalized)?.let { m ->
+                val msg = m.groupValues[1].trim().trim('「', '」', '"')
+                if (msg.isNotBlank()) {
+                    return FastPathMatch(
+                        toolName = "broadcast_tts",
+                        arguments = mapOf("text" to msg, "language" to "ja")
+                    )
+                }
+            }
+        }
+        return null
+    }
+}
+
+object LockScreenMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""\block\s+(?:the\s+)?(?:screen|tablet|device|phone)\b"""),
+        Regex("""\bscreen\s+off\b"""),
+        Regex("""\bgo\s+to\s+lock\s+screen\b""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""(?:画面|スクリーン)(?:を)?ロック"""),
+        Regex("""ロック(?:して|してください)"""),
+        Regex("""画面(?:を)?消して""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "lock_screen", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
+object DeviceHealthMatcher : FastPathMatcher {
+    private val englishPatterns = listOf(
+        Regex("""\bsystem\s+status\b"""),
+        Regex("""\bdevice\s+health\b"""),
+        Regex("""\bhow\s+is\s+the\s+(?:device|system)\s+(?:doing|running)\b"""),
+        Regex("""\bstorage\s+(?:space|available|free)\b"""),
+        Regex("""\bmemory\s+(?:available|free)\b"""),
+        Regex("""\bhow\s+much\s+storage\b""")
+    )
+    private val japanesePatterns = listOf(
+        Regex("""システム(?:状態|状況|ステータス)"""),
+        Regex("""端末状態"""),
+        Regex("""診断"""),
+        Regex("""ストレージ.*(?:残り|空き|容量)"""),
+        Regex("""メモリ.*(?:残り|空き|容量)""")
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishPatterns.any { it.containsMatchIn(normalized) } ||
+            japanesePatterns.any { it.containsMatchIn(normalized) }
+        ) {
+            return FastPathMatch(toolName = "get_device_health", arguments = emptyMap())
+        }
+        return null
+    }
+}
+
 /** "what's today's date" / "今日は何日" */
 object DatetimeMatcher : FastPathMatcher {
     private val patterns = listOf(
@@ -1002,6 +1423,64 @@ object GreetingMatcher : FastPathMatcher {
     }
 }
 
+/**
+ * Session handoff (P17.5) — "move this to the kitchen speaker",
+ * "send to bedroom", "キッチンにハンドオフ" → `handoff_session` tool with
+ * `target=<captured peer>`. The matcher passes whatever the user said;
+ * the broadcaster performs prefix/substring matching against discovered
+ * serviceNames, so both "kitchen" and "speaker-kitchen" resolve.
+ *
+ * Deliberately narrow: the English side requires the "this / the
+ * conversation / the session / it" object to avoid swallowing every
+ * "move to X" / "send to X" utterance (those can mean a lot of things).
+ *
+ * Must sit BEFORE generic LaunchAppMatcher — "move" and "send" aren't
+ * handled by launch_app, but it's cheap insurance.
+ */
+object HandoffMatcher : FastPathMatcher {
+    // English: "move this to the kitchen speaker", "move the conversation
+    // to bedroom", "send (this|the session) to <peer>", "hand this off to <peer>",
+    // "handoff to <peer>".
+    private val englishRegex = Regex(
+        """(?:move|send|transfer|hand(?:\s+this)?\s+off)\s+""" +
+            """(?:this|the\s+(?:conversation|session|chat|call)|it)?\s*""" +
+            """(?:to\s+)(?:the\s+)?""" +
+            """(.+?)(?:\s+speaker)?\s*[!?.]*\s*$"""
+    )
+    // Also accept "handoff to <peer>" without the leading verb variants.
+    private val englishHandoff = Regex(
+        """handoff\s+to\s+(?:the\s+)?(.+?)(?:\s+speaker)?\s*[!?.]*\s*$"""
+    )
+    // Japanese: "キッチンにハンドオフ", "寝室に移して", "リビングに送って".
+    private val japaneseRegex = Regex(
+        """^(.+?)\s*(?:に|へ)\s*(?:ハンドオフ|移して|移動|送って|送信|転送)\s*[!?.]*\s*$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        val trimmed = normalized.trim()
+        englishHandoff.matchEntire(trimmed)?.let { m ->
+            return buildMatch(m.groupValues[1])
+        }
+        englishRegex.matchEntire(trimmed)?.let { m ->
+            return buildMatch(m.groupValues[1])
+        }
+        japaneseRegex.matchEntire(trimmed)?.let { m ->
+            return buildMatch(m.groupValues[1])
+        }
+        return null
+    }
+
+    private fun buildMatch(rawTarget: String): FastPathMatch? {
+        val target = rawTarget.trim().removePrefix("the ").trim()
+        if (target.isEmpty()) return null
+        return FastPathMatch(
+            toolName = "handoff_session",
+            arguments = mapOf("target" to target),
+            spokenConfirmation = "Moving to $target."
+        )
+    }
+}
+
 /** "help", "what can you do", "できることを教えて" — speak-only capability summary. */
 object HelpMatcher : FastPathMatcher {
     private val englishPatterns = listOf(
@@ -1030,5 +1509,87 @@ object HelpMatcher : FastPathMatcher {
             return FastPathMatch(toolName = null, spokenConfirmation = JA_HELP)
         }
         return null
+    }
+}
+
+/**
+ * "cancel timers on all speakers", "全スピーカーのタイマーをキャンセル".
+ *
+ * Scoped variant of [CancelAllTimersMatcher]. Must precede it in the
+ * router order so utterances that explicitly name every speaker go
+ * through the multi-room tool path instead of being swallowed as a
+ * local cancel. Patterns require the explicit "on all/every speakers"
+ * or "全スピーカー" qualifier so plain "cancel all timers" still falls
+ * through to [CancelAllTimersMatcher].
+ */
+object BroadcastCancelTimerMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """(?:cancel|stop|clear)\s+(?:all\s+)?timers?\s+on\s+(?:all|every)\s+speakers?"""
+    )
+    private val japaneseRegex = Regex(
+        """全スピーカー(?:の)?タイマー(?:を)?(?:キャンセル|取り消し|止めて|やめて)"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishRegex.containsMatchIn(normalized) || japaneseRegex.containsMatchIn(normalized)) {
+            return FastPathMatch(
+                toolName = "broadcast_cancel_timer",
+                arguments = emptyMap()
+            )
+        }
+        return null
+    }
+}
+
+/**
+ * "set a 5 minute timer on all speakers", "全スピーカーで5分タイマー".
+ *
+ * Must sit immediately after [TimerMatcher] in the router order — this
+ * matcher's regexes demand the explicit "on all speakers" / "全スピーカー"
+ * qualifier, so plain "set timer 5 minutes" still falls through to
+ * [TimerMatcher] which routes to the local `set_timer`.
+ */
+object BroadcastTimerMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """set\s+(?:a\s+|the\s+)?(\d+)\s+(seconds?|minutes?|hours?|min|sec|hr)\s+timer\s+on\s+(?:all|every)\s+speakers?"""
+    )
+    private val japaneseRegex = Regex(
+        """全スピーカー(?:で|に)(\d+)\s*(秒|分|時間)(?:の)?タイマー"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishRegex.find(normalized)?.let { m ->
+            val n = m.groupValues[1].toInt()
+            val unit = m.groupValues[2].lowercase()
+            val seconds = toSeconds(n, unit) ?: return null
+            return FastPathMatch(
+                toolName = "broadcast_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = "Setting a $n ${unit.trimEnd('s')}${if (n != 1) "s" else ""} timer on every speaker."
+            )
+        }
+        japaneseRegex.find(normalized)?.let { m ->
+            val n = m.groupValues[1].toInt()
+            val unit = m.groupValues[2]
+            val seconds = when (unit) {
+                "秒" -> n
+                "分" -> n * 60
+                "時間" -> n * 3600
+                else -> return null
+            }
+            return FastPathMatch(
+                toolName = "broadcast_timer",
+                arguments = mapOf("seconds" to seconds.toDouble()),
+                spokenConfirmation = "全スピーカーで${n}${unit}のタイマーを設定します。"
+            )
+        }
+        return null
+    }
+
+    private fun toSeconds(n: Int, unit: String): Int? = when {
+        unit.startsWith("sec") || unit == "s" -> n
+        unit.startsWith("min") -> n * 60
+        unit.startsWith("hour") || unit == "hr" -> n * 3600
+        else -> null
     }
 }

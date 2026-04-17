@@ -53,6 +53,11 @@ class AndroidNotificationProvider(
         return any
     }
 
+    override suspend fun replyToNotification(key: String, text: String): ReplyOutcome {
+        if (!isListenerEnabled()) return ReplyOutcome.ListenerNotConnected
+        return OpenSmartSpeakerNotificationListener.replyToNotification(key, text)
+    }
+
     override fun isListenerEnabled(): Boolean {
         val enabled = Settings.Secure.getString(
             context.contentResolver,

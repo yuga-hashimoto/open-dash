@@ -29,7 +29,17 @@ data class AmbientSnapshot(
     /** True while the host device is plugged in. */
     val batteryCharging: Boolean = false,
     /** Host thermal bucket — NORMAL / WARM / HOT. Only surfaced when non-NORMAL. */
-    val thermalBucket: String? = null
+    val thermalBucket: String? = null,
+    /** Peers discovered on the LAN via mDNS. Zero = no chip rendered. */
+    val nearbySpeakerCount: Int = 0,
+    /**
+     * Text of the currently-active household announcement banner; null when
+     * no banner is showing. Paired with [announcementFrom] — both are set
+     * or both are null. See [com.opensmarthome.speaker.multiroom.AnnouncementState].
+     */
+    val announcementText: String? = null,
+    /** mDNS service name of the speaker that sent the active announcement, if any. */
+    val announcementFrom: String? = null
 ) {
     data class DeviceLine(val name: String, val state: String)
 

@@ -6,8 +6,10 @@ import com.opensmarthome.speaker.data.db.AppDatabase
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.MemoryDao
 import com.opensmarthome.speaker.data.db.MessageDao
+import com.opensmarthome.speaker.data.db.MultiroomTrafficDao
 import com.opensmarthome.speaker.data.db.RoutineDao
 import com.opensmarthome.speaker.data.db.SessionDao
+import com.opensmarthome.speaker.data.db.SpeakerGroupDao
 import com.opensmarthome.speaker.data.db.ToolUsageDao
 import dagger.Module
 import dagger.Provides
@@ -48,4 +50,10 @@ object DatabaseModule {
 
     @Provides
     fun provideToolUsageDao(db: AppDatabase): ToolUsageDao = db.toolUsageDao()
+
+    @Provides
+    fun provideSpeakerGroupDao(db: AppDatabase): SpeakerGroupDao = db.speakerGroupDao()
+
+    @Provides
+    fun provideMultiroomTrafficDao(db: AppDatabase): MultiroomTrafficDao = db.multiroomTrafficDao()
 }

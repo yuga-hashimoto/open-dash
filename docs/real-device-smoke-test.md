@@ -70,9 +70,44 @@ Run the following scripted flow. Stop on first failure; file as a bug with the l
 - Leave the app in ambient mode for ≥ 30 minutes with wake-word listening active.
 - **Pass**: No memory growth visible in System Info; wake word still responds; TTS still plays.
 
+### Multi-room discovery (P14.5)
+
+Verifies the mDNS/NSD plumbing added in PR #209 (discovery) and PR #220 (registration). The broadcast RPC protocol that would let one speaker forward commands to another is **not wired yet** — registration is only the advertise-ourselves signal, not a useful endpoint today.
+
+**Prerequisite**: two devices running the debug build on the same LAN (same Wi-Fi SSID, multicast not blocked by the router — some guest networks drop mDNS).
+
+1. **Discovery from the app**
+   - Launch the app on both devices.
+   - On device A, open Settings → System Info and watch the **"Nearby speakers (mDNS)"** row.
+   - **Pass**: device B (instance name `OpenSmartSpeaker-<Build.MODEL>`) appears in the list within ~3 s of launch. Swap roles and re-verify from device B.
+   - **Fail trigger**: row stays on "0 peers" after 10 s — check that both devices are on the same subnet and that `MulticastDiscovery.start()` ran (look for the log tag in `adb logcat | grep MulticastDiscovery`).
+
+2. **Registration from a desktop**
+   - From a machine on the same LAN:
+     - macOS: `dns-sd -B _opensmartspeaker._tcp`
+     - Linux: `avahi-browse -rt _opensmartspeaker._tcp`
+   - **Pass**: each running instance is listed with its instance name and port `8421` (the `DEFAULT_PORT` from `MulticastDiscovery`).
+   - Kill the app on one device; the entry should disappear from the browse output within a few seconds.
+
+Note: no Settings toggle yet invokes `MulticastDiscovery.register(port, instanceName)` — to exercise registration today you need a debug harness or a manual call from a test build. Treat this section as a plumbing check, not a feature validation.
+
+#### Multi-room broadcast end-to-end (P17.2 / P17.3)
+
+Validates the NDJSON listener + sender wired up in PR #241 (server), PR #243 (client/broadcaster), and PR #245 (`broadcast_tts` tool + matcher).
+
+**Prerequisite**: two tablets on the same LAN, both running the app, and **both with the same Multi-room shared secret set** in Settings (the new row added in PR #242).
+
+1. On both devices, enable the **Multi-room broadcast** toggle.
+2. On device A, say "broadcast dinner is ready to all speakers" — expect device B to speak "dinner is ready" within ~1 s.
+3. **Tamper test**: change the secret on device B only, repeat step 2 — device B should stay silent (`AnnouncementParser` rejects on HMAC mismatch). Check `adb logcat` on device B for `Envelope rejected: HMAC_MISMATCH`.
+4. **Replay test**: set both clocks, then artificially skew device B's clock 2 minutes forward. Repeat step 2 — device B should stay silent (`Envelope rejected: REPLAY_WINDOW`).
+5. **No-secret test**: clear the secret on device A, repeat step 2. Device A's tool should return a spoken message "Broadcast refused: no shared secret."
+
+Reference: see [`multi-room-protocol.md`](multi-room-protocol.md) for the full protocol.
+
 ### 10. System info sanity
 - Open Settings → System Info.
-- **Pass**: Device count, routines count, documents count, latency measurements count all render without errors.
+- **Pass**: Device count, routines count, documents count, latency measurements count all render without errors. Also verify the new **"Nearby speakers (mDNS)"** and **"Thermal state"** rows render with a live value rather than a placeholder.
 
 ## Power & thermal
 

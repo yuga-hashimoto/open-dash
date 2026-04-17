@@ -38,6 +38,10 @@ import com.opensmarthome.speaker.assistant.skills.SkillToolExecutor
 import com.opensmarthome.speaker.assistant.routine.RoomRoutineStore
 import com.opensmarthome.speaker.assistant.routine.RoutineToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.AccessibilityScreenReader
+import com.opensmarthome.speaker.tool.a11y.ReadActiveScreenToolExecutor
+import com.opensmarthome.speaker.tool.a11y.ScrollScreenToolExecutor
+import com.opensmarthome.speaker.tool.a11y.TapByTextToolExecutor
+import com.opensmarthome.speaker.tool.a11y.TypeTextToolExecutor
 import com.opensmarthome.speaker.tool.accessibility.ScreenToolExecutor
 import com.opensmarthome.speaker.data.db.DocumentChunkDao
 import com.opensmarthome.speaker.data.db.ToolUsageDao
@@ -64,7 +68,10 @@ import com.opensmarthome.speaker.tool.system.CameraToolExecutor
 import com.opensmarthome.speaker.tool.system.ContactsToolExecutor
 import com.opensmarthome.speaker.tool.system.DeviceHealthToolExecutor
 import com.opensmarthome.speaker.tool.system.LocationToolExecutor
+import com.opensmarthome.speaker.tool.system.NotificationReplyToolExecutor
 import com.opensmarthome.speaker.tool.system.NotificationToolExecutor
+import com.opensmarthome.speaker.tool.system.OpenSettingsToolExecutor
+import com.opensmarthome.speaker.tool.system.OpenUrlToolExecutor
 import com.opensmarthome.speaker.tool.system.PhotosToolExecutor
 import com.opensmarthome.speaker.tool.system.ScreenRecorderHolder
 import com.opensmarthome.speaker.tool.system.ScreenRecorderToolExecutor
@@ -157,11 +164,98 @@ object DeviceModule {
 
     @Provides
     @Singleton
-    fun provideFastPathRouter(): FastPathRouter = DefaultFastPathRouter()
+    fun provideFastPathRouter(
+        batteryMonitor: com.opensmarthome.speaker.util.BatteryMonitor,
+        timerManager: com.opensmarthome.speaker.tool.system.TimerManager
+    ): FastPathRouter {
+        // Insert CancelTimerByLabelMatcher between CancelAllTimersMatcher and TimerMatcher.
+        // CancelAll must come first (owns "all" / "全部" keyword case).
+        // CancelByLabel second so specific labels beat the generic TimerMatcher regex.
+        val cancelByLabel = com.opensmarthome.speaker.voice.fastpath
+            .CancelTimerByLabelMatcher(timerManager)
+        val defaults = DefaultFastPathRouter.DEFAULT_MATCHERS
+        val timerIdx = defaults.indexOf(
+            com.opensmarthome.speaker.voice.fastpath.TimerMatcher
+        )
+        val matchers = if (timerIdx >= 0) {
+            defaults.subList(0, timerIdx) + cancelByLabel + defaults.subList(timerIdx, defaults.size)
+        } else {
+            defaults + cancelByLabel
+        }
+        return DefaultFastPathRouter(
+            matchers = matchers +
+                com.opensmarthome.speaker.voice.fastpath.BatteryMatcher(batteryMonitor)
+        )
+    }
 
     @Provides
     @Singleton
-    fun provideSuggestionEngine(): com.opensmarthome.speaker.assistant.proactive.SuggestionEngine =
+    fun provideAnnouncementParser(
+        moshi: Moshi,
+        securePreferences: com.opensmarthome.speaker.data.preferences.SecurePreferences
+    ): com.opensmarthome.speaker.multiroom.AnnouncementParser =
+        com.opensmarthome.speaker.multiroom.AnnouncementParser(
+            moshi = moshi,
+            sharedSecretProvider = {
+                securePreferences.getString(
+                    com.opensmarthome.speaker.data.preferences.SecurePreferences.KEY_MULTIROOM_SECRET
+                ).takeIf { it.isNotBlank() }
+            }
+        )
+
+    @Provides
+    @Singleton
+    fun provideAnnouncementClient(): com.opensmarthome.speaker.multiroom.AnnouncementClient =
+        com.opensmarthome.speaker.multiroom.AnnouncementClient()
+
+    @Provides
+    @Singleton
+    fun provideAnnouncementDispatcher(
+        tts: com.opensmarthome.speaker.voice.tts.TextToSpeech,
+        timerManager: com.opensmarthome.speaker.tool.system.TimerManager,
+        announcementState: com.opensmarthome.speaker.multiroom.AnnouncementState,
+        peerLivenessTracker: com.opensmarthome.speaker.multiroom.PeerLivenessTracker,
+        trafficRecorder: com.opensmarthome.speaker.multiroom.MultiroomTrafficRecorder
+    ): com.opensmarthome.speaker.multiroom.AnnouncementDispatcher =
+        com.opensmarthome.speaker.multiroom.AnnouncementDispatcher(
+            tts = tts,
+            // TODO(P17.5 follow-up): wire historyProvider to the live
+            // ConversationHistoryManager once VoicePipeline exposes it so
+            // session_handoff messages can actually seed future turns.
+            historyProvider = { null },
+            timerManagerProvider = { timerManager },
+            announcementState = announcementState,
+            onHeartbeat = { envelope -> peerLivenessTracker.onHeartbeat(envelope) },
+            trafficRecorder = trafficRecorder
+        )
+
+    @Provides
+    @Singleton
+    fun provideAnnouncementBroadcaster(
+        discovery: com.opensmarthome.speaker.util.MulticastDiscovery,
+        client: com.opensmarthome.speaker.multiroom.AnnouncementClient,
+        webSocketClient: com.opensmarthome.speaker.multiroom.AnnouncementWebSocketClient,
+        securePreferences: com.opensmarthome.speaker.data.preferences.SecurePreferences,
+        moshi: Moshi,
+        speakerGroupRepository: com.opensmarthome.speaker.multiroom.SpeakerGroupRepository,
+        trafficRecorder: com.opensmarthome.speaker.multiroom.MultiroomTrafficRecorder
+    ): com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster =
+        com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster(
+            discovery = discovery,
+            client = client,
+            securePreferences = securePreferences,
+            moshi = moshi,
+            selfServiceName = { discovery.registeredName.value },
+            groupLookup = { name -> speakerGroupRepository.get(name) },
+            webSocketClient = webSocketClient,
+            trafficRecorder = trafficRecorder
+        )
+
+    @Provides
+    @Singleton
+    fun provideSuggestionEngine(
+        peerLivenessTracker: com.opensmarthome.speaker.multiroom.PeerLivenessTracker
+    ): com.opensmarthome.speaker.assistant.proactive.SuggestionEngine =
         com.opensmarthome.speaker.assistant.proactive.SuggestionEngine(
             rules = listOf(
                 com.opensmarthome.speaker.assistant.proactive.MorningGreetingRule(),
@@ -169,7 +263,8 @@ object DeviceModule {
                 com.opensmarthome.speaker.assistant.proactive.WeekendMorningRule(),
                 com.opensmarthome.speaker.assistant.proactive.EveningLightsRule(),
                 com.opensmarthome.speaker.assistant.proactive.EveningBriefingRule(),
-                com.opensmarthome.speaker.assistant.proactive.NightQuietRule()
+                com.opensmarthome.speaker.assistant.proactive.NightQuietRule(),
+                com.opensmarthome.speaker.assistant.proactive.StalePeerRule(peerLivenessTracker)
             )
         )
 
@@ -242,10 +337,17 @@ object DeviceModule {
     ): com.opensmarthome.speaker.permission.PermissionManager =
         com.opensmarthome.speaker.permission.PermissionManager(
             context = context,
-            notificationListenerClass = com.opensmarthome.speaker.tool.system
-                .OpenSmartSpeakerNotificationListener::class.java,
-            accessibilityServiceClass = com.opensmarthome.speaker.tool.accessibility
-                .OpenSmartAccessibilityService::class.java
+            notificationListenerClasses = listOf(
+                com.opensmarthome.speaker.tool.system.OpenSmartSpeakerNotificationListener::class.java
+            ),
+            // Accept grant on EITHER accessibility service — the legacy
+            // OpenSmartAccessibilityService (tool/accessibility) and the
+            // newer OpenSmartSpeakerA11yService (a11y/) coexist during the
+            // Phase 15 migration. Granting either satisfies onboarding.
+            accessibilityServiceClasses = listOf(
+                com.opensmarthome.speaker.tool.accessibility.OpenSmartAccessibilityService::class.java,
+                com.opensmarthome.speaker.a11y.OpenSmartSpeakerA11yService::class.java
+            )
         )
 
     @Provides
@@ -280,7 +382,10 @@ object DeviceModule {
         screenRecorderHolder: ScreenRecorderHolder,
         toolUsageStats: PersistentToolUsageStats,
         timerManager: com.opensmarthome.speaker.tool.system.TimerManager,
-        notificationProvider: com.opensmarthome.speaker.tool.system.NotificationProvider
+        notificationProvider: com.opensmarthome.speaker.tool.system.NotificationProvider,
+        a11yServiceHolder: com.opensmarthome.speaker.a11y.A11yServiceHolder,
+        announcementBroadcaster: com.opensmarthome.speaker.multiroom.AnnouncementBroadcaster,
+        multicastDiscovery: com.opensmarthome.speaker.util.MulticastDiscovery
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -316,6 +421,7 @@ object DeviceModule {
             ),
             KnowledgeToolExecutor(InMemoryKnowledgeStore()),
             NotificationToolExecutor(notificationProvider),
+            NotificationReplyToolExecutor(notificationProvider),
             CalendarToolExecutor(
                 AndroidCalendarProvider(context)
             ),
@@ -328,6 +434,14 @@ object DeviceModule {
             DeviceHealthToolExecutor(
                 AndroidDeviceHealthProvider(context)
             ),
+            OpenSettingsToolExecutor(context),
+            OpenUrlToolExecutor(context),
+            com.opensmarthome.speaker.tool.system.LockScreenToolExecutor(context),
+            com.opensmarthome.speaker.tool.system.BroadcastTtsToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.BroadcastAnnouncementToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.BroadcastTimerToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.BroadcastCancelTimerToolExecutor(announcementBroadcaster),
+            com.opensmarthome.speaker.tool.multiroom.ListPeersToolExecutor(multicastDiscovery),
             PhotosToolExecutor(
                 AndroidPhotosProvider(context)
             ),
@@ -339,6 +453,10 @@ object DeviceModule {
             ScreenToolExecutor(
                 AccessibilityScreenReader()
             ),
+            ReadActiveScreenToolExecutor(a11yServiceHolder),
+            TapByTextToolExecutor(a11yServiceHolder),
+            ScrollScreenToolExecutor(a11yServiceHolder),
+            TypeTextToolExecutor(a11yServiceHolder),
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
@@ -349,7 +467,15 @@ object DeviceModule {
             com.opensmarthome.speaker.tool.composite.MorningBriefingTool { delegatingExecutor },
             com.opensmarthome.speaker.tool.composite.EveningBriefingTool { delegatingExecutor },
             com.opensmarthome.speaker.tool.composite.GoodnightTool { delegatingExecutor },
-            com.opensmarthome.speaker.tool.composite.PresenceTool { delegatingExecutor }
+            com.opensmarthome.speaker.tool.composite.PresenceTool { delegatingExecutor },
+            // TODO(P17.5 follow-up): wire historyProvider to VoicePipeline's
+            // live conversation history once the pipeline exposes it. For now
+            // the tool ships the structural plumbing with an empty history
+            // provider so the envelope/dispatch path is testable end-to-end.
+            com.opensmarthome.speaker.tool.multiroom.HandoffToolExecutor(
+                broadcaster = announcementBroadcaster,
+                historyProvider = { emptyList() }
+            )
             )
         )
         compositeHolder[0] = composite

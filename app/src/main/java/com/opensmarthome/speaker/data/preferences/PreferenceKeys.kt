@@ -72,6 +72,9 @@ object PreferenceKeys {
     /** When true, wake-word detection pauses while battery is low and unplugged. */
     val BATTERY_SAVER_ENABLED = booleanPreferencesKey("battery_saver_enabled")
 
+    /** When true, advertise this device on the LAN via mDNS so peers can discover it. */
+    val MULTIROOM_BROADCAST_ENABLED = booleanPreferencesKey("multiroom_broadcast_enabled")
+
     // Setup
     val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
 
@@ -83,8 +86,4 @@ object PreferenceKeys {
 
     // Agent customization
     val CUSTOM_SYSTEM_PROMPT = stringPreferencesKey("custom_system_prompt")
-
-    // Multi-room mesh
-    /** When true, this device advertises itself via mDNS so peers can discover it. */
-    val MULTIROOM_BROADCAST_ENABLED = booleanPreferencesKey("multiroom_broadcast_enabled")
 }

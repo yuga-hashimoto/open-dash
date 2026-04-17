@@ -4,6 +4,7 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 
 ## Start here
 
+- **[State of the project](state-of-the-project.md)** — what works today, what's scaffolding, what's missing
 - **[Architecture](architecture.md)** — layer map, key abstractions
 - **[Conventions](conventions.md)** — Kotlin style, package layout, testing
 - **[Roadmap](roadmap.md)** — priority-ordered backlog
@@ -15,6 +16,10 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 - **[Providers](providers.md)** — AssistantProvider implementations
 - **[Skills](skills.md)** — authoring `SKILL.md` files
 - **[Permissions](permissions.md)** — runtime + special permissions
+- **[Tablet control cookbook](tablet-control-cookbook.md)** — Phase 15 recipes (open apps, tap buttons, reply to notifications) without root
+- **[Multi-room quickstart](multi-room-quickstart.md)** — how to pair two tablets and broadcast
+- **[Multi-room protocol](multi-room-protocol.md)** — WebSocket message bus design
+- **[Multi-room FAQ](multi-room-faq.md)** — answers to common questions about pairing, privacy, and scope
 - **[Real-device smoke test](real-device-smoke-test.md)** — on-device validation run before each release
 
 ## Running locally

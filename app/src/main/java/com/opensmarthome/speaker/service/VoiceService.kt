@@ -38,6 +38,9 @@ class VoiceService : Service() {
     @Inject lateinit var preferences: AppPreferences
     @Inject lateinit var batteryMonitor: com.opensmarthome.speaker.util.BatteryMonitor
     @Inject lateinit var thermalMonitor: com.opensmarthome.speaker.util.ThermalMonitor
+    @Inject lateinit var multicastDiscovery: com.opensmarthome.speaker.util.MulticastDiscovery
+    @Inject lateinit var announcementServer: com.opensmarthome.speaker.multiroom.AnnouncementServer
+    @Inject lateinit var peerLivenessTracker: com.opensmarthome.speaker.multiroom.PeerLivenessTracker
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var wakeWordDetector: VoskWakeWordDetector? = null
@@ -111,6 +114,26 @@ class VoiceService : Service() {
             registerReceiver(controlReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(controlReceiver, filter)
+        }
+
+        // Opt-in multi-room: advertise via mDNS AND start listening on the
+        // advertised port for NDJSON envelopes. The server only dispatches
+        // a message after HMAC verification (P17.2), so a missing secret
+        // means the port accepts connections but drops every envelope —
+        // safe default for users who enabled broadcast before setting the
+        // shared secret.
+        scope.launch {
+            val enabled = preferences.observe(PreferenceKeys.MULTIROOM_BROADCAST_ENABLED).first() ?: false
+            if (enabled) {
+                multicastDiscovery.register()
+                multicastDiscovery.start()
+                announcementServer.start()
+                // Liveness tracker relies on the broadcaster fan-out + the
+                // dispatcher's onHeartbeat callback. Start it after the server
+                // is listening so the very first inbound heartbeat has a place
+                // to land.
+                peerLivenessTracker.start()
+            }
         }
     }
 
@@ -249,6 +272,11 @@ class VoiceService : Service() {
         wakeWordDetector?.stop()
         voicePipeline.stopSpeaking()
         voicePipeline.destroy()
+        // Safe to call even if we never registered — unregister() is a no-op in that case.
+        runCatching { peerLivenessTracker.stop() }
+        runCatching { multicastDiscovery.unregister() }
+        runCatching { multicastDiscovery.stop() }
+        runCatching { announcementServer.stop() }
         super.onDestroy()
         Timber.d("VoiceService destroyed")
     }

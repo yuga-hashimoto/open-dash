@@ -39,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
+    onOpenSpeakerGroups: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -342,6 +343,28 @@ fun SettingsScreen(
         val batterySaver by viewModel.batterySaverEnabled.collectAsState()
         SettingsToggle("Battery Saver", batterySaver) { viewModel.saveBatterySaverEnabled(it) }
         SettingsHint("Pause wake-word detection when battery <= 20 % and the device is unplugged.")
+
+        val multiroomOn by viewModel.multiroomBroadcastEnabled.collectAsState()
+        SettingsToggle("Multi-room broadcast", multiroomOn) { viewModel.saveMultiroomBroadcastEnabled(it) }
+        SettingsHint("Advertise this device on the LAN via mDNS and accept announcement envelopes from peers on port 8421. Requires a shared secret below.")
+
+        val multiroomSecret by viewModel.multiroomSecret.collectAsState()
+        SettingsPasswordField("Multi-room shared secret", multiroomSecret) { value ->
+            viewModel.saveMultiroomSecret(value)
+        }
+        SettingsHint("Identical secret on every speaker. HMAC-SHA256 signs each envelope; mismatches are silently dropped. Minimum 16 chars recommended. QR-pair setup coming in a later release.")
+
+        SettingsMultiroomPairingCard(secret = multiroomSecret)
+
+        if (onOpenSpeakerGroups != null) {
+            OutlinedButton(
+                onClick = onOpenSpeakerGroups,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text("Speaker groups…", color = MaterialTheme.colorScheme.onSurface)
+            }
+            SettingsHint("Name subsets of your discovered speakers (e.g. 'kitchen') so you can broadcast to only that room. Groups live on this device only — receivers aren't aware of them.")
+        }
 
         SettingsDivider()
 
