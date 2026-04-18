@@ -1,5 +1,6 @@
 package com.opensmarthome.speaker.tool.system
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import timber.log.Timber
@@ -15,7 +16,12 @@ import kotlin.math.abs
  * Step-based nudging uses `adjustStreamVolume` with `ADJUST_RAISE` /
  * `ADJUST_LOWER`, matching the hardware volume keys. Stolen from Ava's
  * `VolumeControlService.adjustVolume(isUp)`.
+ *
+ * WrongConstant is suppressed because 0 ("no flags") is a documented
+ * valid value for the `flags` arg, but Lint's `@IntDef(flag = true)`
+ * doesn't recognise a bare 0.
  */
+@SuppressLint("WrongConstant")
 class AndroidVolumeManager(
     private val context: Context
 ) : VolumeManager {
