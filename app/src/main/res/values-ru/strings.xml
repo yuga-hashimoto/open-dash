@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">По умолчанию в системе</string>
     <string name="locale_picker_requires_android_13">Требуется Android 13 или новее</string>
     <string name="locale_picker_close">Закрыть</string>
+    <string name="weather_location_picker_title">Местоположение погоды по умолчанию</string>
+    <string name="weather_location_picker_search_hint">Поиск города</string>
+    <string name="weather_location_picker_use_default">Использовать встроенное по умолчанию (Токио)</string>
+    <string name="weather_location_picker_close">Закрыть</string>
+    <string name="weather_location_picker_no_results">Нет подходящих городов</string>
+    <string name="weather_location_picker_current_label_default">Токио (встроенное по умолчанию)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

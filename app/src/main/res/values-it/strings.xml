@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">Predefinito di sistema</string>
     <string name="locale_picker_requires_android_13">Richiede Android 13 o superiore</string>
     <string name="locale_picker_close">Chiudi</string>
+    <string name="weather_location_picker_title">Località meteo predefinita</string>
+    <string name="weather_location_picker_search_hint">Cerca una città</string>
+    <string name="weather_location_picker_use_default">Usa predefinito integrato (Tokyo)</string>
+    <string name="weather_location_picker_close">Chiudi</string>
+    <string name="weather_location_picker_no_results">Nessuna città corrispondente</string>
+    <string name="weather_location_picker_current_label_default">Tokyo (predefinito integrato)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">Padrão do sistema</string>
     <string name="locale_picker_requires_android_13">Requer Android 13 ou superior</string>
     <string name="locale_picker_close">Fechar</string>
+    <string name="weather_location_picker_title">Local padrão do clima</string>
+    <string name="weather_location_picker_search_hint">Buscar uma cidade</string>
+    <string name="weather_location_picker_use_default">Usar padrão integrado (Tóquio)</string>
+    <string name="weather_location_picker_close">Fechar</string>
+    <string name="weather_location_picker_no_results">Nenhuma cidade correspondente</string>
+    <string name="weather_location_picker_current_label_default">Tóquio (padrão integrado)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

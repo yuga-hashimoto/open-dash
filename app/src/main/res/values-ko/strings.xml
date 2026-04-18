@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">시스템 기본값</string>
     <string name="locale_picker_requires_android_13">Android 13 이상 필요</string>
     <string name="locale_picker_close">닫기</string>
+    <string name="weather_location_picker_title">기본 날씨 위치</string>
+    <string name="weather_location_picker_search_hint">도시 검색</string>
+    <string name="weather_location_picker_use_default">기본값 (도쿄) 사용</string>
+    <string name="weather_location_picker_close">닫기</string>
+    <string name="weather_location_picker_no_results">일치하는 도시 없음</string>
+    <string name="weather_location_picker_current_label_default">도쿄 (기본값)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

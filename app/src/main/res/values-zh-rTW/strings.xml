@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">跟隨系統</string>
     <string name="locale_picker_requires_android_13">需要 Android 13 或以上</string>
     <string name="locale_picker_close">關閉</string>
+    <string name="weather_location_picker_title">預設天氣位置</string>
+    <string name="weather_location_picker_search_hint">搜尋城市</string>
+    <string name="weather_location_picker_use_default">使用內建預設 (東京)</string>
+    <string name="weather_location_picker_close">關閉</string>
+    <string name="weather_location_picker_no_results">沒有相符的城市</string>
+    <string name="weather_location_picker_current_label_default">東京 (內建預設)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

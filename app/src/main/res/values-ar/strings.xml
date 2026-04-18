@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">الإعداد الافتراضي للنظام</string>
     <string name="locale_picker_requires_android_13">يتطلب Android 13 أو أحدث</string>
     <string name="locale_picker_close">إغلاق</string>
+    <string name="weather_location_picker_title">موقع الطقس الافتراضي</string>
+    <string name="weather_location_picker_search_hint">ابحث عن مدينة</string>
+    <string name="weather_location_picker_use_default">استخدم الافتراضي المدمج (طوكيو)</string>
+    <string name="weather_location_picker_close">إغلاق</string>
+    <string name="weather_location_picker_no_results">لا توجد مدن مطابقة</string>
+    <string name="weather_location_picker_current_label_default">طوكيو (الافتراضي المدمج)</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>

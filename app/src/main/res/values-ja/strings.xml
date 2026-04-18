@@ -13,6 +13,12 @@
     <string name="locale_picker_system_default">システムデフォルト</string>
     <string name="locale_picker_requires_android_13">Android 13 以降が必要</string>
     <string name="locale_picker_close">閉じる</string>
+    <string name="weather_location_picker_title">既定の天気の場所</string>
+    <string name="weather_location_picker_search_hint">都市を検索</string>
+    <string name="weather_location_picker_use_default">組み込みの既定 (東京) を使用</string>
+    <string name="weather_location_picker_close">閉じる</string>
+    <string name="weather_location_picker_no_results">一致する都市がありません</string>
+    <string name="weather_location_picker_current_label_default">東京 (組み込みの既定)</string>
 
     <string name="settings_title">設定</string>
     <string name="settings_back">戻る</string>
