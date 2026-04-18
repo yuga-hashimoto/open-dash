@@ -126,4 +126,45 @@
     <string name="memory_empty">まだメモリは保存されていません。</string>
     <string name="memory_count">%1$d 件のメモリ</string>
     <string name="memory_forget">忘れる</string>
+
+    <!-- Common buttons (additional) -->
+    <string name="common_done">完了</string>
+
+    <!-- Analytics / usage screen -->
+    <string name="analytics_title">使用状況</string>
+    <string name="analytics_reset_button">リセット</string>
+    <string name="analytics_reset_dialog_title">使用状況の統計をリセットしますか？</string>
+    <string name="analytics_reset_dialog_body">すべてのツール使用履歴を消去します。ローカルデータのみが対象です。</string>
+    <string name="analytics_reset_confirm">リセット</string>
+    <string name="analytics_fast_path_rate">ファストパス %1$d%%</string>
+    <string name="analytics_fast_path_description">LLM を介さずに処理できた定型コマンド — 値が高いほど応答が速くなります。</string>
+    <string name="analytics_voice_latency_title">音声パイプラインのレイテンシ</string>
+    <string name="analytics_no_tools_used">まだツールは使用されていません。</string>
+    <string name="analytics_all_time_usage">累計の使用状況（%1$d ツール）</string>
+    <string name="analytics_clear_tool_usage">ツール使用状況の統計を消去</string>
+    <string name="analytics_latency_over">%1$d 件超過</string>
+    <string name="analytics_latency_within">予算内</string>
+    <string name="analytics_latency_stats">平均 %1$dms • p95 %2$dms</string>
+    <string name="analytics_latency_stats_with_budget">平均 %1$dms • p95 %2$dms • 予算 %3$dms</string>
+    <string name="analytics_tool_calls">%1$d 回のツール呼び出し</string>
+    <string name="analytics_summary_stats">成功率 %1$d%% • %2$d 種類のツール</string>
+    <string name="analytics_success_rate">成功率 %1$d%%</string>
+
+    <!-- Speaker groups screen -->
+    <string name="speaker_groups_title">スピーカーグループ</string>
+    <string name="speaker_groups_new">新しいグループ</string>
+    <string name="speaker_groups_empty">スピーカーグループはまだありません。「新しいグループ」をタップして作成し、発見された %1$d 台のスピーカーを追加してください。</string>
+    <string name="speaker_groups_count">%1$d グループ • %2$d 台のスピーカーを発見</string>
+    <string name="speaker_groups_members">%1$d メンバー • %2$d 台が現在到達可能</string>
+    <string name="speaker_groups_more">  \u2026 他 %1$d 件</string>
+    <string name="speaker_groups_edit">メンバーを編集</string>
+    <string name="speaker_groups_new_dialog_title">新しいスピーカーグループ</string>
+    <string name="speaker_groups_name_label">名前（例: キッチン）</string>
+    <string name="speaker_groups_create">作成</string>
+    <string name="speaker_groups_members_dialog_title">「%1$s」のメンバー</string>
+    <string name="speaker_groups_no_speakers">LAN 上にスピーカーがまだ発見されていません。設定でマルチルームブロードキャストを有効にし、ピアが同じネットワークにあることを確認してください。</string>
+    <string name="speaker_groups_reachable_now">現在到達可能</string>
+    <string name="speaker_groups_not_seen">未検出</string>
+    <string name="speaker_groups_error_name_blank">グループ名を空にはできません</string>
+    <string name="speaker_groups_error_duplicate">「%1$s」グループは既に存在します</string>
 </resources>

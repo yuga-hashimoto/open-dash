@@ -126,4 +126,45 @@
     <string name="memory_empty">No memories stored yet.</string>
     <string name="memory_count">%1$d memories</string>
     <string name="memory_forget">Forget</string>
+
+    <!-- Common buttons (additional) -->
+    <string name="common_done">Done</string>
+
+    <!-- Analytics / usage screen -->
+    <string name="analytics_title">Usage</string>
+    <string name="analytics_reset_button">Reset</string>
+    <string name="analytics_reset_dialog_title">Reset usage stats?</string>
+    <string name="analytics_reset_dialog_body">Clears all tool usage history. This is local data only.</string>
+    <string name="analytics_reset_confirm">Reset</string>
+    <string name="analytics_fast_path_rate">%1$d%% fast-path</string>
+    <string name="analytics_fast_path_description">Canonical commands handled without the LLM \u2014 higher = snappier UX.</string>
+    <string name="analytics_voice_latency_title">Voice pipeline latency</string>
+    <string name="analytics_no_tools_used">No tools used yet.</string>
+    <string name="analytics_all_time_usage">All-time usage (%1$d tools)</string>
+    <string name="analytics_clear_tool_usage">Clear tool usage stats</string>
+    <string name="analytics_latency_over">%1$d over</string>
+    <string name="analytics_latency_within">within budget</string>
+    <string name="analytics_latency_stats">avg %1$dms • p95 %2$dms</string>
+    <string name="analytics_latency_stats_with_budget">avg %1$dms • p95 %2$dms • budget %3$dms</string>
+    <string name="analytics_tool_calls">%1$d tool calls</string>
+    <string name="analytics_summary_stats">%1$d%% success • %2$d unique tools</string>
+    <string name="analytics_success_rate">%1$d%% success</string>
+
+    <!-- Speaker groups screen -->
+    <string name="speaker_groups_title">Speaker groups</string>
+    <string name="speaker_groups_new">New group</string>
+    <string name="speaker_groups_empty">No speaker groups yet. Tap \'New group\' to create one and add any of the %1$d discovered speaker(s).</string>
+    <string name="speaker_groups_count">%1$d group(s) • %2$d speaker(s) discovered</string>
+    <string name="speaker_groups_members">%1$d member(s) • %2$d reachable now</string>
+    <string name="speaker_groups_more">  \u2026 and %1$d more</string>
+    <string name="speaker_groups_edit">Edit members</string>
+    <string name="speaker_groups_new_dialog_title">New speaker group</string>
+    <string name="speaker_groups_name_label">Name (e.g. kitchen)</string>
+    <string name="speaker_groups_create">Create</string>
+    <string name="speaker_groups_members_dialog_title">Members of %1$s</string>
+    <string name="speaker_groups_no_speakers">No speakers discovered on the LAN yet. Enable Multi-room broadcast in Settings and make sure peers are on the same network.</string>
+    <string name="speaker_groups_reachable_now">reachable now</string>
+    <string name="speaker_groups_not_seen">not seen</string>
+    <string name="speaker_groups_error_name_blank">Group name can\'t be blank</string>
+    <string name="speaker_groups_error_duplicate">Group \'%1$s\' already exists</string>
 </resources>

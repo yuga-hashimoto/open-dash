@@ -1,7 +1,9 @@
 package com.opensmarthome.speaker.ui.settings.multiroom
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.multiroom.SpeakerGroup
 import com.opensmarthome.speaker.multiroom.SpeakerGroupRepository
 import com.opensmarthome.speaker.util.DiscoveredSpeaker
@@ -58,18 +60,23 @@ class SpeakerGroupsViewModel @Inject constructor(
         initialValue = UiState()
     )
 
-    private val _snackbar = MutableStateFlow<String?>(null)
-    val snackbar: StateFlow<String?> = _snackbar.asStateFlow()
+    data class SnackbarMessage(
+        @StringRes val resId: Int,
+        val args: List<String> = emptyList(),
+    )
+
+    private val _snackbar = MutableStateFlow<SnackbarMessage?>(null)
+    val snackbar: StateFlow<SnackbarMessage?> = _snackbar.asStateFlow()
 
     fun createGroup(name: String) {
         val trimmed = name.trim()
         if (trimmed.isBlank()) {
-            _snackbar.value = "Group name can't be blank"
+            _snackbar.value = SnackbarMessage(R.string.speaker_groups_error_name_blank)
             return
         }
         viewModelScope.launch {
             if (repository.get(trimmed) != null) {
-                _snackbar.value = "Group '$trimmed' already exists"
+                _snackbar.value = SnackbarMessage(R.string.speaker_groups_error_duplicate, listOf(trimmed))
                 return@launch
             }
             repository.save(SpeakerGroup(name = trimmed, memberServiceNames = emptySet()))
