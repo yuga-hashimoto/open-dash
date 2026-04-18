@@ -209,6 +209,88 @@
     <string name="memory_count">%1$d 件のメモリ</string>
     <string name="memory_forget">忘れる</string>
 
+    <!-- SettingsScreen main body -->
+    <string name="settings_silence_timeout">無音タイムアウト: %1$.1f秒</string>
+    <string name="settings_min_utterance">最小発話長: %1$d ms</string>
+    <string name="settings_min_utterance_hint">これより短い発話を無視します（椅子のきしみや唇の音を除去）。誤起動が目立つ場合は値を上げてください。</string>
+
+    <string name="settings_tts_provider">TTS プロバイダー</string>
+    <string name="settings_tts_provider_android">Android システム（オンデバイス、無料）</string>
+    <string name="settings_tts_provider_openai">OpenAI TTS（クラウド、自然）</string>
+    <string name="settings_tts_provider_elevenlabs">ElevenLabs（クラウド、高品質）</string>
+    <string name="settings_tts_provider_voicevox">VOICEVOX（セルフホスト、日本語）</string>
+    <string name="settings_tts_provider_piper">Piper ニューラル（オフライン）— 近日対応</string>
+
+    <string name="settings_tts_openai_api_key">OpenAI API キー</string>
+    <string name="settings_tts_openai_voice">ボイス（alloy/echo/fable/onyx/nova/shimmer/coral）</string>
+    <string name="settings_tts_openai_model">モデル（tts-1 / tts-1-hd / gpt-4o-mini-tts）</string>
+
+    <string name="settings_tts_elevenlabs_api_key">ElevenLabs API キー</string>
+    <string name="settings_tts_elevenlabs_voice_id">Voice ID</string>
+    <string name="settings_tts_elevenlabs_model">モデル（eleven_multilingual_v2）</string>
+
+    <string name="settings_tts_voicevox_url">VOICEVOX エンジン URL（例: http://192.168.1.10:50021）</string>
+    <string name="settings_tts_voicevox_speaker_id">スピーカー/スタイル ID（3 = ずんだもん）</string>
+    <string name="settings_tts_voicevox_terms">VOICEVOX の利用規約に同意します（ライセンスに従ってスピーカーのクレジットを表記）</string>
+    <string name="settings_tts_voicevox_hint">LAN 上で VOICEVOX ENGINE (Docker/PC) を起動してください。規約に同意するまで音声は再生されません。</string>
+
+    <string name="settings_android_tts_section">Android システム TTS</string>
+    <string name="settings_speech_rate">読み上げ速度: %1$.1f倍</string>
+    <string name="settings_pitch">ピッチ: %1$.1f倍</string>
+    <string name="settings_tts_engine">TTS エンジン: %1$s</string>
+    <string name="settings_tts_engine_default">システムデフォルト</string>
+
+    <string name="settings_weather_section">天気</string>
+    <string name="settings_weather_hint">場所を指定せずに天気を尋ねた場合に使われます（「天気教えて」など）。空欄の場合は東京にフォールバックします。</string>
+    <string name="settings_news_hint">ホームダッシュボードのニュースカードと、音声ニュース要求のデフォルトに使用されるフィードを設定します。バンドル済みフィードまたは独自の RSS/Atom URL を指定できます。</string>
+
+    <string name="settings_app_language_section">アプリの言語</string>
+    <string name="settings_app_language_hint">このアプリのみ UI 言語を上書きします。Android 13 以降が必要で、再起動せずに即座に切り替わります。</string>
+
+    <string name="settings_speech_recognition_section">音声認識</string>
+    <string name="settings_stt_provider_android">Android システム（オンライン / GMS）</string>
+    <string name="settings_stt_provider_vosk">Vosk（オフライン）— 近日対応</string>
+    <string name="settings_stt_provider_whisper">Whisper（オフライン）— 近日対応</string>
+    <string name="settings_stt_provider_hint">オフラインバックエンドは現状プレースホルダーです。選択すると「近日対応」エラーが話されます — JNI 実装が届くまで Android にフォールバックしてください。</string>
+    <string name="settings_stt_language">STT 言語（例: ja-JP, en-US）</string>
+    <string name="settings_tts_language">TTS 言語（例: ja-JP, en-US）</string>
+    <string name="settings_language_default_hint">空欄で端末のデフォルト言語を使用します</string>
+
+    <string name="settings_wake_word_section">ウェイクワード</string>
+    <string name="settings_enable_wake_word">ウェイクワードを有効化</string>
+    <string name="settings_enable_wake_word_hint">オフ = ウェイクワード検出を無効化。マイクはマイクボタンからのみ起動します</string>
+    <string name="settings_wake_word_phrase">ウェイクワード</string>
+    <string name="settings_wake_word_phrase_hint">アプリが待ち受ける語句です。変更後はアプリを再起動してください。</string>
+    <string name="settings_sensitivity">感度: %1$.2f</string>
+    <string name="settings_sensitivity_hint">高い = トリガーされやすい（誤起動の可能性あり）。低い = より保守的。既定値 0.60。</string>
+    <string name="settings_battery_saver">バッテリーセーバー</string>
+    <string name="settings_battery_saver_hint">バッテリー残量 20 %% 以下かつ非充電時にウェイクワード検出を一時停止します。</string>
+    <string name="settings_multiroom_broadcast">マルチルームブロードキャスト</string>
+    <string name="settings_multiroom_broadcast_hint">mDNS で LAN にこの端末をアドバタイズし、ポート 8421 でピアからのアナウンスを受信します。以下の共有シークレットが必要です。</string>
+    <string name="settings_multiroom_secret">マルチルーム共有シークレット</string>
+    <string name="settings_multiroom_secret_hint">全スピーカーで同一のシークレットを設定してください。HMAC-SHA256 で各エンベロープに署名し、不一致は無言で破棄されます。最低 16 文字推奨。QR ペアリング設定は今後のリリースで対応予定。</string>
+    <string name="settings_speaker_groups_button">スピーカーグループ\u2026</string>
+    <string name="settings_speaker_groups_button_hint">発見されたスピーカーの一部に名前を付けて（例:「キッチン」）、その部屋だけにブロードキャストできます。グループはこの端末内のみに保存され、受信側は関知しません。</string>
+
+    <string name="settings_home_assistant_section">Home Assistant</string>
+    <string name="settings_ha_base_url">ベース URL</string>
+    <string name="settings_ha_token">長期アクセストークン</string>
+    <string name="settings_openclaw_section">OpenClaw</string>
+    <string name="settings_openclaw_url">ゲートウェイ URL</string>
+    <string name="settings_local_llm_section">ローカル LLM (OpenAI 互換)</string>
+    <string name="settings_local_llm_url">エンドポイント URL</string>
+    <string name="settings_local_llm_model">モデル名</string>
+    <string name="settings_switchbot_section">SwitchBot</string>
+    <string name="settings_switchbot_token">トークン</string>
+    <string name="settings_switchbot_secret">シークレットキー</string>
+    <string name="settings_mqtt_section">MQTT (Shelly / Tasmota)</string>
+    <string name="settings_mqtt_broker_url">ブローカー URL</string>
+
+    <string name="settings_about_litert">オンデバイス LLM: Gemma 4 E2B の GPU 推論に LiteRT-LM を使用しています。</string>
+    <string name="settings_about_default_assistant">既定のアシスタントに設定するには: 設定 &gt; アプリ &gt; 既定のアプリ &gt; デジタルアシスタント &gt; OpenSmartSpeaker</string>
+    <string name="settings_about_section">アプリについて</string>
+    <string name="settings_about_tagline">OpenSmartSpeaker — タブレット向けオンデバイス AI スマートスピーカー。</string>
+    <string name="settings_about_github">GitHub のドキュメントとソースコード</string>
     <!-- Common buttons (additional) -->
     <string name="common_done">完了</string>
 

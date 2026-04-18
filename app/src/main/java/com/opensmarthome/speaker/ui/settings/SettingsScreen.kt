@@ -132,7 +132,7 @@ fun SettingsScreen(
         SettingsHint(stringResource(R.string.settings_media_button_trigger_hint))
 
         Text(
-            text = "Silence Timeout: ${silenceTimeoutMs / 1000.0}s",
+            text = stringResource(R.string.settings_silence_timeout, silenceTimeoutMs / 1000.0f),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 8.dp)
@@ -147,7 +147,7 @@ fun SettingsScreen(
 
         val minSpeechMs by viewModel.minSpeechMs.collectAsState()
         Text(
-            text = "Minimum Utterance: ${minSpeechMs} ms",
+            text = stringResource(R.string.settings_min_utterance, minSpeechMs.toInt()),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 8.dp)
@@ -159,19 +159,19 @@ fun SettingsScreen(
             steps = 18,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
-        SettingsHint("Ignore utterances shorter than this (filters chair squeaks and lip smacks). Raise if you hear false wakes firing the pipeline.")
+        SettingsHint(stringResource(R.string.settings_min_utterance_hint))
 
         SettingsDivider()
 
         // === TTS Provider ===
-        SectionHeader("TTS Provider")
+        SectionHeader(stringResource(R.string.settings_tts_provider))
         val ttsProvider by viewModel.ttsProvider.collectAsState()
         listOf(
-            "android" to "Android System (on-device, free)",
-            "openai" to "OpenAI TTS (cloud, natural)",
-            "elevenlabs" to "ElevenLabs (cloud, high quality)",
-            "voicevox" to "VOICEVOX (self-hosted, Japanese)",
-            "piper" to "Piper neural (offline) — coming soon"
+            "android" to stringResource(R.string.settings_tts_provider_android),
+            "openai" to stringResource(R.string.settings_tts_provider_openai),
+            "elevenlabs" to stringResource(R.string.settings_tts_provider_elevenlabs),
+            "voicevox" to stringResource(R.string.settings_tts_provider_voicevox),
+            "piper" to stringResource(R.string.settings_tts_provider_piper),
         ).forEach { (id, label) ->
             val isSelected = ttsProvider == id
             OutlinedButton(
@@ -190,13 +190,13 @@ fun SettingsScreen(
             val apiKey by viewModel.openAiTtsApiKey.collectAsState()
             val voice by viewModel.openAiTtsVoice.collectAsState()
             val model by viewModel.openAiTtsModel.collectAsState()
-            SettingsPasswordField("OpenAI API Key", apiKey) {
+            SettingsPasswordField(stringResource(R.string.settings_tts_openai_api_key), apiKey) {
                 viewModel.saveOpenAiTts(it, voice, model)
             }
-            SettingsTextField("Voice (alloy/echo/fable/onyx/nova/shimmer/coral)", voice) {
+            SettingsTextField(stringResource(R.string.settings_tts_openai_voice), voice) {
                 viewModel.saveOpenAiTts(apiKey, it, model)
             }
-            SettingsTextField("Model (tts-1 / tts-1-hd / gpt-4o-mini-tts)", model) {
+            SettingsTextField(stringResource(R.string.settings_tts_openai_model), model) {
                 viewModel.saveOpenAiTts(apiKey, voice, it)
             }
         }
@@ -206,13 +206,13 @@ fun SettingsScreen(
             val apiKey by viewModel.elevenLabsApiKey.collectAsState()
             val voiceId by viewModel.elevenLabsVoiceId.collectAsState()
             val model by viewModel.elevenLabsModel.collectAsState()
-            SettingsPasswordField("ElevenLabs API Key", apiKey) {
+            SettingsPasswordField(stringResource(R.string.settings_tts_elevenlabs_api_key), apiKey) {
                 viewModel.saveElevenLabs(it, voiceId, model)
             }
-            SettingsTextField("Voice ID", voiceId) {
+            SettingsTextField(stringResource(R.string.settings_tts_elevenlabs_voice_id), voiceId) {
                 viewModel.saveElevenLabs(apiKey, it, model)
             }
-            SettingsTextField("Model (eleven_multilingual_v2)", model) {
+            SettingsTextField(stringResource(R.string.settings_tts_elevenlabs_model), model) {
                 viewModel.saveElevenLabs(apiKey, voiceId, it)
             }
         }
@@ -222,20 +222,20 @@ fun SettingsScreen(
             val baseUrl by viewModel.voicevoxBaseUrl.collectAsState()
             val speakerId by viewModel.voicevoxSpeakerId.collectAsState()
             val termsAccepted by viewModel.voicevoxTermsAccepted.collectAsState()
-            SettingsTextField("VOICEVOX Engine URL (e.g. http://192.168.1.10:50021)", baseUrl) {
+            SettingsTextField(stringResource(R.string.settings_tts_voicevox_url), baseUrl) {
                 viewModel.saveVoiceVox(it, speakerId, termsAccepted)
             }
-            SettingsTextField("Speaker/Style ID (3 = ずんだもん)", speakerId.toString()) { value ->
+            SettingsTextField(stringResource(R.string.settings_tts_voicevox_speaker_id), speakerId.toString()) { value ->
                 val id = value.toIntOrNull() ?: 3
                 viewModel.saveVoiceVox(baseUrl, id, termsAccepted)
             }
             SettingsToggle(
-                "I agree to VOICEVOX terms of use (credit the speaker per their license)",
+                stringResource(R.string.settings_tts_voicevox_terms),
                 termsAccepted
             ) { accepted ->
                 viewModel.saveVoiceVox(baseUrl, speakerId, accepted)
             }
-            SettingsHint("Run the VOICEVOX ENGINE (Docker/PC) on your LAN. Speech won't work until terms are accepted.")
+            SettingsHint(stringResource(R.string.settings_tts_voicevox_hint))
         }
 
         SettingsDivider()
@@ -246,10 +246,10 @@ fun SettingsScreen(
         val ttsEngine by viewModel.ttsEngine.collectAsState()
         val availableEngines by viewModel.availableEngines.collectAsState()
 
-        SectionHeader("Android System TTS")
+        SectionHeader(stringResource(R.string.settings_android_tts_section))
 
         Text(
-            text = "Speech Rate: ${"%.1f".format(ttsSpeechRate)}x",
+            text = stringResource(R.string.settings_speech_rate, ttsSpeechRate),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 4.dp)
@@ -263,7 +263,7 @@ fun SettingsScreen(
         )
 
         Text(
-            text = "Pitch: ${"%.1f".format(ttsPitch)}x",
+            text = stringResource(R.string.settings_pitch, ttsPitch),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 4.dp)
@@ -277,11 +277,11 @@ fun SettingsScreen(
         )
 
         if (availableEngines.isNotEmpty()) {
+            val systemDefaultLabel = stringResource(R.string.settings_tts_engine_default)
+            val engineName = availableEngines.find { it.packageName == ttsEngine }?.label
+                ?: ttsEngine.ifEmpty { systemDefaultLabel }
             Text(
-                text = "TTS Engine: ${
-                    availableEngines.find { it.packageName == ttsEngine }?.label
-                        ?: ttsEngine.ifEmpty { "System Default" }
-                }",
+                text = stringResource(R.string.settings_tts_engine, engineName),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -311,44 +311,33 @@ fun SettingsScreen(
         // Keep `viewModel.saveDefaultLocation` around on the SettingsViewModel
         // for compatibility with any other callers; the picker row bypasses
         // it and writes via its own dedicated ViewModel instead.
-        SectionHeader("Weather")
+        SectionHeader(stringResource(R.string.settings_weather_section))
         WeatherLocationPickerRow()
-        SettingsHint(
-            "Used when you ask for the weather without naming a place " +
-                "(\"what's the weather?\" / \"天気教えて\"). Leave empty " +
-                "to fall back to Tokyo."
-        )
+        SettingsHint(stringResource(R.string.settings_weather_hint))
 
         SettingsDivider()
 
         // === News ===
         SectionHeader(stringResource(R.string.news_feed_section_header))
         NewsFeedPickerRow()
-        SettingsHint(
-            "Controls the feed shown on the Home dashboard's headlines card " +
-                "and used as the default for voice news requests. Pick a bundled " +
-                "feed or paste your own RSS/Atom URL."
-        )
+        SettingsHint(stringResource(R.string.settings_news_hint))
 
         SettingsDivider()
 
         // === App Language ===
-        SectionHeader("App Language")
+        SectionHeader(stringResource(R.string.settings_app_language_section))
         LocalePickerRow()
-        SettingsHint(
-            "Overrides the UI language for this app only. Android 13 or later required; " +
-                "the change takes effect immediately without a restart."
-        )
+        SettingsHint(stringResource(R.string.settings_app_language_hint))
 
         SettingsDivider()
 
         // === Speech Recognition ===
-        SectionHeader("Speech Recognition")
+        SectionHeader(stringResource(R.string.settings_speech_recognition_section))
         val sttProvider by viewModel.sttProviderType.collectAsState()
         listOf(
-            "android" to "Android System (online / GMS)",
-            "vosk" to "Vosk (offline) — coming soon",
-            "whisper" to "Whisper (offline) — coming soon"
+            "android" to stringResource(R.string.settings_stt_provider_android),
+            "vosk" to stringResource(R.string.settings_stt_provider_vosk),
+            "whisper" to stringResource(R.string.settings_stt_provider_whisper),
         ).forEach { (id, label) ->
             val isSelected = sttProvider == id
             OutlinedButton(
@@ -361,37 +350,37 @@ fun SettingsScreen(
                 Text(label, color = MaterialTheme.colorScheme.onSurface)
             }
         }
-        SettingsHint("Offline backends are placeholder stubs today. Selecting one surfaces a spoken \"coming soon\" error — fall back to Android until the JNI wiring lands.")
+        SettingsHint(stringResource(R.string.settings_stt_provider_hint))
 
         val sttLanguage by viewModel.sttLanguage.collectAsState()
-        SettingsTextField("STT Language (e.g. ja-JP, en-US)", sttLanguage) { lang ->
+        SettingsTextField(stringResource(R.string.settings_stt_language), sttLanguage) { lang ->
             viewModel.saveSttLanguage(lang)
         }
-        SettingsHint("Leave empty to use device default language")
+        SettingsHint(stringResource(R.string.settings_language_default_hint))
 
         val ttsLanguageVal by viewModel.ttsLanguage.collectAsState()
-        SettingsTextField("TTS Language (e.g. ja-JP, en-US)", ttsLanguageVal) { lang ->
+        SettingsTextField(stringResource(R.string.settings_tts_language), ttsLanguageVal) { lang ->
             viewModel.saveTtsLanguage(lang)
         }
-        SettingsHint("Leave empty to use device default language")
+        SettingsHint(stringResource(R.string.settings_language_default_hint))
 
         SettingsDivider()
 
         // === Wake Word ===
-        SectionHeader("Wake Word")
+        SectionHeader(stringResource(R.string.settings_wake_word_section))
         val hotwordEnabled by viewModel.hotwordEnabled.collectAsState()
-        SettingsToggle("Enable Wake Word", hotwordEnabled) { viewModel.saveHotwordEnabled(it) }
-        SettingsHint("Off = wake word detection disabled, mic only activates from mic button")
+        SettingsToggle(stringResource(R.string.settings_enable_wake_word), hotwordEnabled) { viewModel.saveHotwordEnabled(it) }
+        SettingsHint(stringResource(R.string.settings_enable_wake_word_hint))
 
         val wakeWord by viewModel.wakeWord.collectAsState()
-        SettingsTextField("Wake Word Phrase", wakeWord) { word ->
+        SettingsTextField(stringResource(R.string.settings_wake_word_phrase), wakeWord) { word ->
             viewModel.saveWakeWord(word)
         }
-        SettingsHint("The phrase the app listens for. Restart the app after changing.")
+        SettingsHint(stringResource(R.string.settings_wake_word_phrase_hint))
 
         val wakeWordSensitivity by viewModel.wakeWordSensitivity.collectAsState()
         Text(
-            text = "Sensitivity: ${"%.2f".format(wakeWordSensitivity)}",
+            text = stringResource(R.string.settings_sensitivity, wakeWordSensitivity),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 4.dp)
@@ -403,21 +392,21 @@ fun SettingsScreen(
             steps = 9,
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
-        SettingsHint("Higher = more likely to trigger (can cause false wakes). Lower = more conservative. Default 0.60.")
+        SettingsHint(stringResource(R.string.settings_sensitivity_hint))
 
         val batterySaver by viewModel.batterySaverEnabled.collectAsState()
-        SettingsToggle("Battery Saver", batterySaver) { viewModel.saveBatterySaverEnabled(it) }
-        SettingsHint("Pause wake-word detection when battery <= 20 % and the device is unplugged.")
+        SettingsToggle(stringResource(R.string.settings_battery_saver), batterySaver) { viewModel.saveBatterySaverEnabled(it) }
+        SettingsHint(stringResource(R.string.settings_battery_saver_hint))
 
         val multiroomOn by viewModel.multiroomBroadcastEnabled.collectAsState()
-        SettingsToggle("Multi-room broadcast", multiroomOn) { viewModel.saveMultiroomBroadcastEnabled(it) }
-        SettingsHint("Advertise this device on the LAN via mDNS and accept announcement envelopes from peers on port 8421. Requires a shared secret below.")
+        SettingsToggle(stringResource(R.string.settings_multiroom_broadcast), multiroomOn) { viewModel.saveMultiroomBroadcastEnabled(it) }
+        SettingsHint(stringResource(R.string.settings_multiroom_broadcast_hint))
 
         val multiroomSecret by viewModel.multiroomSecret.collectAsState()
-        SettingsPasswordField("Multi-room shared secret", multiroomSecret) { value ->
+        SettingsPasswordField(stringResource(R.string.settings_multiroom_secret), multiroomSecret) { value ->
             viewModel.saveMultiroomSecret(value)
         }
-        SettingsHint("Identical secret on every speaker. HMAC-SHA256 signs each envelope; mismatches are silently dropped. Minimum 16 chars recommended. QR-pair setup coming in a later release.")
+        SettingsHint(stringResource(R.string.settings_multiroom_secret_hint))
 
         SettingsMultiroomPairingCard(secret = multiroomSecret)
 
@@ -426,36 +415,36 @@ fun SettingsScreen(
                 onClick = onOpenSpeakerGroups,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
             ) {
-                Text("Speaker groups…", color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_speaker_groups_button), color = MaterialTheme.colorScheme.onSurface)
             }
-            SettingsHint("Name subsets of your discovered speakers (e.g. 'kitchen') so you can broadcast to only that room. Groups live on this device only — receivers aren't aware of them.")
+            SettingsHint(stringResource(R.string.settings_speaker_groups_button_hint))
         }
 
         SettingsDivider()
 
         // === Connections ===
-        SectionHeader("Home Assistant")
-        SettingsTextField("Base URL", haBaseUrl) { url ->
+        SectionHeader(stringResource(R.string.settings_home_assistant_section))
+        SettingsTextField(stringResource(R.string.settings_ha_base_url), haBaseUrl) { url ->
             viewModel.saveHaSettings(url, haToken)
         }
-        SettingsPasswordField("Long-Lived Access Token", haToken) { token ->
+        SettingsPasswordField(stringResource(R.string.settings_ha_token), haToken) { token ->
             viewModel.saveHaSettings(haBaseUrl, token)
         }
 
         SettingsDivider()
 
-        SectionHeader("OpenClaw")
-        SettingsTextField("Gateway URL", openClawUrl) { url ->
+        SectionHeader(stringResource(R.string.settings_openclaw_section))
+        SettingsTextField(stringResource(R.string.settings_openclaw_url), openClawUrl) { url ->
             viewModel.saveOpenClawSettings(url)
         }
 
         SettingsDivider()
 
-        SectionHeader("Local LLM (OpenAI Compatible)")
-        SettingsTextField("Endpoint URL", localLlmUrl) { url ->
+        SectionHeader(stringResource(R.string.settings_local_llm_section))
+        SettingsTextField(stringResource(R.string.settings_local_llm_url), localLlmUrl) { url ->
             viewModel.saveLocalLlmSettings(url, localLlmModel)
         }
-        SettingsTextField("Model Name", localLlmModel) { model ->
+        SettingsTextField(stringResource(R.string.settings_local_llm_model), localLlmModel) { model ->
             viewModel.saveLocalLlmSettings(localLlmUrl, model)
         }
 
@@ -463,32 +452,32 @@ fun SettingsScreen(
 
         val switchBotToken by viewModel.switchBotToken.collectAsState()
         val switchBotSecret by viewModel.switchBotSecret.collectAsState()
-        SectionHeader("SwitchBot")
-        SettingsTextField("Token", switchBotToken) { token ->
+        SectionHeader(stringResource(R.string.settings_switchbot_section))
+        SettingsTextField(stringResource(R.string.settings_switchbot_token), switchBotToken) { token ->
             viewModel.saveSwitchBotSettings(token, switchBotSecret)
         }
-        SettingsPasswordField("Secret Key", switchBotSecret) { secret ->
+        SettingsPasswordField(stringResource(R.string.settings_switchbot_secret), switchBotSecret) { secret ->
             viewModel.saveSwitchBotSettings(switchBotToken, secret)
         }
 
         SettingsDivider()
 
         val mqttBrokerUrl by viewModel.mqttBrokerUrl.collectAsState()
-        SectionHeader("MQTT (Shelly / Tasmota)")
-        SettingsTextField("Broker URL", mqttBrokerUrl) { url ->
+        SectionHeader(stringResource(R.string.settings_mqtt_section))
+        SettingsTextField(stringResource(R.string.settings_mqtt_broker_url), mqttBrokerUrl) { url ->
             viewModel.saveMqttSettings(url)
         }
 
         SettingsDivider()
 
         Text(
-            text = "On-Device LLM: The app uses LiteRT-LM for GPU-accelerated inference with Gemma 4 E2B.",
+            text = stringResource(R.string.settings_about_litert),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 8.dp)
         )
         Text(
-            text = "To set as default assistant: Settings > Apps > Default Apps > Digital Assistant > OpenSmartSpeaker",
+            text = stringResource(R.string.settings_about_default_assistant),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 4.dp)
@@ -505,9 +494,9 @@ fun SettingsScreen(
 @Composable
 private fun AboutSection() {
     val context = androidx.compose.ui.platform.LocalContext.current
-    SectionHeader("About")
+    SectionHeader(stringResource(R.string.settings_about_section))
     Text(
-        text = "OpenSmartSpeaker — tablet-first on-device AI smart speaker.",
+        text = stringResource(R.string.settings_about_tagline),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurface
     )
@@ -524,7 +513,7 @@ private fun AboutSection() {
         },
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text("Docs & source on GitHub")
+        Text(stringResource(R.string.settings_about_github))
     }
 }
 
@@ -599,7 +588,7 @@ private fun SettingsTextField(
             contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
-        Text("Save")
+        Text(stringResource(R.string.common_save))
     }
 }
 
@@ -627,6 +616,6 @@ private fun SettingsPasswordField(
             contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
-        Text("Save")
+        Text(stringResource(R.string.common_save))
     }
 }
