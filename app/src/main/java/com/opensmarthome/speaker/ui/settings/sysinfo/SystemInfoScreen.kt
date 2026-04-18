@@ -22,9 +22,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +47,10 @@ fun SystemInfoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("System info") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+                title = { Text(stringResource(R.string.sysinfo_title)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) } },
                 actions = {
-                    TextButton(onClick = { viewModel.refresh() }) { Text("Refresh") }
+                    TextButton(onClick = { viewModel.refresh() }) { Text(stringResource(R.string.common_refresh)) }
                 }
             )
         }
@@ -61,53 +63,58 @@ fun SystemInfoScreen(
             ) { CircularProgressIndicator() }
             return@Scaffold
         }
+        val modelNone = stringResource(R.string.sysinfo_model_none)
+        val notBroadcasting = stringResource(R.string.sysinfo_not_broadcasting)
+        val online = stringResource(R.string.sysinfo_online)
+        val offline = stringResource(R.string.sysinfo_offline)
+        val freshLabel = stringResource(R.string.sysinfo_freshness_fresh)
+        val staleLabel = stringResource(R.string.sysinfo_freshness_stale)
+        val goneLabel = stringResource(R.string.sysinfo_freshness_gone)
         val rows = buildList {
-            add("Active model" to (state.activeProviderModel ?: "(none)"))
-            add("Providers registered" to "${state.providerCount}")
-            add("Tools available" to "${state.toolCount}")
-            add("Smart-home devices" to "${state.deviceCount}")
+            add(stringResource(R.string.sysinfo_active_model) to (state.activeProviderModel ?: modelNone))
+            add(stringResource(R.string.sysinfo_providers_count) to "${state.providerCount}")
+            add(stringResource(R.string.sysinfo_tools_count) to "${state.toolCount}")
+            add(stringResource(R.string.sysinfo_devices_count) to "${state.deviceCount}")
             state.devicesByType.forEach { (type, count) ->
                 add("  • $type" to "$count")
             }
-            add("Skills" to "${state.skillCount}")
-            add("Routines" to "${state.routineCount}")
-            add("Documents (RAG)" to "${state.documentCount}")
-            add("Memory entries" to "${state.memoryCount}")
-            add("Connectivity" to if (state.online) "Online" else "Offline")
-            add("Latency budget violations" to "${state.totalBudgetViolations}")
-            add("Latency measurements (lifetime)" to "${state.totalLatencyMeasurements}")
-            add("Thermal state" to state.thermalLevel)
-            add("Broadcasting as" to (registeredName ?: "(not broadcasting)"))
-            add("Nearby speakers (mDNS)" to if (nearby.isEmpty()) "(none)" else "${nearby.size}")
+            add(stringResource(R.string.sysinfo_skills_count) to "${state.skillCount}")
+            add(stringResource(R.string.sysinfo_routines_count) to "${state.routineCount}")
+            add(stringResource(R.string.sysinfo_documents_count) to "${state.documentCount}")
+            add(stringResource(R.string.sysinfo_memory_count) to "${state.memoryCount}")
+            add(stringResource(R.string.sysinfo_connectivity) to if (state.online) online else offline)
+            add(stringResource(R.string.sysinfo_latency_violations) to "${state.totalBudgetViolations}")
+            add(stringResource(R.string.sysinfo_latency_measurements) to "${state.totalLatencyMeasurements}")
+            add(stringResource(R.string.sysinfo_thermal_state) to state.thermalLevel)
+            add(stringResource(R.string.sysinfo_broadcasting_as) to (registeredName ?: notBroadcasting))
+            add(stringResource(R.string.sysinfo_nearby_speakers) to if (nearby.isEmpty()) modelNone else "${nearby.size}")
             nearby.forEach { speaker ->
                 val hostSuffix = speaker.host?.let { host ->
                     speaker.port?.let { " — $host:$it" } ?: " — $host"
                 } ?: ""
                 val freshnessSuffix = when (freshness[speaker.serviceName]) {
-                    com.opensmarthome.speaker.multiroom.PeerFreshness.Fresh -> " · fresh"
-                    com.opensmarthome.speaker.multiroom.PeerFreshness.Stale -> " · stale"
-                    com.opensmarthome.speaker.multiroom.PeerFreshness.Gone -> " · gone"
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Fresh -> " · $freshLabel"
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Stale -> " · $staleLabel"
+                    com.opensmarthome.speaker.multiroom.PeerFreshness.Gone -> " · $goneLabel"
                     null -> ""
                 }
                 val value = (hostSuffix + freshnessSuffix).trimStart(' ', '—', ' ')
                 add("  • ${speaker.serviceName}" to value)
             }
             if (state.multiroomTraffic.isNotEmpty()) {
-                // Collapsed `{in}/{out}` counter per envelope type — lets the
-                // user sanity-check that the mesh is actually exchanging
-                // traffic without paging through logs.
-                add("Multi-room traffic" to "")
+                add(stringResource(R.string.sysinfo_multiroom_traffic) to "")
                 state.multiroomTraffic.forEach { row ->
-                    add("  • ${row.type}" to "${row.outbound} out · ${row.inbound} in")
+                    add(
+                        "  • ${row.type}" to
+                            stringResource(R.string.sysinfo_traffic_summary, row.outbound, row.inbound)
+                    )
                 }
             }
             if (state.rejections.isNotEmpty()) {
-                // Only render when there's actually something to explain —
-                // an empty section would just add visual noise when the
-                // mesh is healthy.
-                add("Multi-room rejections" to "")
+                add(stringResource(R.string.sysinfo_multiroom_rejections) to "")
                 state.rejections.forEach { row ->
-                    add("  • ${row.reason}" to "${row.count}× ${row.hint}")
+                    val hintText = row.hintRes?.let { stringResource(it) } ?: row.hintFallback
+                    add("  • ${row.reason}" to "${row.count}× $hintText")
                 }
             }
         }
@@ -121,14 +128,11 @@ fun SystemInfoScreen(
                 InfoRow(label = row.first, value = row.second)
             }
             if (showClearCounters) {
-                // Only render the clear action when something is actually
-                // accumulated — hiding it on a clean mesh keeps the screen
-                // free of orphan controls the user has no reason to tap.
                 item(key = "clear-multiroom-counters") {
                     TextButton(
                         onClick = { viewModel.clearMultiroomCounters() },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Clear multi-room counters") }
+                    ) { Text(stringResource(R.string.sysinfo_clear_multiroom)) }
                 }
             }
         }

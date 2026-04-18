@@ -100,6 +100,65 @@
     <string name="briefing_retry">再試行</string>
 
     <!-- Common buttons -->
+    <string name="common_refresh">更新</string>
+
+    <!-- Providers screen -->
+    <string name="providers_title">アシスタントプロバイダー</string>
+    <string name="providers_empty">まだプロバイダーは登録されていません。オンデバイスモデルをダウンロードするか、設定でゲートウェイを構成してください。</string>
+    <string name="providers_active">有効</string>
+    <string name="providers_badge_on_device">オンデバイス</string>
+    <string name="providers_badge_streaming">ストリーミング</string>
+    <string name="providers_badge_tools">ツール</string>
+    <string name="providers_badge_vision">ビジョン</string>
+
+    <!-- Multi-room card + mesh health -->
+    <string name="multiroom_title">マルチルーム</string>
+    <string name="multiroom_broadcast">ブロードキャスト: %1$s</string>
+    <string name="multiroom_status_on">オン</string>
+    <string name="multiroom_status_off">オフ</string>
+    <string name="multiroom_shared_secret">共有シークレット: %1$s</string>
+    <string name="multiroom_secret_set">設定済み</string>
+    <string name="multiroom_secret_not_set">未設定</string>
+    <string name="multiroom_broadcasting_as">ブロードキャスト名: %1$s</string>
+    <string name="multiroom_peers_summary">ピア: %1$d（%2$d 新鮮、%3$d 古い、%4$d 消失）</string>
+    <string name="multiroom_hint_broadcast_off">メッシュに参加するにはマルチルームブロードキャストをオンにしてください。</string>
+    <string name="multiroom_hint_no_secret">共有シークレットを設定してください</string>
+    <string name="multiroom_hint_no_peers">ピアがまだ見つかりません — 他のタブレットのマルチルームブロードキャストがオンか確認してください。</string>
+    <string name="multiroom_hint_healthy">メッシュは正常です。</string>
+
+    <!-- System info screen -->
+    <string name="sysinfo_title">システム情報</string>
+    <string name="sysinfo_active_model">有効なモデル</string>
+    <string name="sysinfo_model_none">（なし）</string>
+    <string name="sysinfo_providers_count">登録済みプロバイダー</string>
+    <string name="sysinfo_tools_count">利用可能なツール</string>
+    <string name="sysinfo_devices_count">スマートホームデバイス</string>
+    <string name="sysinfo_skills_count">スキル</string>
+    <string name="sysinfo_routines_count">ルーティン</string>
+    <string name="sysinfo_documents_count">ドキュメント (RAG)</string>
+    <string name="sysinfo_memory_count">メモリエントリ</string>
+    <string name="sysinfo_connectivity">接続状態</string>
+    <string name="sysinfo_online">オンライン</string>
+    <string name="sysinfo_offline">オフライン</string>
+    <string name="sysinfo_latency_violations">レイテンシ予算超過</string>
+    <string name="sysinfo_latency_measurements">レイテンシ測定回数（累計）</string>
+    <string name="sysinfo_thermal_state">サーマル状態</string>
+    <string name="sysinfo_broadcasting_as">ブロードキャスト名</string>
+    <string name="sysinfo_not_broadcasting">（ブロードキャストしていません）</string>
+    <string name="sysinfo_nearby_speakers">近くのスピーカー (mDNS)</string>
+    <string name="sysinfo_multiroom_traffic">マルチルームトラフィック</string>
+    <string name="sysinfo_multiroom_rejections">マルチルーム拒否</string>
+    <string name="sysinfo_traffic_summary">送信 %1$d · 受信 %2$d</string>
+    <string name="sysinfo_clear_multiroom">マルチルームカウンタをクリア</string>
+    <string name="sysinfo_freshness_fresh">新鮮</string>
+    <string name="sysinfo_freshness_stale">古い</string>
+    <string name="sysinfo_freshness_gone">消失</string>
+    <string name="sysinfo_rejection_malformed_json">不正な JSON — ピアが無効なフレームを送信しています</string>
+    <string name="sysinfo_rejection_missing_field">エンベロープの必須フィールドが欠落</string>
+    <string name="sysinfo_rejection_version_mismatch">プロトコルバージョン不一致 — ピアのビルドが異なります</string>
+    <string name="sysinfo_rejection_replay_window">リプレイウィンドウ外 — デバイスの時刻を確認してください</string>
+    <string name="sysinfo_rejection_no_secret">このデバイスに共有シークレットが設定されていません</string>
+    <string name="sysinfo_rejection_hmac_mismatch">HMAC 不一致 — 共有シークレットを確認してください</string>
     <string name="common_save">保存</string>
 
     <!-- System prompt screen -->

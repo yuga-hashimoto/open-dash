@@ -175,7 +175,7 @@ class ProvidersViewModelTest {
         )
         val hint = meshHealthHint(state)
         assertThat(hint.healthy).isFalse()
-        assertThat(hint.message).contains("Multi-room broadcast")
+        assertThat(hint.messageRes).isEqualTo(com.opensmarthome.speaker.R.string.multiroom_hint_broadcast_off)
     }
 
     @Test
@@ -191,7 +191,7 @@ class ProvidersViewModelTest {
         )
         val hint = meshHealthHint(state)
         assertThat(hint.healthy).isFalse()
-        assertThat(hint.message).isEqualTo("Set a shared secret")
+        assertThat(hint.messageRes).isEqualTo(com.opensmarthome.speaker.R.string.multiroom_hint_no_secret)
     }
 
     @Test
@@ -207,7 +207,7 @@ class ProvidersViewModelTest {
         )
         val hint = meshHealthHint(state)
         assertThat(hint.healthy).isFalse()
-        assertThat(hint.message).contains("No peers")
+        assertThat(hint.messageRes).isEqualTo(com.opensmarthome.speaker.R.string.multiroom_hint_no_peers)
     }
 
     @Test
@@ -223,7 +223,7 @@ class ProvidersViewModelTest {
         )
         val hint = meshHealthHint(state)
         assertThat(hint.healthy).isTrue()
-        assertThat(hint.message).isEqualTo("Mesh is healthy.")
+        assertThat(hint.messageRes).isEqualTo(com.opensmarthome.speaker.R.string.multiroom_hint_healthy)
     }
 
     private fun buildVm(
