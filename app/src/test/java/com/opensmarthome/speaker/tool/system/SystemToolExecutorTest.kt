@@ -33,6 +33,7 @@ class SystemToolExecutorTest {
         assertThat(names).contains("cancel_timer")
         assertThat(names).contains("set_volume")
         assertThat(names).contains("get_volume")
+        assertThat(names).contains("adjust_volume")
     }
 
     @Test
@@ -75,6 +76,47 @@ class SystemToolExecutorTest {
         )
 
         assertThat(result.success).isTrue()
+    }
+
+    @Test
+    fun `adjust_volume raises by steps and reports new level`() = runTest {
+        coEvery { volumeManager.adjustVolume(1) } returns 55
+
+        val result = executor.execute(
+            ToolCall(id = "10", name = "adjust_volume", arguments = mapOf(
+                "steps" to 1.0
+            ))
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(result.data).contains("55")
+        coVerify { volumeManager.adjustVolume(1) }
+    }
+
+    @Test
+    fun `adjust_volume defaults to one step when argument omitted`() = runTest {
+        coEvery { volumeManager.adjustVolume(1) } returns 60
+
+        val result = executor.execute(
+            ToolCall(id = "11", name = "adjust_volume", arguments = emptyMap())
+        )
+
+        assertThat(result.success).isTrue()
+        coVerify { volumeManager.adjustVolume(1) }
+    }
+
+    @Test
+    fun `adjust_volume accepts negative for volume down`() = runTest {
+        coEvery { volumeManager.adjustVolume(-2) } returns 30
+
+        val result = executor.execute(
+            ToolCall(id = "12", name = "adjust_volume", arguments = mapOf(
+                "steps" to -2.0
+            ))
+        )
+
+        assertThat(result.success).isTrue()
+        coVerify { volumeManager.adjustVolume(-2) }
     }
 
     @Test

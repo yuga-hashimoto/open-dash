@@ -152,6 +152,11 @@ class SystemPromptBuilder(
                 call = """{"name": "set_volume", "arguments": {"level": 50}}"""
             ),
             FewShot(
+                tool = "adjust_volume",
+                user = "音量を少し上げて",
+                call = """{"name": "adjust_volume", "arguments": {"steps": 1}}"""
+            ),
+            FewShot(
                 tool = "get_news",
                 user = "ニュースを教えて",
                 call = """{"tool_call": {"name": "get_news", "arguments": {"topic": "top"}}}"""

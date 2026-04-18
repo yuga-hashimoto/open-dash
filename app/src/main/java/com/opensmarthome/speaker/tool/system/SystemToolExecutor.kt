@@ -49,9 +49,23 @@ class SystemToolExecutor(
         ),
         ToolSchema(
             name = "set_volume",
-            description = "Set the device volume level (0-100).",
+            description = "Set the device volume to an absolute level (0-100). " +
+                "Prefer adjust_volume for relative requests like 'a bit louder'.",
             parameters = mapOf(
                 "level" to ToolParameter("number", "Volume level 0-100", required = true)
+            )
+        ),
+        ToolSchema(
+            name = "adjust_volume",
+            description = "Nudge the device volume by a number of hardware steps. " +
+                "Positive raises, negative lowers. Use this for 'volume up', 'louder', " +
+                "'音量を上げて', 'quieter', etc. — never opens the system volume UI.",
+            parameters = mapOf(
+                "steps" to ToolParameter(
+                    type = "number",
+                    description = "Signed step count (e.g. 1 up, -1 down). Defaults to 1.",
+                    required = false
+                )
             )
         ),
         ToolSchema(
@@ -86,6 +100,7 @@ class SystemToolExecutor(
                 "cancel_all_timers" -> executeCancelAllTimers(call)
                 "get_timers" -> executeGetTimers(call)
                 "set_volume" -> executeSetVolume(call)
+                "adjust_volume" -> executeAdjustVolume(call)
                 "get_volume" -> executeGetVolume(call)
                 "get_datetime" -> executeGetDatetime(call)
                 "launch_app" -> executeLaunchApp(call)
@@ -145,6 +160,16 @@ class SystemToolExecutor(
             ToolResult(call.id, true, """{"volume": $clamped}""")
         } else {
             ToolResult(call.id, false, "", "Failed to set volume")
+        }
+    }
+
+    private suspend fun executeAdjustVolume(call: ToolCall): ToolResult {
+        val steps = (call.arguments["steps"] as? Number)?.toInt() ?: 1
+        val newLevel = volumeManager.adjustVolume(steps)
+        return if (newLevel != null) {
+            ToolResult(call.id, true, """{"volume": $newLevel, "steps": $steps}""")
+        } else {
+            ToolResult(call.id, false, "", "Failed to adjust volume")
         }
     }
 

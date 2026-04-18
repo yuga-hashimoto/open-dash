@@ -47,23 +47,31 @@ class FastPathRouterTest {
     }
 
     @Test
-    fun `volume up`() {
+    fun `volume up nudges by one step via adjust_volume`() {
         val m = router.match("Volume up")
-        assertThat(m?.toolName).isEqualTo("set_volume")
-        assertThat(m?.arguments?.get("level")).isEqualTo(70.0)
+        assertThat(m?.toolName).isEqualTo("adjust_volume")
+        assertThat(m?.arguments?.get("steps")).isEqualTo(1.0)
     }
 
     @Test
-    fun `louder`() {
+    fun `louder routes to adjust_volume up`() {
         val m = router.match("Louder please")
-        assertThat(m?.toolName).isEqualTo("set_volume")
+        assertThat(m?.toolName).isEqualTo("adjust_volume")
+        assertThat(m?.arguments?.get("steps")).isEqualTo(1.0)
     }
 
     @Test
-    fun `volume down japanese`() {
+    fun `volume down japanese nudges by one step via adjust_volume`() {
         val m = router.match("音量を下げて")
-        assertThat(m?.toolName).isEqualTo("set_volume")
-        assertThat(m?.arguments?.get("level")).isEqualTo(30.0)
+        assertThat(m?.toolName).isEqualTo("adjust_volume")
+        assertThat(m?.arguments?.get("steps")).isEqualTo(-1.0)
+    }
+
+    @Test
+    fun `volume up japanese nudges by one step via adjust_volume`() {
+        val m = router.match("音量を上げて")
+        assertThat(m?.toolName).isEqualTo("adjust_volume")
+        assertThat(m?.arguments?.get("steps")).isEqualTo(1.0)
     }
 
     @Test

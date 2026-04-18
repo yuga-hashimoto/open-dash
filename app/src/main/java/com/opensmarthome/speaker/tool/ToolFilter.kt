@@ -51,7 +51,7 @@ object ToolFilter {
         ),
         Bucket(
             keywords = listOf("volume", "mute", "loud", "quiet", "音量", "ミュート"),
-            tools = setOf("set_volume", "get_volume")
+            tools = setOf("set_volume", "adjust_volume", "get_volume")
         ),
         Bucket(
             keywords = listOf("calendar", "schedule", "appointment", "meeting", "予定", "カレンダー"),

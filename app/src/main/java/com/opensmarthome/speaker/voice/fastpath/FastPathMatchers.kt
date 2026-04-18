@@ -221,11 +221,23 @@ object VolumeMatcher : FastPathMatcher {
         if (unmutePatterns.any { it.containsMatchIn(normalized) }) {
             return FastPathMatch(toolName = "set_volume", arguments = mapOf("level" to 50.0), spokenConfirmation = "Unmuted.")
         }
+        // Relative nudge via adjust_volume: 1 hardware step, no system volume
+        // overlay (set_volume used to jump to a fixed 70/30 and flash
+        // FLAG_SHOW_UI, which surprised users). Stolen from Ava's
+        // VolumeControlService.
         if (upPatterns.any { it.containsMatchIn(normalized) }) {
-            return FastPathMatch(toolName = "set_volume", arguments = mapOf("level" to 70.0), spokenConfirmation = "Volume up.")
+            return FastPathMatch(
+                toolName = "adjust_volume",
+                arguments = mapOf("steps" to 1.0),
+                spokenConfirmation = "Volume up."
+            )
         }
         if (downPatterns.any { it.containsMatchIn(normalized) }) {
-            return FastPathMatch(toolName = "set_volume", arguments = mapOf("level" to 30.0), spokenConfirmation = "Volume down.")
+            return FastPathMatch(
+                toolName = "adjust_volume",
+                arguments = mapOf("steps" to -1.0),
+                spokenConfirmation = "Volume down."
+            )
         }
         return null
     }
