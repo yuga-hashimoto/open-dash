@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Ladataan säätä…</string>
+    <string name="briefing_weather_error">Säätä ei voitu ladata</string>
+    <string name="briefing_headlines_title">Otsikot</string>
+    <string name="briefing_headlines_loading">Haetaan päivän otsikoita…</string>
+    <string name="briefing_headlines_error">Otsikoita ei voitu ladata</string>
+    <string name="briefing_error_network">Tarkista yhteys ja yritä uudelleen.</string>
+    <string name="briefing_error_parse">Lähde palautti odottamattoman vastauksen.</string>
+    <string name="briefing_error_unknown">Jokin meni pieleen. Yritä uudelleen.</string>
+    <string name="briefing_retry">Yritä uudelleen</string>
 </resources>

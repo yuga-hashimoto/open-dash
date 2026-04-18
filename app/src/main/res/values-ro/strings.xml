@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Se încarcă vremea…</string>
+    <string name="briefing_weather_error">Nu s-a putut încărca vremea</string>
+    <string name="briefing_headlines_title">Titluri</string>
+    <string name="briefing_headlines_loading">Se preiau titlurile zilei…</string>
+    <string name="briefing_headlines_error">Nu s-au putut încărca titlurile</string>
+    <string name="briefing_error_network">Verificați conexiunea și încercați din nou.</string>
+    <string name="briefing_error_parse">Sursa a returnat un răspuns neașteptat.</string>
+    <string name="briefing_error_unknown">Ceva nu a mers bine. Încercați din nou.</string>
+    <string name="briefing_retry">Reîncearcă</string>
 </resources>

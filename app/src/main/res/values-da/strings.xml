@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Indlæser vejret…</string>
+    <string name="briefing_weather_error">Kunne ikke indlæse vejret</string>
+    <string name="briefing_headlines_title">Overskrifter</string>
+    <string name="briefing_headlines_loading">Henter dagens overskrifter…</string>
+    <string name="briefing_headlines_error">Kunne ikke indlæse overskrifter</string>
+    <string name="briefing_error_network">Tjek din forbindelse og prøv igen.</string>
+    <string name="briefing_error_parse">Kilden returnerede et uventet svar.</string>
+    <string name="briefing_error_unknown">Noget gik galt. Prøv igen.</string>
+    <string name="briefing_retry">Prøv igen</string>
 </resources>

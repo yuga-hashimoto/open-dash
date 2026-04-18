@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">मौसम लोड हो रहा है…</string>
+    <string name="briefing_weather_error">मौसम लोड नहीं हो सका</string>
+    <string name="briefing_headlines_title">सुर्खियां</string>
+    <string name="briefing_headlines_loading">आज की सुर्खियां लाई जा रही हैं…</string>
+    <string name="briefing_headlines_error">सुर्खियां लोड नहीं हो सकीं</string>
+    <string name="briefing_error_network">अपना कनेक्शन जांचें और पुनः प्रयास करें।</string>
+    <string name="briefing_error_parse">स्रोत से अप्रत्याशित प्रतिक्रिया प्राप्त हुई।</string>
+    <string name="briefing_error_unknown">कुछ गड़बड़ हो गई। कृपया पुनः प्रयास करें।</string>
+    <string name="briefing_retry">पुनः प्रयास करें</string>
 </resources>

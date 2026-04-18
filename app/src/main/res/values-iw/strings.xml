@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">טוען מזג אוויר…</string>
+    <string name="briefing_weather_error">לא ניתן לטעון מזג אוויר</string>
+    <string name="briefing_headlines_title">כותרות</string>
+    <string name="briefing_headlines_loading">מביא את הכותרות של היום…</string>
+    <string name="briefing_headlines_error">לא ניתן לטעון כותרות</string>
+    <string name="briefing_error_network">בדוק את החיבור שלך ונסה שוב.</string>
+    <string name="briefing_error_parse">המקור החזיר תגובה לא צפויה.</string>
+    <string name="briefing_error_unknown">משהו השתבש. אנא נסה שוב.</string>
+    <string name="briefing_retry">נסה שוב</string>
 </resources>

@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Φόρτωση καιρού…</string>
+    <string name="briefing_weather_error">Δεν ήταν δυνατή η φόρτωση του καιρού</string>
+    <string name="briefing_headlines_title">Πρωτοσέλιδα</string>
+    <string name="briefing_headlines_loading">Λήψη σημερινών πρωτοσέλιδων…</string>
+    <string name="briefing_headlines_error">Δεν ήταν δυνατή η φόρτωση των πρωτοσέλιδων</string>
+    <string name="briefing_error_network">Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.</string>
+    <string name="briefing_error_parse">Η πηγή επέστρεψε μη αναμενόμενη απάντηση.</string>
+    <string name="briefing_error_unknown">Κάτι πήγε στραβά. Δοκιμάστε ξανά.</string>
+    <string name="briefing_retry">Επανάληψη</string>
 </resources>

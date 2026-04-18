@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">กำลังโหลดสภาพอากาศ…</string>
+    <string name="briefing_weather_error">ไม่สามารถโหลดสภาพอากาศได้</string>
+    <string name="briefing_headlines_title">พาดหัวข่าว</string>
+    <string name="briefing_headlines_loading">กำลังดึงพาดหัวข่าวของวันนี้…</string>
+    <string name="briefing_headlines_error">ไม่สามารถโหลดพาดหัวข่าวได้</string>
+    <string name="briefing_error_network">ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
+    <string name="briefing_error_parse">แหล่งข้อมูลส่งคืนการตอบสนองที่ไม่คาดคิด</string>
+    <string name="briefing_error_unknown">มีบางอย่างผิดพลาด โปรดลองอีกครั้ง</string>
+    <string name="briefing_retry">ลองอีกครั้ง</string>
 </resources>
