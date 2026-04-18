@@ -44,4 +44,33 @@
     <string name="briefing_error_parse">ソースから予期しない応答が返されました。</string>
     <string name="briefing_error_unknown">問題が発生しました。もう一度お試しください。</string>
     <string name="briefing_retry">再試行</string>
+
+    <!-- Common buttons -->
+    <string name="common_cancel">キャンセル</string>
+    <string name="common_back">戻る</string>
+
+    <!-- Skills screen -->
+    <string name="skills_title">スキル</string>
+    <string name="skills_reload">再読み込み</string>
+    <string name="skills_installed_count">%1$d 件のスキルをインストール済み</string>
+    <string name="skills_install_from_url">URL からスキルをインストール</string>
+    <string name="skills_install_url_placeholder">https://\u2026/SKILL.md</string>
+    <string name="skills_installing">インストール中\u2026</string>
+    <string name="skills_install_button">インストール</string>
+    <string name="skills_source_prefix">ソース: %1$s</string>
+    <string name="skills_remove">削除</string>
+    <string name="skills_error_bundled_or_removed">スキル「%1$s」は同梱品または既に削除済みです。</string>
+    <string name="skills_error_url_empty">URL が空です</string>
+    <string name="skills_error_install_failed">インストールに失敗しました: %1$s</string>
+
+    <!-- Memory screen -->
+    <string name="memory_title">長期メモリ</string>
+    <string name="memory_clear_all">すべて消去</string>
+    <string name="memory_clear_dialog_title">すべてのメモリを消去しますか？</string>
+    <string name="memory_clear_dialog_body">エージェントが学習したすべてのキーと値のペアを削除します。この操作は取り消せません。</string>
+    <string name="memory_clear_confirm">消去</string>
+    <string name="memory_search_placeholder">キーまたは値で検索</string>
+    <string name="memory_empty">まだメモリは保存されていません。</string>
+    <string name="memory_count">%1$d 件のメモリ</string>
+    <string name="memory_forget">忘れる</string>
 </resources>

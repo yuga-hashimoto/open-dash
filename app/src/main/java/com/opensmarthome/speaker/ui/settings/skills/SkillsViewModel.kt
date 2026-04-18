@@ -1,7 +1,9 @@
 package com.opensmarthome.speaker.ui.settings.skills
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.assistant.skills.SkillInstaller
 import com.opensmarthome.speaker.assistant.skills.SkillRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,12 +20,17 @@ class SkillsViewModel @Inject constructor(
     private val installer: SkillInstaller
 ) : ViewModel() {
 
+    data class UiMessage(
+        @StringRes val resId: Int,
+        val args: List<String> = emptyList(),
+    )
+
     sealed class UiState {
         data object Loading : UiState()
         data class Loaded(
             val skills: List<SkillRepository.SkillView>,
             val installing: Boolean = false,
-            val errorMessage: String? = null
+            val errorMessage: UiMessage? = null
         ) : UiState()
     }
 
@@ -42,7 +49,7 @@ class SkillsViewModel @Inject constructor(
         viewModelScope.launch {
             val ok = repository.delete(name)
             if (!ok) {
-                setError("Skill '$name' is bundled or already removed.")
+                setError(UiMessage(R.string.skills_error_bundled_or_removed, listOf(name)))
             }
             refresh()
         }
@@ -63,7 +70,7 @@ class SkillsViewModel @Inject constructor(
     fun installFromUrl(url: String) {
         val trimmed = url.trim()
         if (trimmed.isBlank()) {
-            setError("URL is empty")
+            setError(UiMessage(R.string.skills_error_url_empty))
             return
         }
         setInstalling(true)
@@ -76,7 +83,8 @@ class SkillsViewModel @Inject constructor(
             }
             when (result) {
                 is SkillInstaller.Result.Installed -> refresh()
-                is SkillInstaller.Result.Failed -> setError(result.reason)
+                is SkillInstaller.Result.Failed ->
+                    setError(UiMessage(R.string.skills_error_install_failed, listOf(result.reason)))
             }
             setInstalling(false)
         }
@@ -88,7 +96,7 @@ class SkillsViewModel @Inject constructor(
         }
     }
 
-    private fun setError(message: String) {
+    private fun setError(message: UiMessage) {
         val current = _state.value as? UiState.Loaded ?: UiState.Loaded(emptyList())
         _state.value = current.copy(errorMessage = message)
     }

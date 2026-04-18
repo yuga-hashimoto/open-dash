@@ -44,4 +44,33 @@
     <string name="briefing_error_parse">Kilden returnerede et uventet svar.</string>
     <string name="briefing_error_unknown">Noget gik galt. Prøv igen.</string>
     <string name="briefing_retry">Prøv igen</string>
+
+    <!-- Common buttons -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_back">Back</string>
+
+    <!-- Skills screen -->
+    <string name="skills_title">Skills</string>
+    <string name="skills_reload">Reload</string>
+    <string name="skills_installed_count">%1$d skills installed</string>
+    <string name="skills_install_from_url">Install skill from URL</string>
+    <string name="skills_install_url_placeholder">https://\u2026/SKILL.md</string>
+    <string name="skills_installing">Installing\u2026</string>
+    <string name="skills_install_button">Install</string>
+    <string name="skills_source_prefix">Source: %1$s</string>
+    <string name="skills_remove">Remove</string>
+    <string name="skills_error_bundled_or_removed">Skill \'%1$s\' is bundled or already removed.</string>
+    <string name="skills_error_url_empty">URL is empty</string>
+    <string name="skills_error_install_failed">Install failed: %1$s</string>
+
+    <!-- Memory screen -->
+    <string name="memory_title">Long-term memory</string>
+    <string name="memory_clear_all">Clear all</string>
+    <string name="memory_clear_dialog_title">Clear all memory?</string>
+    <string name="memory_clear_dialog_body">This deletes every key-value pair the agent has learned. Cannot be undone.</string>
+    <string name="memory_clear_confirm">Clear</string>
+    <string name="memory_search_placeholder">Search keys or values</string>
+    <string name="memory_empty">No memories stored yet.</string>
+    <string name="memory_count">%1$d memories</string>
+    <string name="memory_forget">Forget</string>
 </resources>
