@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">ウェイクワードでTTSを割り込み</string>
     <string name="settings_media_button_trigger">メディアボタンでトリガー</string>
     <string name="settings_media_button_trigger_hint">Bluetoothヘッドセットのボタンで音声入力を開始します</string>
+    <string name="briefing_weather_loading">天気を読み込み中…</string>
+    <string name="briefing_weather_error">天気を取得できませんでした</string>
+    <string name="briefing_headlines_title">ニュース</string>
+    <string name="briefing_headlines_loading">今日のニュースを取得中…</string>
+    <string name="briefing_headlines_error">ニュースを取得できませんでした</string>
+    <string name="briefing_error_network">接続を確認して、もう一度お試しください。</string>
+    <string name="briefing_error_parse">ソースから予期しない応答が返されました。</string>
+    <string name="briefing_error_unknown">問題が発生しました。もう一度お試しください。</string>
+    <string name="briefing_retry">再試行</string>
 </resources>

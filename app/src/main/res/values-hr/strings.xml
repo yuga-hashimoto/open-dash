@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Učitavanje vremena…</string>
+    <string name="briefing_weather_error">Vrijeme se nije moglo učitati</string>
+    <string name="briefing_headlines_title">Naslovi</string>
+    <string name="briefing_headlines_loading">Dohvaćanje današnjih naslova…</string>
+    <string name="briefing_headlines_error">Naslovi se nisu mogli učitati</string>
+    <string name="briefing_error_network">Provjerite vezu i pokušajte ponovno.</string>
+    <string name="briefing_error_parse">Izvor je vratio neočekivani odgovor.</string>
+    <string name="briefing_error_unknown">Nešto je pošlo po zlu. Pokušajte ponovno.</string>
+    <string name="briefing_retry">Pokušaj ponovno</string>
 </resources>

@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Memuatkan cuaca…</string>
+    <string name="briefing_weather_error">Tidak dapat memuatkan cuaca</string>
+    <string name="briefing_headlines_title">Tajuk Utama</string>
+    <string name="briefing_headlines_loading">Mendapatkan tajuk utama hari ini…</string>
+    <string name="briefing_headlines_error">Tidak dapat memuatkan tajuk utama</string>
+    <string name="briefing_error_network">Semak sambungan anda dan cuba lagi.</string>
+    <string name="briefing_error_parse">Sumber mengembalikan respons yang tidak dijangka.</string>
+    <string name="briefing_error_unknown">Sesuatu berlaku. Sila cuba lagi.</string>
+    <string name="briefing_retry">Cuba lagi</string>
 </resources>

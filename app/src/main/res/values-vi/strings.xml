@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Đang tải thời tiết…</string>
+    <string name="briefing_weather_error">Không thể tải thời tiết</string>
+    <string name="briefing_headlines_title">Tin nổi bật</string>
+    <string name="briefing_headlines_loading">Đang lấy tin nổi bật hôm nay…</string>
+    <string name="briefing_headlines_error">Không thể tải tin nổi bật</string>
+    <string name="briefing_error_network">Kiểm tra kết nối và thử lại.</string>
+    <string name="briefing_error_parse">Nguồn trả về phản hồi không mong đợi.</string>
+    <string name="briefing_error_unknown">Đã xảy ra lỗi. Vui lòng thử lại.</string>
+    <string name="briefing_retry">Thử lại</string>
 </resources>

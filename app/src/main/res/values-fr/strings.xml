@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Chargement de la météo…</string>
+    <string name="briefing_weather_error">Impossible de charger la météo</string>
+    <string name="briefing_headlines_title">À la une</string>
+    <string name="briefing_headlines_loading">Récupération des titres du jour…</string>
+    <string name="briefing_headlines_error">Impossible de charger les titres</string>
+    <string name="briefing_error_network">Vérifiez votre connexion et réessayez.</string>
+    <string name="briefing_error_parse">La source a renvoyé une réponse inattendue.</string>
+    <string name="briefing_error_unknown">Une erreur s\'est produite. Veuillez réessayer.</string>
+    <string name="briefing_retry">Réessayer</string>
 </resources>

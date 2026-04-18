@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Hava durumu yükleniyor…</string>
+    <string name="briefing_weather_error">Hava durumu yüklenemedi</string>
+    <string name="briefing_headlines_title">Başlıklar</string>
+    <string name="briefing_headlines_loading">Bugünün başlıkları getiriliyor…</string>
+    <string name="briefing_headlines_error">Başlıklar yüklenemedi</string>
+    <string name="briefing_error_network">Bağlantınızı kontrol edip tekrar deneyin.</string>
+    <string name="briefing_error_parse">Kaynak beklenmeyen bir yanıt döndürdü.</string>
+    <string name="briefing_error_unknown">Bir şeyler ters gitti. Lütfen tekrar deneyin.</string>
+    <string name="briefing_retry">Yeniden dene</string>
 </resources>

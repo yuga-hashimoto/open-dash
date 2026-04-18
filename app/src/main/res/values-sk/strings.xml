@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Načítava sa počasie…</string>
+    <string name="briefing_weather_error">Počasie sa nepodarilo načítať</string>
+    <string name="briefing_headlines_title">Titulky</string>
+    <string name="briefing_headlines_loading">Načítavajú sa dnešné titulky…</string>
+    <string name="briefing_headlines_error">Titulky sa nepodarilo načítať</string>
+    <string name="briefing_error_network">Skontrolujte pripojenie a skúste to znova.</string>
+    <string name="briefing_error_parse">Zdroj vrátil neočakávanú odpoveď.</string>
+    <string name="briefing_error_unknown">Niečo sa pokazilo. Skúste to znova.</string>
+    <string name="briefing_retry">Skúsiť znova</string>
 </resources>

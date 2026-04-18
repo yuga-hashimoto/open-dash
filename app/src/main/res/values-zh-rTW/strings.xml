@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">正在載入天氣…</string>
+    <string name="briefing_weather_error">無法載入天氣</string>
+    <string name="briefing_headlines_title">頭條新聞</string>
+    <string name="briefing_headlines_loading">正在取得今日頭條…</string>
+    <string name="briefing_headlines_error">無法載入頭條</string>
+    <string name="briefing_error_network">請檢查網路連線後重試。</string>
+    <string name="briefing_error_parse">來源返回了非預期的回應。</string>
+    <string name="briefing_error_unknown">發生錯誤，請重試。</string>
+    <string name="briefing_retry">重試</string>
 </resources>

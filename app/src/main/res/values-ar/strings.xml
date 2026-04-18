@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">جارٍ تحميل الطقس…</string>
+    <string name="briefing_weather_error">تعذّر تحميل الطقس</string>
+    <string name="briefing_headlines_title">العناوين</string>
+    <string name="briefing_headlines_loading">جارٍ جلب عناوين اليوم…</string>
+    <string name="briefing_headlines_error">تعذّر تحميل العناوين</string>
+    <string name="briefing_error_network">تحقق من اتصالك وحاول مرة أخرى.</string>
+    <string name="briefing_error_parse">أعاد المصدر استجابة غير متوقعة.</string>
+    <string name="briefing_error_unknown">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+    <string name="briefing_retry">إعادة المحاولة</string>
 </resources>

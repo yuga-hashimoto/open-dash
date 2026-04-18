@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">در حال بارگذاری آب و هوا…</string>
+    <string name="briefing_weather_error">آب و هوا بارگذاری نشد</string>
+    <string name="briefing_headlines_title">سرخط‌ها</string>
+    <string name="briefing_headlines_loading">در حال دریافت سرخط‌های امروز…</string>
+    <string name="briefing_headlines_error">سرخط‌ها بارگذاری نشدند</string>
+    <string name="briefing_error_network">اتصال خود را بررسی کنید و دوباره امتحان کنید.</string>
+    <string name="briefing_error_parse">منبع پاسخی غیرمنتظره برگرداند.</string>
+    <string name="briefing_error_unknown">مشکلی پیش آمد. لطفاً دوباره امتحان کنید.</string>
+    <string name="briefing_retry">تلاش مجدد</string>
 </resources>

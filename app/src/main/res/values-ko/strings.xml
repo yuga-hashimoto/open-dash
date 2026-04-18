@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">날씨 로드 중…</string>
+    <string name="briefing_weather_error">날씨를 불러올 수 없습니다</string>
+    <string name="briefing_headlines_title">헤드라인</string>
+    <string name="briefing_headlines_loading">오늘의 헤드라인을 가져오는 중…</string>
+    <string name="briefing_headlines_error">헤드라인을 불러올 수 없습니다</string>
+    <string name="briefing_error_network">연결을 확인하고 다시 시도하세요.</string>
+    <string name="briefing_error_parse">소스가 예상치 못한 응답을 반환했습니다.</string>
+    <string name="briefing_error_unknown">문제가 발생했습니다. 다시 시도해 주세요.</string>
+    <string name="briefing_retry">재시도</string>
 </resources>

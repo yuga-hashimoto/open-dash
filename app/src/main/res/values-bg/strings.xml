@@ -29,4 +29,13 @@
     <string name="settings_wake_word_interrupts_tts">Wake Word Interrupts TTS</string>
     <string name="settings_media_button_trigger">Media Button Trigger</string>
     <string name="settings_media_button_trigger_hint">Use Bluetooth headset button to start voice input</string>
+    <string name="briefing_weather_loading">Зарежда се времето…</string>
+    <string name="briefing_weather_error">Времето не можа да се зареди</string>
+    <string name="briefing_headlines_title">Заглавия</string>
+    <string name="briefing_headlines_loading">Извличане на днешните заглавия…</string>
+    <string name="briefing_headlines_error">Заглавията не можаха да се заредят</string>
+    <string name="briefing_error_network">Проверете връзката си и опитайте отново.</string>
+    <string name="briefing_error_parse">Източникът върна неочакван отговор.</string>
+    <string name="briefing_error_unknown">Нещо се обърка. Моля, опитайте отново.</string>
+    <string name="briefing_retry">Опитай отново</string>
 </resources>
