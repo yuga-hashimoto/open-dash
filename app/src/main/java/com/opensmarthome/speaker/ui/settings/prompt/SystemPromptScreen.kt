@@ -23,9 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +46,9 @@ fun SystemPromptScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agent personality") },
+                title = { Text(stringResource(R.string.system_prompt_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
                 }
             )
         }
@@ -59,7 +61,7 @@ fun SystemPromptScreen(
                 .verticalScroll(scrollState)
         ) {
             Text(
-                text = "Customize the agent's system prompt. This is baked into every conversation and shapes tone and behavior.",
+                text = stringResource(R.string.system_prompt_description),
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(Modifier.size(12.dp))
@@ -67,7 +69,14 @@ fun SystemPromptScreen(
             OutlinedTextField(
                 value = state.prompt,
                 onValueChange = viewModel::updatePrompt,
-                label = { Text(if (state.usingDefault) "Default prompt (editable)" else "Custom prompt") },
+                label = {
+                    Text(
+                        stringResource(
+                            if (state.usingDefault) R.string.system_prompt_label_default
+                            else R.string.system_prompt_label_custom
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .size(width = 10.dp, height = 300.dp)
@@ -80,7 +89,7 @@ fun SystemPromptScreen(
 
             if (state.saved) {
                 Text(
-                    text = "Saved. Restart a conversation to pick up the change.",
+                    text = stringResource(R.string.system_prompt_saved_message),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -89,10 +98,10 @@ fun SystemPromptScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { viewModel.save() }) {
-                    Text("Save")
+                    Text(stringResource(R.string.common_save))
                 }
                 OutlinedButton(onClick = { viewModel.resetToDefault() }) {
-                    Text("Reset to default")
+                    Text(stringResource(R.string.system_prompt_reset))
                 }
             }
         }

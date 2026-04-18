@@ -158,4 +158,53 @@
     <string name="sysinfo_rejection_replay_window">outside replay window \u2014 check device clocks</string>
     <string name="sysinfo_rejection_no_secret">shared secret not configured on this device</string>
     <string name="sysinfo_rejection_hmac_mismatch">HMAC mismatch \u2014 check shared secret</string>
+    <string name="common_save">Save</string>
+
+    <!-- System prompt screen -->
+    <string name="system_prompt_title">Agent personality</string>
+    <string name="system_prompt_description">Customize the agent\'s system prompt. This is baked into every conversation and shapes tone and behavior.</string>
+    <string name="system_prompt_label_default">Default prompt (editable)</string>
+    <string name="system_prompt_label_custom">Custom prompt</string>
+    <string name="system_prompt_saved_message">Saved. Restart a conversation to pick up the change.</string>
+    <string name="system_prompt_reset">Reset to default</string>
+
+    <!-- Documents screen -->
+    <string name="documents_title">Documents</string>
+    <string name="documents_teach_title">Teach the agent a document</string>
+    <string name="documents_title_field">Title</string>
+    <string name="documents_content_field">Content (paste text, notes, article)</string>
+    <string name="documents_ingesting">Ingesting\u2026</string>
+    <string name="documents_ingest_button">Ingest</string>
+    <string name="documents_empty">No documents yet.</string>
+    <string name="documents_stored_count">%1$d documents stored</string>
+    <string name="documents_chunks_count">%1$d chunks</string>
+    <string name="documents_error_title_content_required">Title and content are required</string>
+    <string name="documents_added_message">Added \'%1$s\'</string>
+    <string name="documents_error_ingest_failed">Ingest failed: %1$s</string>
+    <string name="common_cancel">Cancel</string>
+
+    <!-- Skills screen -->
+    <string name="skills_title">Skills</string>
+    <string name="skills_reload">Reload</string>
+    <string name="skills_installed_count">%1$d skills installed</string>
+    <string name="skills_install_from_url">Install skill from URL</string>
+    <string name="skills_install_url_placeholder">https://\u2026/SKILL.md</string>
+    <string name="skills_installing">Installing\u2026</string>
+    <string name="skills_install_button">Install</string>
+    <string name="skills_source_prefix">Source: %1$s</string>
+    <string name="skills_remove">Remove</string>
+    <string name="skills_error_bundled_or_removed">Skill \'%1$s\' is bundled or already removed.</string>
+    <string name="skills_error_url_empty">URL is empty</string>
+    <string name="skills_error_install_failed">Install failed: %1$s</string>
+
+    <!-- Memory screen -->
+    <string name="memory_title">Long-term memory</string>
+    <string name="memory_clear_all">Clear all</string>
+    <string name="memory_clear_dialog_title">Clear all memory?</string>
+    <string name="memory_clear_dialog_body">This deletes every key-value pair the agent has learned. Cannot be undone.</string>
+    <string name="memory_clear_confirm">Clear</string>
+    <string name="memory_search_placeholder">Search keys or values</string>
+    <string name="memory_empty">No memories stored yet.</string>
+    <string name="memory_count">%1$d memories</string>
+    <string name="memory_forget">Forget</string>
 </resources>

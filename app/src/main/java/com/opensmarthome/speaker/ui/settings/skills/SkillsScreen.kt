@@ -30,15 +30,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.assistant.skills.SkillRepository
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,11 +48,13 @@ fun SkillsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
-    (state as? SkillsViewModel.UiState.Loaded)?.errorMessage?.let { msg ->
-        LaunchedEffect(msg) {
-            snackbarHost.showSnackbar(msg)
+    val resolvedError = (state as? SkillsViewModel.UiState.Loaded)?.errorMessage?.let { msg ->
+        stringResource(msg.resId, *msg.args.toTypedArray())
+    }
+    resolvedError?.let { text ->
+        LaunchedEffect(text) {
+            snackbarHost.showSnackbar(text)
             viewModel.clearError()
         }
     }
@@ -60,13 +62,13 @@ fun SkillsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Skills") },
+                title = { Text(stringResource(R.string.skills_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
                 },
                 actions = {
                     TextButton(onClick = { viewModel.reloadFromDisk() }) {
-                        Text("Reload")
+                        Text(stringResource(R.string.skills_reload))
                     }
                 }
             )
@@ -128,7 +130,7 @@ private fun LoadedContent(
         }
         item {
             Text(
-                text = "${loaded.skills.size} skills installed",
+                text = stringResource(R.string.skills_installed_count, loaded.skills.size),
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -153,14 +155,14 @@ private fun InstallFromUrlCard(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                "Install skill from URL",
+                stringResource(R.string.skills_install_from_url),
                 style = MaterialTheme.typography.titleSmall
             )
             Spacer(Modifier.size(8.dp))
             OutlinedTextField(
                 value = url,
                 onValueChange = onUrlChange,
-                label = { Text("https://.../SKILL.md") },
+                label = { Text(stringResource(R.string.skills_install_url_placeholder)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -179,9 +181,9 @@ private fun InstallFromUrlCard(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.size(8.dp))
-                        Text("Installing…")
+                        Text(stringResource(R.string.skills_installing))
                     } else {
-                        Text("Install")
+                        Text(stringResource(R.string.skills_install_button))
                     }
                 }
             }
@@ -218,7 +220,7 @@ private fun SkillRow(
             )
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "Source: ${skill.source}",
+                text = stringResource(R.string.skills_source_prefix, skill.source),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -228,7 +230,7 @@ private fun SkillRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDelete) { Text("Remove") }
+                    TextButton(onClick = onDelete) { Text(stringResource(R.string.skills_remove)) }
                 }
             }
         }

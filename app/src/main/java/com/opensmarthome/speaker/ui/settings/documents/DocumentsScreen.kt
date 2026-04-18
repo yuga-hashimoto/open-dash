@@ -31,9 +31,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.tool.rag.RagRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,9 +47,12 @@ fun DocumentsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHost = remember { SnackbarHostState() }
 
-    state.message?.let { msg ->
-        LaunchedEffect(msg) {
-            snackbarHost.showSnackbar(msg)
+    val resolvedMessage = state.message?.let { msg ->
+        stringResource(msg.resId, *msg.args.toTypedArray())
+    }
+    resolvedMessage?.let { text ->
+        LaunchedEffect(text) {
+            snackbarHost.showSnackbar(text)
             viewModel.clearMessage()
         }
     }
@@ -55,9 +60,9 @@ fun DocumentsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Documents") },
+                title = { Text(stringResource(R.string.documents_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
                 }
             )
         },
@@ -91,14 +96,14 @@ private fun LoadedContent(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        "Teach the agent a document",
+                        stringResource(R.string.documents_teach_title),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Spacer(Modifier.size(8.dp))
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Title") },
+                        label = { Text(stringResource(R.string.documents_title_field)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -106,7 +111,7 @@ private fun LoadedContent(
                     OutlinedTextField(
                         value = content,
                         onValueChange = { content = it },
-                        label = { Text("Content (paste text, notes, article)") },
+                        label = { Text(stringResource(R.string.documents_content_field)) },
                         minLines = 5,
                         maxLines = 20,
                         modifier = Modifier.fillMaxWidth()
@@ -130,9 +135,9 @@ private fun LoadedContent(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.size(8.dp))
-                                Text("Ingesting…")
+                                Text(stringResource(R.string.documents_ingesting))
                             } else {
-                                Text("Ingest")
+                                Text(stringResource(R.string.documents_ingest_button))
                             }
                         }
                     }
@@ -141,8 +146,8 @@ private fun LoadedContent(
         }
         item {
             Text(
-                text = if (state.documents.isEmpty()) "No documents yet."
-                else "${state.documents.size} documents stored",
+                text = if (state.documents.isEmpty()) stringResource(R.string.documents_empty)
+                else stringResource(R.string.documents_stored_count, state.documents.size),
                 style = MaterialTheme.typography.labelMedium
             )
         }
@@ -162,7 +167,7 @@ private fun DocumentRow(
             Text(doc.title, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "${doc.chunkCount} chunks",
+                text = stringResource(R.string.documents_chunks_count, doc.chunkCount),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -171,7 +176,7 @@ private fun DocumentRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = onDelete) { Text("Delete") }
+                TextButton(onClick = onDelete) { Text(stringResource(R.string.common_delete)) }
             }
         }
     }

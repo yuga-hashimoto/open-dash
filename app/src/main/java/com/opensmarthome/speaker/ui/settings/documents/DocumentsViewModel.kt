@@ -1,7 +1,9 @@
 package com.opensmarthome.speaker.ui.settings.documents
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.tool.rag.RagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +17,16 @@ class DocumentsViewModel @Inject constructor(
     private val repository: RagRepository
 ) : ViewModel() {
 
+    data class UiMessage(
+        @StringRes val resId: Int,
+        val args: List<String> = emptyList(),
+    )
+
     data class UiState(
         val documents: List<RagRepository.DocumentSummary> = emptyList(),
         val loading: Boolean = true,
         val ingesting: Boolean = false,
-        val message: String? = null
+        val message: UiMessage? = null
     )
 
     private val _state = MutableStateFlow(UiState())
@@ -40,7 +47,9 @@ class DocumentsViewModel @Inject constructor(
         val trimmedTitle = title.trim()
         val trimmedContent = content.trim()
         if (trimmedTitle.isBlank() || trimmedContent.isBlank()) {
-            _state.value = _state.value.copy(message = "Title and content are required")
+            _state.value = _state.value.copy(
+                message = UiMessage(R.string.documents_error_title_content_required)
+            )
             return
         }
         _state.value = _state.value.copy(ingesting = true)
@@ -49,14 +58,17 @@ class DocumentsViewModel @Inject constructor(
                 .onSuccess {
                     _state.value = _state.value.copy(
                         ingesting = false,
-                        message = "Added '$trimmedTitle'"
+                        message = UiMessage(R.string.documents_added_message, listOf(trimmedTitle))
                     )
                     refresh()
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
                         ingesting = false,
-                        message = "Ingest failed: ${e.message ?: "unknown"}"
+                        message = UiMessage(
+                            R.string.documents_error_ingest_failed,
+                            listOf(e.message.orEmpty())
+                        )
                     )
                 }
         }

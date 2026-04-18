@@ -159,4 +159,53 @@
     <string name="sysinfo_rejection_replay_window">リプレイウィンドウ外 — デバイスの時刻を確認してください</string>
     <string name="sysinfo_rejection_no_secret">このデバイスに共有シークレットが設定されていません</string>
     <string name="sysinfo_rejection_hmac_mismatch">HMAC 不一致 — 共有シークレットを確認してください</string>
+    <string name="common_save">保存</string>
+
+    <!-- System prompt screen -->
+    <string name="system_prompt_title">エージェントのパーソナリティ</string>
+    <string name="system_prompt_description">エージェントのシステムプロンプトをカスタマイズします。すべての会話に組み込まれ、トーンと動作を決定します。</string>
+    <string name="system_prompt_label_default">デフォルトのプロンプト (編集可能)</string>
+    <string name="system_prompt_label_custom">カスタムプロンプト</string>
+    <string name="system_prompt_saved_message">保存しました。変更を反映するには会話を開始し直してください。</string>
+    <string name="system_prompt_reset">デフォルトに戻す</string>
+
+    <!-- Documents screen -->
+    <string name="documents_title">ドキュメント</string>
+    <string name="documents_teach_title">エージェントにドキュメントを教える</string>
+    <string name="documents_title_field">タイトル</string>
+    <string name="documents_content_field">本文（テキスト、メモ、記事を貼り付け）</string>
+    <string name="documents_ingesting">取り込み中\u2026</string>
+    <string name="documents_ingest_button">取り込み</string>
+    <string name="documents_empty">ドキュメントはまだありません。</string>
+    <string name="documents_stored_count">%1$d 件のドキュメントを保存済み</string>
+    <string name="documents_chunks_count">%1$d チャンク</string>
+    <string name="documents_error_title_content_required">タイトルと本文が必要です</string>
+    <string name="documents_added_message">「%1$s」を追加しました</string>
+    <string name="documents_error_ingest_failed">取り込みに失敗しました: %1$s</string>
+    <string name="common_cancel">キャンセル</string>
+
+    <!-- Skills screen -->
+    <string name="skills_title">スキル</string>
+    <string name="skills_reload">再読み込み</string>
+    <string name="skills_installed_count">%1$d 件のスキルをインストール済み</string>
+    <string name="skills_install_from_url">URL からスキルをインストール</string>
+    <string name="skills_install_url_placeholder">https://\u2026/SKILL.md</string>
+    <string name="skills_installing">インストール中\u2026</string>
+    <string name="skills_install_button">インストール</string>
+    <string name="skills_source_prefix">ソース: %1$s</string>
+    <string name="skills_remove">削除</string>
+    <string name="skills_error_bundled_or_removed">スキル「%1$s」は同梱品または既に削除済みです。</string>
+    <string name="skills_error_url_empty">URL が空です</string>
+    <string name="skills_error_install_failed">インストールに失敗しました: %1$s</string>
+
+    <!-- Memory screen -->
+    <string name="memory_title">長期メモリ</string>
+    <string name="memory_clear_all">すべて消去</string>
+    <string name="memory_clear_dialog_title">すべてのメモリを消去しますか？</string>
+    <string name="memory_clear_dialog_body">エージェントが学習したすべてのキーと値のペアを削除します。この操作は取り消せません。</string>
+    <string name="memory_clear_confirm">消去</string>
+    <string name="memory_search_placeholder">キーまたは値で検索</string>
+    <string name="memory_empty">まだメモリは保存されていません。</string>
+    <string name="memory_count">%1$d 件のメモリ</string>
+    <string name="memory_forget">忘れる</string>
 </resources>

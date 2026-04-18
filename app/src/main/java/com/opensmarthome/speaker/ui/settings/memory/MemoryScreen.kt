@@ -29,9 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.data.db.MemoryEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,16 +48,16 @@ fun MemoryScreen(
     if (showClearDialog) {
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
-            title = { Text("Clear all memory?") },
-            text = { Text("This deletes every key-value pair the agent has learned. Cannot be undone.") },
+            title = { Text(stringResource(R.string.memory_clear_dialog_title)) },
+            text = { Text(stringResource(R.string.memory_clear_dialog_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.clearAll()
                     showClearDialog = false
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.memory_clear_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearDialog = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -63,15 +65,15 @@ fun MemoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Long-term memory") },
+                title = { Text(stringResource(R.string.memory_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
                 },
                 actions = {
                     TextButton(
                         onClick = { showClearDialog = true },
                         enabled = state.entries.isNotEmpty()
-                    ) { Text("Clear all") }
+                    ) { Text(stringResource(R.string.memory_clear_all)) }
                 }
             )
         }
@@ -111,15 +113,15 @@ private fun LoadedContent(
             OutlinedTextField(
                 value = state.query,
                 onValueChange = onQueryChange,
-                label = { Text("Search keys or values") },
+                label = { Text(stringResource(R.string.memory_search_placeholder)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
             Text(
-                text = if (state.entries.isEmpty()) "No memories stored yet."
-                else "${state.entries.size} memories",
+                text = if (state.entries.isEmpty()) stringResource(R.string.memory_empty)
+                else stringResource(R.string.memory_count, state.entries.size),
                 style = MaterialTheme.typography.labelMedium
             )
         }
@@ -144,7 +146,7 @@ private fun MemoryRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = onDelete) { Text("Forget") }
+                TextButton(onClick = onDelete) { Text(stringResource(R.string.memory_forget)) }
             }
         }
     }

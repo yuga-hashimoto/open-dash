@@ -209,6 +209,27 @@ smoke testing).
   marginal UX gain over word-phrase). Full challenge-response handshake is a future-work
   item on the ADR backlog
 
+## Phase 18 — Priority 3: Home dashboard briefing UX
+- [x] P18.1: Visible Loading / Error states for online weather + headlines —
+  `BriefingState<T>` sealed type (Loading/Success/Error{Network|Parse|Unknown});
+  `OnlineBriefingSource` returns `Result<T>` so failures propagate; `HomeViewModel`
+  flows seed Loading and emit on both success/failure; `OnlineWeatherCard` +
+  `HeadlinesCard` gain Loading + Error variants with copy via 9 new
+  `briefing_*` strings (32 locales translated, English fallback for the rest).
+  Replaces the prior silent disappearance when network/RSS fetch failed (#425)
+- [x] P18.2: Searchable city picker for weather location — new
+  `CitySearchRepository` (Open-Meteo Geocoding wrapper, `Result<List<CitySuggestion>>`);
+  `WeatherLocationSettingsViewModel` with 300 ms debounce; `WeatherLocationPickerRow`
+  AlertDialog mirrors `LocalePickerRow` pattern; replaces the freeform text field
+  in Settings → Weather. Preserves existing `DEFAULT_LOCATION` preference key for
+  backward compat with `WeatherToolExecutor.resolveLocation()` (#424)
+- [x] P18.3: User-selectable news feed for dashboard headlines — new
+  `BundledNewsFeeds` catalogue (8 NHK categories cat0..7, 4 BBC sections,
+  Hacker News, plus custom-URL); `NewsFeedSettingsViewModel` +
+  `NewsFeedPickerRow`; `DEFAULT_NEWS_FEED_URL` preference; `NewsToolExecutor`
+  legacy aliases (`bbc`/`nhk`/`hackernews`) preserved; `OnlineBriefingSource`
+  reads preference with NHK General fallback. Replaces the hardcoded NHK feed (#426)
+
 ## Won't do — requires root (design boundary)
 - OEM modifications (CarrierConfig, RIL overrides)
 - System-wide audio routing beyond MediaSession
