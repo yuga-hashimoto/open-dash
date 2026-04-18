@@ -112,7 +112,9 @@ class SystemInfoViewModel @Inject constructor(
         val reason: String,
         val count: Long,
         val lastAtMs: Long,
-        val hint: String
+        @androidx.annotation.StringRes val hintRes: Int?,
+        /** Fallback when reason isn't in the known set — lower-cased/underscore-stripped. */
+        val hintFallback: String,
     )
 
     data class Snapshot(
@@ -165,7 +167,8 @@ class SystemInfoViewModel @Inject constructor(
                         reason = row.reason,
                         count = row.count,
                         lastAtMs = row.lastAtMs,
-                        hint = hintForReason(row.reason)
+                        hintRes = hintResForReason(row.reason),
+                        hintFallback = row.reason.lowercase().replace('_', ' '),
                     )
                 }
                 .sortedByDescending { it.count }
@@ -207,13 +210,14 @@ class SystemInfoViewModel @Inject constructor(
      * Rendered alongside the count so the user has a pointer at what
      * probably needs to be checked.
      */
-    private fun hintForReason(reason: String): String = when (reason) {
-        "MALFORMED_JSON" -> "malformed JSON — peer is sending invalid frames"
-        "MISSING_FIELD" -> "missing required envelope field"
-        "VERSION_MISMATCH" -> "protocol version mismatch — peers on different builds"
-        "REPLAY_WINDOW" -> "outside replay window — check device clocks"
-        "NO_SECRET" -> "shared secret not configured on this device"
-        "HMAC_MISMATCH" -> "HMAC mismatch — check shared secret"
-        else -> reason.lowercase().replace('_', ' ')
+    @androidx.annotation.StringRes
+    private fun hintResForReason(reason: String): Int? = when (reason) {
+        "MALFORMED_JSON" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_malformed_json
+        "MISSING_FIELD" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_missing_field
+        "VERSION_MISMATCH" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_version_mismatch
+        "REPLAY_WINDOW" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_replay_window
+        "NO_SECRET" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_no_secret
+        "HMAC_MISMATCH" -> com.opensmarthome.speaker.R.string.sysinfo_rejection_hmac_mismatch
+        else -> null
     }
 }

@@ -100,6 +100,65 @@
     <string name="briefing_retry">Повторить</string>
 
     <!-- Common buttons -->
+    <string name="common_refresh">Refresh</string>
+
+    <!-- Providers screen -->
+    <string name="providers_title">Assistant providers</string>
+    <string name="providers_empty">No providers registered yet. Download an on-device model or configure a gateway in Settings.</string>
+    <string name="providers_active">Active</string>
+    <string name="providers_badge_on_device">On-device</string>
+    <string name="providers_badge_streaming">Streaming</string>
+    <string name="providers_badge_tools">Tools</string>
+    <string name="providers_badge_vision">Vision</string>
+
+    <!-- Multi-room card + mesh health -->
+    <string name="multiroom_title">Multi-room</string>
+    <string name="multiroom_broadcast">Broadcast: %1$s</string>
+    <string name="multiroom_status_on">On</string>
+    <string name="multiroom_status_off">Off</string>
+    <string name="multiroom_shared_secret">Shared secret: %1$s</string>
+    <string name="multiroom_secret_set">Set</string>
+    <string name="multiroom_secret_not_set">Not set</string>
+    <string name="multiroom_broadcasting_as">Broadcasting as: %1$s</string>
+    <string name="multiroom_peers_summary">Peers: %1$d (%2$d fresh, %3$d stale, %4$d gone)</string>
+    <string name="multiroom_hint_broadcast_off">Turn on Multi-room broadcast to join the mesh.</string>
+    <string name="multiroom_hint_no_secret">Set a shared secret</string>
+    <string name="multiroom_hint_no_peers">No peers yet \u2014 check that other tablets have Multi-room broadcast on.</string>
+    <string name="multiroom_hint_healthy">Mesh is healthy.</string>
+
+    <!-- System info screen -->
+    <string name="sysinfo_title">System info</string>
+    <string name="sysinfo_active_model">Active model</string>
+    <string name="sysinfo_model_none">(none)</string>
+    <string name="sysinfo_providers_count">Providers registered</string>
+    <string name="sysinfo_tools_count">Tools available</string>
+    <string name="sysinfo_devices_count">Smart-home devices</string>
+    <string name="sysinfo_skills_count">Skills</string>
+    <string name="sysinfo_routines_count">Routines</string>
+    <string name="sysinfo_documents_count">Documents (RAG)</string>
+    <string name="sysinfo_memory_count">Memory entries</string>
+    <string name="sysinfo_connectivity">Connectivity</string>
+    <string name="sysinfo_online">Online</string>
+    <string name="sysinfo_offline">Offline</string>
+    <string name="sysinfo_latency_violations">Latency budget violations</string>
+    <string name="sysinfo_latency_measurements">Latency measurements (lifetime)</string>
+    <string name="sysinfo_thermal_state">Thermal state</string>
+    <string name="sysinfo_broadcasting_as">Broadcasting as</string>
+    <string name="sysinfo_not_broadcasting">(not broadcasting)</string>
+    <string name="sysinfo_nearby_speakers">Nearby speakers (mDNS)</string>
+    <string name="sysinfo_multiroom_traffic">Multi-room traffic</string>
+    <string name="sysinfo_multiroom_rejections">Multi-room rejections</string>
+    <string name="sysinfo_traffic_summary">%1$d out · %2$d in</string>
+    <string name="sysinfo_clear_multiroom">Clear multi-room counters</string>
+    <string name="sysinfo_freshness_fresh">fresh</string>
+    <string name="sysinfo_freshness_stale">stale</string>
+    <string name="sysinfo_freshness_gone">gone</string>
+    <string name="sysinfo_rejection_malformed_json">malformed JSON \u2014 peer is sending invalid frames</string>
+    <string name="sysinfo_rejection_missing_field">missing required envelope field</string>
+    <string name="sysinfo_rejection_version_mismatch">protocol version mismatch \u2014 peers on different builds</string>
+    <string name="sysinfo_rejection_replay_window">outside replay window \u2014 check device clocks</string>
+    <string name="sysinfo_rejection_no_secret">shared secret not configured on this device</string>
+    <string name="sysinfo_rejection_hmac_mismatch">HMAC mismatch \u2014 check shared secret</string>
     <string name="common_save">Save</string>
 
     <!-- System prompt screen -->
@@ -232,4 +291,44 @@
     <string name="settings_about_section">About</string>
     <string name="settings_about_tagline">OpenSmartSpeaker \u2014 tablet-first on-device AI smart speaker.</string>
     <string name="settings_about_github">Docs &amp; source on GitHub</string>
+    <!-- Common buttons (additional) -->
+    <string name="common_done">Done</string>
+
+    <!-- Analytics / usage screen -->
+    <string name="analytics_title">Usage</string>
+    <string name="analytics_reset_button">Reset</string>
+    <string name="analytics_reset_dialog_title">Reset usage stats?</string>
+    <string name="analytics_reset_dialog_body">Clears all tool usage history. This is local data only.</string>
+    <string name="analytics_reset_confirm">Reset</string>
+    <string name="analytics_fast_path_rate">%1$d%% fast-path</string>
+    <string name="analytics_fast_path_description">Canonical commands handled without the LLM \u2014 higher = snappier UX.</string>
+    <string name="analytics_voice_latency_title">Voice pipeline latency</string>
+    <string name="analytics_no_tools_used">No tools used yet.</string>
+    <string name="analytics_all_time_usage">All-time usage (%1$d tools)</string>
+    <string name="analytics_clear_tool_usage">Clear tool usage stats</string>
+    <string name="analytics_latency_over">%1$d over</string>
+    <string name="analytics_latency_within">within budget</string>
+    <string name="analytics_latency_stats">avg %1$dms • p95 %2$dms</string>
+    <string name="analytics_latency_stats_with_budget">avg %1$dms • p95 %2$dms • budget %3$dms</string>
+    <string name="analytics_tool_calls">%1$d tool calls</string>
+    <string name="analytics_summary_stats">%1$d%% success • %2$d unique tools</string>
+    <string name="analytics_success_rate">%1$d%% success</string>
+
+    <!-- Speaker groups screen -->
+    <string name="speaker_groups_title">Speaker groups</string>
+    <string name="speaker_groups_new">New group</string>
+    <string name="speaker_groups_empty">No speaker groups yet. Tap \'New group\' to create one and add any of the %1$d discovered speaker(s).</string>
+    <string name="speaker_groups_count">%1$d group(s) • %2$d speaker(s) discovered</string>
+    <string name="speaker_groups_members">%1$d member(s) • %2$d reachable now</string>
+    <string name="speaker_groups_more">  \u2026 and %1$d more</string>
+    <string name="speaker_groups_edit">Edit members</string>
+    <string name="speaker_groups_new_dialog_title">New speaker group</string>
+    <string name="speaker_groups_name_label">Name (e.g. kitchen)</string>
+    <string name="speaker_groups_create">Create</string>
+    <string name="speaker_groups_members_dialog_title">Members of %1$s</string>
+    <string name="speaker_groups_no_speakers">No speakers discovered on the LAN yet. Enable Multi-room broadcast in Settings and make sure peers are on the same network.</string>
+    <string name="speaker_groups_reachable_now">reachable now</string>
+    <string name="speaker_groups_not_seen">not seen</string>
+    <string name="speaker_groups_error_name_blank">Group name can\'t be blank</string>
+    <string name="speaker_groups_error_duplicate">Group \'%1$s\' already exists</string>
 </resources>

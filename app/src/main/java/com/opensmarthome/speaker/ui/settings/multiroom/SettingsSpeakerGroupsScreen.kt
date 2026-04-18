@@ -38,9 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 import com.opensmarthome.speaker.multiroom.SpeakerGroup
 import com.opensmarthome.speaker.util.DiscoveredSpeaker
 
@@ -60,9 +62,12 @@ fun SettingsSpeakerGroupsScreen(
     val snackbarHost = remember { SnackbarHostState() }
     var showCreate by remember { mutableStateOf(false) }
 
-    snackbarMsg?.let { msg ->
-        LaunchedEffect(msg) {
-            snackbarHost.showSnackbar(msg)
+    val resolvedSnackbar = snackbarMsg?.let {
+        stringResource(it.resId, *it.args.toTypedArray())
+    }
+    resolvedSnackbar?.let { text ->
+        LaunchedEffect(text) {
+            snackbarHost.showSnackbar(text)
             viewModel.consumeSnackbar()
         }
     }
@@ -70,15 +75,15 @@ fun SettingsSpeakerGroupsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Speaker groups") },
+                title = { Text(stringResource(R.string.speaker_groups_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
                 }
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("New group") },
+                text = { Text(stringResource(R.string.speaker_groups_new)) },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 onClick = { showCreate = true }
             )
@@ -140,10 +145,9 @@ private fun GroupsList(
         item {
             Text(
                 text = if (groups.isEmpty()) {
-                    "No speaker groups yet. Tap 'New group' to create one and " +
-                        "add any of the ${discoveredPeers.size} discovered speaker(s)."
+                    stringResource(R.string.speaker_groups_empty, discoveredPeers.size)
                 } else {
-                    "${groups.size} group(s) • ${discoveredPeers.size} speaker(s) discovered"
+                    stringResource(R.string.speaker_groups_count, groups.size, discoveredPeers.size)
                 },
                 style = MaterialTheme.typography.labelMedium
             )
@@ -173,7 +177,7 @@ private fun GroupRow(
             Text(group.name, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.size(4.dp))
             Text(
-                text = "${group.memberServiceNames.size} member(s) • $reachable reachable now",
+                text = stringResource(R.string.speaker_groups_members, group.memberServiceNames.size, reachable),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -188,7 +192,7 @@ private fun GroupRow(
                 }
                 if (group.memberServiceNames.size > 4) {
                     Text(
-                        "  … and ${group.memberServiceNames.size - 4} more",
+                        stringResource(R.string.speaker_groups_more, group.memberServiceNames.size - 4),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 8.dp)
@@ -200,8 +204,8 @@ private fun GroupRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = onDelete) { Text("Delete") }
-                TextButton(onClick = onEdit) { Text("Edit members") }
+                TextButton(onClick = onDelete) { Text(stringResource(R.string.common_delete)) }
+                TextButton(onClick = onEdit) { Text(stringResource(R.string.speaker_groups_edit)) }
             }
         }
     }
@@ -215,12 +219,12 @@ private fun CreateGroupDialog(
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New speaker group") },
+        title = { Text(stringResource(R.string.speaker_groups_new_dialog_title)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name (e.g. kitchen)") },
+                label = { Text(stringResource(R.string.speaker_groups_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -229,10 +233,10 @@ private fun CreateGroupDialog(
             TextButton(
                 enabled = name.isNotBlank(),
                 onClick = { onConfirm(name) }
-            ) { Text("Create") }
+            ) { Text(stringResource(R.string.speaker_groups_create)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
@@ -251,14 +255,10 @@ private fun EditMembersDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Members of ${group.name}") },
+        title = { Text(stringResource(R.string.speaker_groups_members_dialog_title, group.name)) },
         text = {
             if (candidates.isEmpty()) {
-                Text(
-                    "No speakers discovered on the LAN yet. Enable Multi-room " +
-                        "broadcast in Settings and make sure peers are on the " +
-                        "same network."
-                )
+                Text(stringResource(R.string.speaker_groups_no_speakers))
             } else {
                 Column {
                     candidates.forEach { svcName ->
@@ -275,7 +275,8 @@ private fun EditMembersDialog(
                             Column(modifier = Modifier.padding(start = 4.dp)) {
                                 Text(svcName, style = MaterialTheme.typography.bodyMedium)
                                 Text(
-                                    text = if (online) "reachable now" else "not seen",
+                                    text = if (online) stringResource(R.string.speaker_groups_reachable_now)
+                                    else stringResource(R.string.speaker_groups_not_seen),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -286,7 +287,7 @@ private fun EditMembersDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Done") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_done)) }
         }
     )
 }

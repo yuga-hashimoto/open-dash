@@ -23,12 +23,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.annotation.StringRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opensmarthome.speaker.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +45,8 @@ fun ProvidersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Assistant providers") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } }
+                title = { Text(stringResource(R.string.providers_title)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) } }
             )
         }
     ) { padding ->
@@ -53,7 +56,7 @@ fun ProvidersScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "No providers registered yet. Download an on-device model or configure a gateway in Settings.",
+                    stringResource(R.string.providers_empty),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(Modifier.size(16.dp))
@@ -98,7 +101,7 @@ private fun ProviderRow(
                 Text(row.displayName, style = MaterialTheme.typography.titleMedium)
                 if (row.isActive) {
                     Text(
-                        text = "Active",
+                        text = stringResource(R.string.providers_active),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -112,10 +115,10 @@ private fun ProviderRow(
             )
             Spacer(Modifier.size(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (row.isLocal) Badge("On-device")
-                if (row.supportsStreaming) Badge("Streaming")
-                if (row.supportsTools) Badge("Tools")
-                if (row.supportsVision) Badge("Vision")
+                if (row.isLocal) Badge(stringResource(R.string.providers_badge_on_device))
+                if (row.supportsStreaming) Badge(stringResource(R.string.providers_badge_streaming))
+                if (row.supportsTools) Badge(stringResource(R.string.providers_badge_tools))
+                if (row.supportsVision) Badge(stringResource(R.string.providers_badge_vision))
             }
         }
     }
@@ -132,28 +135,36 @@ private fun Badge(label: String) {
 
 @Composable
 private fun MultiroomCard(state: ProvidersViewModel.MultiroomState) {
+    val broadcastStatus = stringResource(
+        if (state.broadcastEnabled) R.string.multiroom_status_on else R.string.multiroom_status_off
+    )
+    val secretStatus = stringResource(
+        if (state.hasSecret) R.string.multiroom_secret_set else R.string.multiroom_secret_not_set
+    )
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Multi-room", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.multiroom_title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.size(8.dp))
             Text(
-                text = "Broadcast: ${if (state.broadcastEnabled) "On" else "Off"}",
+                text = stringResource(R.string.multiroom_broadcast, broadcastStatus),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "Shared secret: ${if (state.hasSecret) "Set" else "Not set"}",
+                text = stringResource(R.string.multiroom_shared_secret, secretStatus),
                 style = MaterialTheme.typography.bodyMedium
             )
             if (state.broadcastEnabled && state.broadcastingAs != null) {
                 Text(
-                    text = "Broadcasting as: ${state.broadcastingAs}",
+                    text = stringResource(R.string.multiroom_broadcasting_as, state.broadcastingAs),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = "Peers: ${state.peerCount} " +
-                    "(${state.freshCount} fresh, ${state.staleCount} stale, ${state.goneCount} gone)",
+                text = stringResource(
+                    R.string.multiroom_peers_summary,
+                    state.peerCount, state.freshCount, state.staleCount, state.goneCount
+                ),
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(Modifier.size(8.dp))
@@ -173,7 +184,7 @@ private fun MeshHealthHint(state: ProvidersViewModel.MultiroomState) {
         )
         Spacer(Modifier.size(6.dp))
         Text(
-            text = hint.message,
+            text = stringResource(hint.messageRes),
             style = MaterialTheme.typography.bodyMedium,
             color = if (hint.healthy) hint.color else MaterialTheme.colorScheme.onSurface
         )
@@ -184,7 +195,7 @@ internal data class MeshHealthHintText(
     val healthy: Boolean,
     val icon: String,
     val color: Color,
-    val message: String
+    @StringRes val messageRes: Int,
 )
 
 /**
@@ -194,30 +205,31 @@ internal data class MeshHealthHintText(
  */
 internal fun meshHealthHint(state: ProvidersViewModel.MultiroomState): MeshHealthHintText {
     val green = Color(0xFF2E7D32)
+    val amber = Color(0xFFB26A00)
     return when {
         !state.broadcastEnabled -> MeshHealthHintText(
             healthy = false,
             icon = "!",
-            color = Color(0xFFB26A00),
-            message = "Turn on Multi-room broadcast to join the mesh."
+            color = amber,
+            messageRes = R.string.multiroom_hint_broadcast_off,
         )
         !state.hasSecret -> MeshHealthHintText(
             healthy = false,
             icon = "!",
-            color = Color(0xFFB26A00),
-            message = "Set a shared secret"
+            color = amber,
+            messageRes = R.string.multiroom_hint_no_secret,
         )
         state.freshCount == 0 -> MeshHealthHintText(
             healthy = false,
             icon = "!",
-            color = Color(0xFFB26A00),
-            message = "No peers yet — check that other tablets have Multi-room broadcast on."
+            color = amber,
+            messageRes = R.string.multiroom_hint_no_peers,
         )
         else -> MeshHealthHintText(
             healthy = true,
             icon = "\u2713",
             color = green,
-            message = "Mesh is healthy."
+            messageRes = R.string.multiroom_hint_healthy,
         )
     }
 }
