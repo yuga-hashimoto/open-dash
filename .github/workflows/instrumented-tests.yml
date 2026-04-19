@@ -1,0 +1,111 @@
+name: Instrumented Tests
+
+on:
+  pull_request:
+    branches: [main]
+    # Only run when something likely to affect instrumented tests changed.
+    # Keeps PR latency low for docs-only / unrelated changes — the AVD
+    # boot itself dominates the runtime.
+    paths:
+      - 'app/src/main/**'
+      - 'app/src/androidTest/**'
+      - 'app/src/standard/**'
+      - 'app/build.gradle.kts'
+      - 'gradle/libs.versions.toml'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/instrumented-tests.yml'
+  push:
+    branches: [main]
+
+# Cancel an older in-flight run on the same branch when a new commit arrives;
+# the AVD boot is expensive enough that double-spending it on stale shas hurts.
+concurrency:
+  group: instrumented-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  instrumented:
+    name: connectedStandardDebugAndroidTest
+    # macOS hosts get hardware-acceleration (HVF) so AVDs boot ~5x faster than
+    # on ubuntu's nested-virt. The runner is more expensive but the wall-clock
+    # win is large enough to matter for PR feedback loops.
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Pick a single API level for now — keep the matrix small until we
+        # know the suite is stable. API 34 matches `compileSdk` in
+        # app/build.gradle.kts.
+        api-level: [34]
+        target: [google_apis]
+        arch: [x86_64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Cache the AVD snapshot across runs so subsequent invocations skip the
+      # cold image boot (~3-5 min savings per run).
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
+
+      - name: Create AVD snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          # Headless options for CI; -no-snapshot only on the *creation* run
+          # so the snapshot we save excludes the boot animation state.
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "AVD snapshot prepared"
+
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          # Skip the `full` flavor — its VOICEVOX native AAR is irrelevant for
+          # instrumented tests and inflates AVD memory use.
+          script: ./gradlew connectedStandardDebugAndroidTest --stacktrace
+
+      - name: Upload androidTest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-report-api${{ matrix.api-level }}
+          path: |
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+
+      - name: Upload logcat
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-logcat-api${{ matrix.api-level }}
+          path: |
+            ~/.android/avd/**/*.log
