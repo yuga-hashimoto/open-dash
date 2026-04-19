@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,6 +73,11 @@ fun HeadlinesCard(
     if (headlines.isEmpty()) return
 
     val listState = rememberLazyListState()
+    // Own the ticker cursor instead of reading `firstVisibleItemIndex`.
+    // LazyRow clamps scroll at the end of the list, so once the tail is
+    // reached `firstVisibleItemIndex` can stop increasing and the loop
+    // never wraps back to 0 — headlines would freeze on the last tile.
+    var tickerIndex by remember(headlines.size) { mutableIntStateOf(0) }
 
     // Auto-advance the ticker. The key is the item count so that a
     // fresh fetch delivering a different number of headlines resets
@@ -77,8 +86,8 @@ fun HeadlinesCard(
         if (headlines.size <= 1) return@LaunchedEffect
         while (true) {
             delay(HEADLINES_TICKER_INTERVAL_MS)
-            val next = (listState.firstVisibleItemIndex + 1) % headlines.size
-            listState.animateScrollToItem(next)
+            tickerIndex = (tickerIndex + 1) % headlines.size
+            listState.animateScrollToItem(tickerIndex)
         }
     }
 
