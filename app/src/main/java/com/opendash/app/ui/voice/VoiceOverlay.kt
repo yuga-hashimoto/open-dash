@@ -11,8 +11,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -62,85 +64,90 @@ fun VoiceOverlay(
         // so this `systemBarsPadding()` is a safety net: if the overlay is
         // ever hoisted to MainActivity.setContent directly (tests, previews,
         // bug reproductions) the headline text still clears the status bar.
-        Box(
+        // Two-row response screen:
+        //   top    — what the user said (quoted, secondary colour)
+        //   middle — divider
+        //   bottom — AI reply rolled karaoke-style (displaySmall)
+        // Keeps the conversation legible on a tablet at a glance.
+        Column(
             modifier = modifier
                 .fillMaxSize()
                 .background(SpeakerBackground.copy(alpha = 0.94f))
-                .systemBarsPadding(),
-            contentAlignment = Alignment.Center
+                .systemBarsPadding()
+                .padding(horizontal = 32.dp, vertical = 28.dp),
+            horizontalAlignment = Alignment.Start,
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(32.dp)
-            ) {
-                VoiceStateAnimation(state = voiceState)
-
-                Spacer(Modifier.height(36.dp))
-
-                // Show what user said
-                if (sttText.isNotBlank()) {
-                    Text(
-                        text = "\"$sttText\"",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = SpeakerTextSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                // During Speaking, roll through chunks karaoke-style. The
-                // active chunk (spokenText) overrides the full response so
-                // each sentence gets the whole headline real-estate. Outside
-                // Speaking (thinking, error, etc.) we fall back to the full
-                // response so users still see what the assistant said.
-                val displayText = when {
-                    voiceState is VoicePipelineState.Speaking && spokenText.isNotBlank() ->
-                        spokenText
-                    else -> responseText
-                }
-
-                if (displayText.isNotBlank()) {
-                    AnimatedContent(
-                        targetState = displayText,
-                        transitionSpec = {
-                            // Crossfade between chunks — no directional slide,
-                            // keeps the "karaoke" feel centred like on a
-                            // Nest Hub / Echo Show.
-                            fadeIn(tween(220)) togetherWith fadeOut(tween(180))
-                        },
-                        label = "karaoke-chunk"
-                    ) { text ->
-                        Text(
-                            text = text,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = if (voiceState is VoicePipelineState.Error) VoiceError
-                            else SpeakerTextPrimary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .padding(horizontal = 24.dp)
-                                .animateContentSize(tween(240))
-                                .semantics { liveRegion = LiveRegionMode.Polite }
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                // State label — announced as a live region so TalkBack users
-                // know when the pipeline transitions (listening → processing → speaking).
+            // Top: user's utterance.
+            if (sttText.isNotBlank()) {
                 Text(
-                    text = when (voiceState) {
-                        is VoicePipelineState.Listening -> "Listening..."
-                        is VoicePipelineState.Processing -> "Processing..."
-                        is VoicePipelineState.Thinking -> "Thinking..."
-                        is VoicePipelineState.PreparingSpeech -> "Preparing..."
-                        is VoicePipelineState.Speaking -> ""
-                        is VoicePipelineState.Error -> ""
-                        else -> ""
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SpeakerTextTertiary,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    text = "\u300C$sttText\u300D",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = SpeakerTextSecondary,
                 )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Thin divider between user and assistant.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(SpeakerTextTertiary.copy(alpha = 0.35f))
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            // State indicator (only shown while assistant is still
+            // processing — goes away once karaoke starts).
+            val stateLabel = when (voiceState) {
+                is VoicePipelineState.Processing -> "処理中…"
+                is VoicePipelineState.Thinking -> "考えています…"
+                is VoicePipelineState.PreparingSpeech -> "準備中…"
+                else -> ""
+            }
+            if (stateLabel.isNotEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    VoiceStateAnimation(state = voiceState)
+                    Spacer(Modifier.height(0.dp))
+                    Text(
+                        text = stateLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = SpeakerTextTertiary,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                }
+                Spacer(Modifier.height(20.dp))
+            }
+
+            // Bottom: AI reply — karaoke-style crossfade between chunks
+            // while Speaking, fallback to the full response otherwise.
+            val displayText = when {
+                voiceState is VoicePipelineState.Speaking && spokenText.isNotBlank() ->
+                    spokenText
+                else -> responseText
+            }
+
+            if (displayText.isNotBlank()) {
+                AnimatedContent(
+                    targetState = displayText,
+                    transitionSpec = {
+                        fadeIn(tween(220)) togetherWith fadeOut(tween(180))
+                    },
+                    label = "karaoke-chunk"
+                ) { text ->
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = if (voiceState is VoicePipelineState.Error) VoiceError
+                        else SpeakerTextPrimary,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .animateContentSize(tween(240))
+                            .semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                }
             }
         }
     }

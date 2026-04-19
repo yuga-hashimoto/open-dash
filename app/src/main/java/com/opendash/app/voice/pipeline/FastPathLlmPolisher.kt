@@ -186,7 +186,8 @@ class FastPathLlmPolisher(
             "get_weather",
             "get_forecast",
             "web_search",
-            "get_news"
+            "get_news",
+            "make_call"
         )
     }
 }

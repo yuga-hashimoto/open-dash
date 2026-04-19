@@ -10,9 +10,16 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import android.text.format.DateFormat
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,14 +29,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.opendash.app.ui.ambient.ActiveTimersCard
-import com.opendash.app.ui.common.SuggestionBubble
 import com.opendash.app.ui.common.isExpandedLandscape
 import com.opendash.app.ui.theme.SpeakerBackground
+import com.opendash.app.ui.theme.SpeakerTextPrimary
+import com.opendash.app.ui.theme.SpeakerTextSecondary
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun HomeScreen(
@@ -50,12 +61,13 @@ fun HomeScreen(
     val headlines by viewModel.headlines.collectAsState()
     val chips by viewModel.deviceChips.collectAsState()
     val nowPlaying by viewModel.nowPlaying.collectAsState()
-    val suggestions by viewModel.suggestions.collectAsState()
     val activeTimers by viewModel.activeTimers.collectAsState()
     val thermal by viewModel.thermalLevel.collectAsState()
     val nextEvent by viewModel.nextEvent.collectAsState()
 
     val wide = isExpandedLandscape()
+
+    val topPad = 32.dp
 
     // `systemBarsPadding()` guards the standalone usage path (previews, direct
     // navigation) — when HomeScreen is hosted inside ModeScaffold the outer Box
@@ -67,61 +79,64 @@ fun HomeScreen(
             .systemBarsPadding()
     ) {
         if (wide) {
-            // Tablet landscape — the primary use mode. Three-column top
-            // block in the Echo Show / Nest Hub rhythm:
-            //   left   — oversized clock + date (time-first)
-            //   center — online weather card (briefing second)
-            //   right  — next event / timers / device chips (status third)
-            // A full-width auto-advancing headlines ticker fills the
-            // bottom band. Greeting copy ("Hello / Good morning /
-            // こんにちは") is intentionally absent — at-a-glance dashboards
-            // don't need a salutation every time the user looks up.
+            // Tablet landscape — Alexa-Show style ambient layout.
+            // Single Column flow (top → spacer → headlines → bottom spacer)
+            // guarantees no two clusters overlap, unlike the previous
+            // free-Box align approach where the clock and the centered
+            // headlines strip stacked on top of each other.
+            //   top-left  — compact clock + date + weather card
+            //   middle    — auto-advancing headlines ticker
+            //   bottom    — secondary status (events / timers / chips)
+            //   overlays  — settings gear (top-right, ModeScaffold),
+            //               mic FAB (bottom-right, ModeScaffold),
+            //               suggestion bubble (bottom-center, this file)
             Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 32.dp, end = 32.dp, top = topPad, bottom = 32.dp)
             ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1.3f).fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ClockWidget(time = time, largeMode = true)
-                    }
-                    Spacer(Modifier.width(24.dp))
-                    Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        WeatherBlock(state = onlineWeather, sensorWeather = weather)
-                    }
-                    Spacer(Modifier.width(24.dp))
-                    Column(
-                        modifier = Modifier.weight(0.9f).fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center
-                    ) {
+                // Echo Show inline header: time · weather icon · temp · date+location
+                // All on a single Row at ~28 sp so the ambient screen is
+                // dominated by the centered news card, not the chrome.
+                AmbientHeader(time = time, weatherState = onlineWeather)
+
+                // Push the news strip and any secondary status all the
+                // way to the bottom — the mic FAB is gone so there's no
+                // Asymmetric spacers — 3 parts top, 1 part bottom — lift
+                // the news strip off the very bottom edge. Leaves room
+                // for the ListeningBar to slide in from BottomCenter
+                // without hiding the last line of the news card.
+                Spacer(modifier = Modifier.weight(3f))
+
+                HeadlinesBlock(
+                    state = headlines,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .widthIn(max = 720.dp)
+                        .fillMaxWidth()
+                )
+
+                if (nextEvent != null || activeTimers.isNotEmpty() || chips.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(modifier = Modifier.widthIn(max = 420.dp)) {
                         nextEvent?.let {
                             NextEventCard(event = it)
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                         if (activeTimers.isNotEmpty()) {
                             ActiveTimersCard(
                                 timers = activeTimers,
                                 onCancelTimer = viewModel::onCancelTimer
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                         if (chips.isNotEmpty()) {
                             DeviceStatusChips(chips = chips)
                         }
                     }
                 }
-                HeadlinesBlock(
-                    state = headlines,
-                    modifier = Modifier.padding(top = 20.dp).fillMaxWidth(),
-                )
+
+                Spacer(modifier = Modifier.weight(1f))
             }
         } else {
             // Portrait / compact: same widget set, single stacked column.
@@ -129,7 +144,9 @@ fun HomeScreen(
             // remains at the bottom so the eye rests on time and
             // temperature first.
             Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 32.dp, end = 32.dp, top = topPad, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.weight(0.2f))
@@ -192,16 +209,10 @@ fun HomeScreen(
                 .padding(top = 16.dp, end = 64.dp)
         )
 
-        // Top: most recent proactive suggestion (one at a time so it doesn't
-        // dominate the ambient view).
-        suggestions.firstOrNull()?.let { suggestion ->
-            SuggestionBubble(
-                suggestion = suggestion,
-                onAccept = { viewModel.acceptSuggestion(it) },
-                onDismiss = { viewModel.dismissSuggestion(it.id) },
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-        }
+        // Proactive SuggestionBubble intentionally not rendered on the
+        // ambient Home — the user found the recurring popup distracting.
+        // Suggestions still flow into voice / proactive paths via
+        // SuggestionEngine; only the on-screen card is suppressed here.
     }
 }
 
@@ -233,6 +244,66 @@ private fun WeatherBlock(
             kind = state.kind,
             modifier = modifier,
         )
+    }
+}
+
+/**
+ * Echo Show inline ambient header. Renders one Row at ~28 sp:
+ *   `HH:mm  ☁  18°    日 4/19 · Munakata`
+ *
+ * Time and temperature share a single typography scale so the header
+ * reads as one continuous status line rather than three competing
+ * widgets. Date+location collapse to a soft secondary color so the
+ * eye lands on time/temp first. Loading / error states omit the
+ * weather portion silently — an ambient screen shouldn't be displaying
+ * "loading…" copy in chrome.
+ */
+@Composable
+private fun AmbientHeader(
+    time: LocalDateTime,
+    weatherState: BriefingState<com.opendash.app.tool.info.WeatherInfo?>,
+    modifier: Modifier = Modifier,
+) {
+    val use24Hour = DateFormat.is24HourFormat(LocalContext.current)
+    val timePattern = if (use24Hour) "HH:mm" else "h:mm"
+    val info = (weatherState as? BriefingState.Success)?.data
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = time.format(DateTimeFormatter.ofPattern(timePattern)),
+            style = MaterialTheme.typography.headlineMedium,
+            color = SpeakerTextPrimary,
+            fontWeight = FontWeight.Normal,
+        )
+        if (info != null) {
+            Spacer(modifier = Modifier.width(14.dp))
+            Icon(
+                imageVector = conditionIcon(info.condition),
+                contentDescription = info.condition,
+                tint = SpeakerTextPrimary,
+                modifier = Modifier.size(26.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "${info.temperatureC.toInt()}°",
+                style = MaterialTheme.typography.headlineMedium,
+                color = SpeakerTextPrimary,
+                fontWeight = FontWeight.Light,
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = buildString {
+                append(time.format(DateTimeFormatter.ofPattern("E M/d")))
+                if (info != null) append(" · ${info.location}")
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = SpeakerTextSecondary,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(64.dp)) // settings gear slot
     }
 }
 

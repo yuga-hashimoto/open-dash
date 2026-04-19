@@ -520,6 +520,10 @@ object DeviceModule {
             ContactsToolExecutor(
                 AndroidContactsProvider(context)
             ),
+            com.opendash.app.tool.system.PhoneCallToolExecutor(
+                context,
+                AndroidContactsProvider(context),
+            ),
             DeviceHealthToolExecutor(
                 AndroidDeviceHealthProvider(context)
             ),

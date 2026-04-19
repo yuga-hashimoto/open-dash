@@ -121,6 +121,12 @@ object ToolFilter {
         ),
         Bucket(
             keywords = listOf(
+                "call", "phone call", "dial", "電話", "通話", "かけて", "発信"
+            ),
+            tools = setOf("make_call", "search_contacts")
+        ),
+        Bucket(
+            keywords = listOf(
                 "document", "rag", "ingest", "knowledge base",
                 "ドキュメント", "資料"
             ),
