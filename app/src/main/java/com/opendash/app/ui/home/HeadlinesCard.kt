@@ -103,7 +103,7 @@ fun HeadlinesCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(headlines, key = { it.link.ifBlank { it.title } }) { item ->
-                HeadlineTile(item)
+                HeadlineTile(item, modifier = Modifier.fillParentMaxWidth())
             }
         }
     }
@@ -211,10 +211,9 @@ fun HeadlinesCardError(
 }
 
 @Composable
-private fun HeadlineTile(item: NewsItem) {
+private fun HeadlineTile(item: NewsItem, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
-            .width(320.dp)
+        modifier = modifier
             .background(SpeakerSurfaceVariant, RoundedCornerShape(14.dp))
             .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {

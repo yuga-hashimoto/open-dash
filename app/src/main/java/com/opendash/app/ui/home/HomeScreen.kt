@@ -322,7 +322,7 @@ private fun HeadlinesBlock(
         BriefingState.Loading -> HeadlinesCardLoading(modifier = modifier)
         is BriefingState.Success -> {
             if (state.data.isNotEmpty()) {
-                HeadlinesCard(headlines = state.data, modifier = modifier)
+                HeadlinesCard(headlines = state.data.take(1), modifier = modifier)
             }
         }
         is BriefingState.Error -> HeadlinesCardError(
