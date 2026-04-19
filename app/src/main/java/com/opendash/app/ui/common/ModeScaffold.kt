@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.opendash.app.ui.conversations.ConversationsScreen
 import com.opendash.app.ui.devices.DevicesScreen
 import com.opendash.app.ui.home.ConnectionBadge
 import com.opendash.app.ui.home.ConnectionStatus
@@ -68,14 +69,14 @@ fun ModeScaffold(
     val responseText by viewModel.lastResponse.collectAsState()
     val spokenText by viewModel.currentSpokenText.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
-    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val pagerState = rememberPagerState(initialPage = 0) { 3 }
     var showSettings by remember { mutableStateOf(false) }
     var showNightClock by remember { mutableStateOf(false) }
     var showControlDrawer by remember { mutableStateOf(false) }
     val showOverlay = voiceState !is VoicePipelineState.Idle &&
             voiceState !is VoicePipelineState.WakeWordListening
 
-    // Auto-return to Home after 30s inactivity on Devices page
+    // Auto-return to Home after 30s inactivity on non-Home pages
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage != 0) {
             delay(30_000L)
@@ -96,14 +97,15 @@ fun ModeScaffold(
             .background(SpeakerBackground)
             .systemBarsPadding()
     ) {
-        // Main pages: Home ↔ Devices (swipe)
+        // Main pages: Home → Conversations → Devices (swipe)
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
                 0 -> HomeScreen()
-                1 -> DevicesScreen()
+                1 -> ConversationsScreen()
+                2 -> DevicesScreen()
             }
         }
 
@@ -114,7 +116,7 @@ fun ModeScaffold(
                 .padding(bottom = 88.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            repeat(2) { index ->
+            repeat(3) { index ->
                 Box(
                     modifier = Modifier
                         .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
