@@ -71,8 +71,17 @@ class TtsManager(
     private val elevenLabsProvider: ElevenLabsTtsProvider by lazy {
         ElevenLabsTtsProvider(context, preferences, securePreferences, httpClient)
     }
-    private val voiceVoxProvider: VoiceVoxTtsProvider by lazy {
+    private val voiceVoxHttpProvider: VoiceVoxTtsProvider by lazy {
         VoiceVoxTtsProvider(context, preferences, httpClient)
+    }
+
+    /**
+     * `full` flavor: bundled on-device VOICEVOX engine (no LAN dependency).
+     * `standard` flavor: null — [resolveProvider] falls back to the HTTP provider.
+     * Flavor selection happens at compile time via [VoiceVoxEmbeddedFactory].
+     */
+    private val voiceVoxEmbeddedProvider: TextToSpeech? by lazy {
+        VoiceVoxEmbeddedFactory.createOrNull(context, preferences, httpClient)
     }
     private val piperProvider: PiperTtsProvider by lazy {
         // Piper is a placeholder that falls back to Android system TTS until
@@ -139,7 +148,7 @@ class TtsManager(
         val next: TextToSpeech = when (id) {
             "openai" -> openAiProvider
             "elevenlabs" -> elevenLabsProvider
-            "voicevox" -> voiceVoxProvider
+            "voicevox" -> resolveVoiceVoxProvider()
             "piper" -> piperProvider
             else -> androidTtsProvider
         }
@@ -154,6 +163,21 @@ class TtsManager(
             bindChunkForwarder(next)
         }
         return next
+    }
+
+    /**
+     * Pick the VOICEVOX backend based on the user's `VOICEVOX_ENGINE_MODE`
+     * preference. On the `full` flavor the default is `embedded` (bundled
+     * voicevox_core); on `standard` the factory returns null so we fall back
+     * to the HTTP-engine provider. Users on `full` can explicitly pick `http`
+     * to use a LAN-hosted VOICEVOX ENGINE instead.
+     */
+    private fun resolveVoiceVoxProvider(): TextToSpeech {
+        val embedded = voiceVoxEmbeddedProvider
+        if (embedded == null) return voiceVoxHttpProvider
+        val mode = runBlocking { preferences.observe(PreferenceKeys.VOICEVOX_ENGINE_MODE).first() }
+            ?.lowercase()?.trim()
+        return if (mode == "http") voiceVoxHttpProvider else embedded
     }
 
     override suspend fun speak(text: String) {

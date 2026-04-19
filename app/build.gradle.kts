@@ -49,6 +49,23 @@ android {
         }
     }
 
+    // Product flavors for embedded VOICEVOX support.
+    //   standard: no VOICEVOX native runtime — HTTP engine provider still usable.
+    //   full:     bundles voicevoxcore AAR + libvoicevox_onnxruntime.so. The
+    //             OpenJTalk dictionary (~102MB) is downloaded on first use,
+    //             not shipped in the APK, to keep the artifact small.
+    flavorDimensions += "voicevox"
+    productFlavors {
+        create("standard") {
+            dimension = "voicevox"
+            buildConfigField("boolean", "VOICEVOX_EMBEDDED", "false")
+        }
+        create("full") {
+            dimension = "voicevox"
+            buildConfigField("boolean", "VOICEVOX_EMBEDDED", "true")
+        }
+    }
+
     lint {
         // Baseline captures existing warnings so only new issues fail CI.
         // Regenerate with `./gradlew updateLintBaseline`.
@@ -200,6 +217,13 @@ dependencies {
 
     // Wake word (Vosk offline speech recognition)
     implementation(libs.vosk)
+
+    // VOICEVOX core (embedded, full flavor only).
+    // The AAR ships with Java bindings for jp.hiroshiba.voicevoxcore; pair it with
+    // libvoicevox_onnxruntime.so placed in src/full/jniLibs/arm64-v8a/.
+    // The standard Microsoft ONNX Runtime does NOT support the "vv-bin" model
+    // format used by voicevox_core 0.16.4 — the bundled custom ORT is required.
+    "fullImplementation"(files("libs/voicevoxcore-android-0.16.4.aar"))
 
     // Logging
     implementation(libs.timber)

@@ -26,6 +26,14 @@ object PreferenceKeys {
     val VOICEVOX_TERMS_ACCEPTED = booleanPreferencesKey("voicevox_terms_accepted")
     val VOICEVOX_BASE_URL = stringPreferencesKey("voicevox_base_url") // self-hosted HTTP engine URL
 
+    /**
+     * VOICEVOX engine mode for the `voicevox` provider:
+     *   "embedded" (default on `full` flavor) — uses the bundled voicevox_core AAR
+     *   "http"     (default on `standard` flavor) — uses an external VOICEVOX ENGINE server
+     * Reads fall back to the correct default per [BuildConfig.VOICEVOX_EMBEDDED].
+     */
+    val VOICEVOX_ENGINE_MODE = stringPreferencesKey("voicevox_engine_mode")
+
     // Voice interaction
     val CONTINUOUS_MODE = booleanPreferencesKey("continuous_mode")
     val THINKING_SOUND = booleanPreferencesKey("thinking_sound")

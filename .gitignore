@@ -4,6 +4,12 @@
 *.ap_
 *.aab
 
+# Exception: VOICEVOX core AAR is vendored for the `full` product flavor.
+!app/libs/voicevoxcore-*.aar
+
+# VOICEVOX VVM model files — downloaded at runtime, never committed.
+*.vvm
+
 # Files for the ART/Dalvik VM
 *.dex
 
