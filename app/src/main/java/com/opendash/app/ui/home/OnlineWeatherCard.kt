@@ -206,7 +206,7 @@ private fun formatTemp(value: Double): String = "%.0f".format(value)
  * Rough condition-string → icon mapping. Strings come from
  * [com.opendash.app.tool.info.OpenMeteoWeatherProvider.weatherCodeToText].
  */
-private fun conditionIcon(condition: String): ImageVector {
+internal fun conditionIcon(condition: String): ImageVector {
     val c = condition.lowercase()
     return when {
         "thunder" in c -> Icons.Filled.Thunderstorm

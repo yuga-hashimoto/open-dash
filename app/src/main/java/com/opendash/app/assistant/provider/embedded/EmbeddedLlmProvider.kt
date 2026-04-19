@@ -191,6 +191,17 @@ class EmbeddedLlmProvider(
         }
     }
 
+    /**
+     * Rebuild the native [Conversation] from scratch for every send.
+     *
+     * Reusing a single Conversation across turns corrupts internal state
+     * on at least some (MIUI-hosted) Adreno GPUs: the second send after a
+     * tool-use round was consistently SEGV'ing inside
+     * `liblitertlm_jni.so`. Rebuilding is cheaper than it looks because
+     * the [Engine] is kept warm — only the per-turn KV-cache / sampler
+     * context is recreated. Conversation history is re-sent each turn
+     * via [buildEnrichedPrompt] so rebuild does not lose context.
+     */
     private suspend fun sendOnce(
         messages: List<AssistantMessage>,
         tools: List<ToolSchema>,
@@ -198,6 +209,7 @@ class EmbeddedLlmProvider(
     ): String {
         val prompt = buildEnrichedPrompt(messages, tools, retry)
         val response = StringBuilder()
+        createConversation() // close prior + open fresh
         conversation?.sendMessageAsync(prompt)?.collect { message ->
             response.append(message.contents.toString())
         }
@@ -213,6 +225,9 @@ class EmbeddedLlmProvider(
             val prompt = buildEnrichedPrompt(messages, tools, retry = false)
             val response = StringBuilder()
 
+            // Match [sendOnce]: rebuild the native Conversation each turn to
+            // avoid the second-turn SEGV in liblitertlm_jni.so.
+            createConversation()
             conversation?.sendMessageAsync(prompt)?.collect { message ->
                 val chunk = message.contents.toString()
                 if (chunk.isNotEmpty()) {
@@ -231,7 +246,15 @@ class EmbeddedLlmProvider(
 
     override suspend fun latencyMs(): Long = 0L
 
-    fun unload() {
+    /**
+     * Teardown path. Takes [engineMutex] because closing the native
+     * `Conversation` / `Engine` while another caller is mid-`send()` or
+     * mid-`sendStreaming()` races inside `liblitertlm_jni.so` and
+     * crashes with SIGSEGV at unpredictable offsets. Without this lock
+     * we saw the crash during voice sessions when the app was rotated /
+     * backgrounded mid-response.
+     */
+    suspend fun unload() = engineMutex.withLock {
         conversation?.close()
         conversation = null
         engine?.let {
@@ -270,6 +293,16 @@ class EmbeddedLlmProvider(
     ): String {
         val sb = StringBuilder()
 
+        // Locale-aware language directive injected just before the final
+        // user turn (see end of this function). Declared up front so we
+        // don't recompute per branch.
+        val localeDirective = when (java.util.Locale.getDefault().language) {
+            "ja" -> "[指示] 常に日本語で、短く自然な話し言葉で答えてください。"
+            "ko" -> "[지시] 항상 한국어로, 짧고 자연스러운 회화체로 답해주세요。"
+            "zh" -> "[指令] 请始终用中文，简短自然地口语化回答。"
+            else -> null
+        }
+
         if (tools.isNotEmpty()) {
             sb.append(buildToolAnnex(tools, retry))
             sb.append("\n\n")
@@ -284,16 +317,52 @@ class EmbeddedLlmProvider(
             }
         }
 
+        // Prior-turn history. Required now that the native Conversation
+        // is rebuilt on every send (per SIGSEGV workaround in sendOnce /
+        // sendStreaming): the KV-cache is wiped each turn, so anything
+        // the model should "remember" has to be re-sent in-prompt.
+        val priorTurns = messages
+            .dropLastWhile { it is AssistantMessage.ToolCallResult }
+            .let { trimmed ->
+                val lastUserIdx = trimmed.indexOfLast { it is AssistantMessage.User }
+                if (lastUserIdx <= 0) emptyList() else trimmed.subList(0, lastUserIdx)
+            }
+            .filter { it is AssistantMessage.User || it is AssistantMessage.Assistant }
+        if (priorTurns.isNotEmpty()) {
+            priorTurns.forEach { msg ->
+                when (msg) {
+                    is AssistantMessage.User ->
+                        sb.append("User: ").append(msg.content).append('\n')
+                    is AssistantMessage.Assistant ->
+                        if (msg.content.isNotBlank()) {
+                            sb.append("Assistant: ").append(msg.content).append('\n')
+                        }
+                    else -> {}
+                }
+            }
+            sb.append('\n')
+        }
+
         // If the most recent message is a tool result, we're in the 2nd
         // (or later) round of the agent loop. Frame the turn as
         // "here is the tool output — now answer the user" rather than
         // repeating the original user question, which previously caused
         // Gemma 2B to emit "..." because it thought the tool call was
         // still pending.
+        // Language directive right before the current turn — at this
+        // position Gemma treats it as a meta-instruction rather than a
+        // user utterance to reply to. (Earlier placement caused the
+        // model to respond "承知しました" as if someone had asked it to
+        // switch languages.)
+        if (localeDirective != null) {
+            sb.append(localeDirective).append('\n')
+        }
+
         val followUp = buildToolResultFollowUp(messages)
         if (followUp != null) {
             sb.append(followUp)
         } else {
+            sb.append("User: ")
             sb.append(extractLastUserMessage(messages))
         }
         return sb.toString()

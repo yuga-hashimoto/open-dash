@@ -14,6 +14,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- make_call tool places calls directly with ACTION_CALL. Falls back
+         to ACTION_DIAL (dialer-only, no permission) at runtime if the user
+         denies CALL_PHONE. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
@@ -31,7 +35,10 @@
     <uses-feature android:name="android.hardware.location.network" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
-    <!-- Required to detect TTS engines and speech recognizer (Android 11+) -->
+    <!-- Required to detect TTS engines and speech recognizer (Android 11+).
+         Explicit <package> entries are needed so getServiceInfo() succeeds
+         when we name a specific Google recognition component on MIUI /
+         non-Pixel stacks where voice_recognition_service is otherwise unset. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
@@ -39,6 +46,14 @@
         <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>
+        <!-- make_call tool opens the system dialer via ACTION_DIAL; we need
+             to see the dialer package at resolve time on Android 11+. -->
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <package android:name="com.google.android.googlequicksearchbox" />
+        <package android:name="com.google.android.tts" />
     </queries>
 
     <application

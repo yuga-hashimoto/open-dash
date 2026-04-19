@@ -16,11 +16,20 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import com.opendash.app.ui.theme.VoiceListening
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -73,8 +82,17 @@ fun ModeScaffold(
     var showSettings by remember { mutableStateOf(false) }
     var showNightClock by remember { mutableStateOf(false) }
     var showControlDrawer by remember { mutableStateOf(false) }
-    val showOverlay = voiceState !is VoicePipelineState.Idle &&
-            voiceState !is VoicePipelineState.WakeWordListening
+    // Keep the ambient Home visible while the mic is still listening:
+    // only switch to the full VoiceOverlay once the assistant is
+    // actually thinking / speaking. Listening gets an in-place bottom
+    // bar drawn below (ListeningBar) that matches the Alexa / Nest Hub
+    // pattern — the clock + news stay on screen while the user talks.
+    val showOverlay = voiceState is VoicePipelineState.Processing ||
+            voiceState is VoicePipelineState.Thinking ||
+            voiceState is VoicePipelineState.PreparingSpeech ||
+            voiceState is VoicePipelineState.Speaking ||
+            voiceState is VoicePipelineState.Error
+    val showListeningBar = voiceState is VoicePipelineState.Listening
 
     // Auto-return to Home after 30s inactivity on non-Home pages
     LaunchedEffect(pagerState.currentPage) {
@@ -109,34 +127,14 @@ fun ModeScaffold(
             }
         }
 
-        // Page indicator dots
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 88.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            repeat(3) { index ->
-                Box(
-                    modifier = Modifier
-                        .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
-                        .background(
-                            if (pagerState.currentPage == index) SpeakerTextSecondary else SpeakerTextTertiary,
-                            CircleShape
-                        )
-                )
-            }
-        }
+        // Page indicator dots intentionally hidden — they overlapped the
+        // news card on the ambient Home. Horizontal swipe between Home,
+        // Conversations, and Devices still works without the visual hint.
 
-        // Connection badge (top-left) — reflects real connectivity now.
-        ConnectionBadge(
-            status = if (isOnline) ConnectionStatus.CONNECTED else ConnectionStatus.DISCONNECTED,
-            providerCount = 0,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 16.dp)
-                .alpha(0.7f)
-        )
+        // Connection badge intentionally hidden — the user found the
+        // "0 devices" chip distracting on the ambient Home where it
+        // overlapped with the clock cluster. Connection status surfaces
+        // via the Settings → Devices screen and via voice when relevant.
 
         // Settings gear icon (top-right)
         IconButton(
@@ -164,22 +162,23 @@ fun ModeScaffold(
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
-        // Mic FAB — pinned to the bottom-end corner so it stays out of the
-        // way of the clock, weather, and ticker. Alignment.BottomEnd keeps
-        // it on the trailing side in RTL layouts automatically, mirroring
-        // the locale. Idle alpha is slightly dimmed so the FAB reads as a
-        // secondary affordance; the breathing animation + glow ring bring
-        // it back to full presence once listening starts. Wake word for
-        // hands-free invocation is "dash" (configurable in Settings).
-        MicFab(
-            isListening = voiceState is VoicePipelineState.Listening,
-            onClick = { viewModel.startVoiceInput() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 24.dp)
-        )
+        // Mic FAB intentionally hidden — voice input is wake-word driven
+        // ("dash") so a tappable mic button isn't required on the
+        // ambient Home. Removing it keeps the dashboard chrome-free and
+        // closer to an Echo Show / Nest Hub aesthetic.
 
-        // Voice Overlay
+        // Bottom listening bar — appears in-place over the Home bottom
+        // edge while the mic is active. Alexa / Nest Hub style: no
+        // screen transition, just a colored indicator + partial STT.
+        if (showListeningBar) {
+            ListeningBar(
+                partialText = sttText,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+
+        // Voice Overlay — full-screen response view with user message
+        // on top and the karaoke-style AI reply below.
         if (showOverlay) {
             VoiceOverlay(
                 voiceState = voiceState,
@@ -201,6 +200,60 @@ fun ModeScaffold(
         // Night clock overlay
         if (showNightClock) {
             NightClockOverlay(onDismiss = { showNightClock = false })
+        }
+    }
+}
+
+/**
+ * In-place listening indicator pinned to the bottom edge of the Home.
+ * Renders a thin blue bar (pulsing) + the live STT partial text so the
+ * user can see what the assistant heard without leaving the ambient
+ * view. Appears only during [VoicePipelineState.Listening]; replaced by
+ * the full [VoiceOverlay] once processing / speaking starts.
+ */
+@Composable
+private fun ListeningBar(
+    partialText: String,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "listening-pulse")
+    val alpha by transition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "listening-alpha",
+    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(VoiceListening.copy(alpha = 0.14f * alpha))
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (partialText.isNotBlank()) {
+            Text(
+                text = partialText,
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Filled.Mic,
+                contentDescription = null,
+                tint = VoiceListening.copy(alpha = alpha),
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "聞いています…",
+                color = VoiceListening.copy(alpha = alpha),
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
     }
 }

@@ -129,6 +129,14 @@ class DefaultFastPathRouter(
             // "look up the time" style wordings still route to web search
             // when the utterance isn't a plain time query.
             WebSearchMatcher,
+            // Confirm / cancel matchers must run BEFORE PhoneCallMatcher
+            // so a bare "はい" / "いいえ" after the assistant asks
+            // "○○さんに電話してよろしいですか?" is not re-interpreted
+            // as a new tool call. VoicePipeline checks its pending-call
+            // state and short-circuits if either fires.
+            ConfirmCallMatcher,
+            CancelCallMatcher,
+            PhoneCallMatcher,
             CalendarMatcher,
             // Notification matchers: clear precedes list because "clear" verb
             // dominates the "show / list" verbs on common notification utterances.

@@ -176,6 +176,7 @@ class VoicePipeline(
         private const val WATCHDOG_TIMEOUT_MS = 5 * 60 * 1000L
         private const val CONTINUOUS_MODE_DELAY_MS = 500L
         private const val DEFAULT_SILENCE_TIMEOUT_MS = 1500L
+        private const val PENDING_CALL_TIMEOUT_MS = 30_000L
     }
 
     fun startWakeWordListening() {
@@ -239,15 +240,15 @@ class VoicePipeline(
                     is SttResult.Error -> {
                         latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
                         Timber.w("STT error: ${result.message}")
-                        playErrorBeep()
-                        val recovery = errorClassifier.classify(
-                            result.message,
-                            kind = currentProviderKind()
-                        )
-                        _lastResponse.value = recovery.userSpokenMessage
-                        _state.value = VoicePipelineState.Error(recovery.userSpokenMessage)
+                        // Every STT-layer failure (NO_MATCH, SPEECH_TIMEOUT,
+                        // NETWORK, CLIENT, SERVER, RECOGNIZER_BUSY …) drops
+                        // us back to Idle silently. All of these indicate
+                        // either "user never spoke" or "transient
+                        // transcription hiccup" — neither warrants the
+                        // intrusive red "Sorry, I didn't catch that"
+                        // overlay on the ambient Home. The user just tries
+                        // again by saying the wake word.
                         abandonAudioFocus()
-                        delay(2000)
                         resumeWakeWord()
                         _state.value = VoicePipelineState.Idle
                         return@collect
@@ -673,10 +674,139 @@ class VoicePipeline(
      * so conversation history still shows what happened.
      * Returns true if the fast-path handled the turn end-to-end (state → Idle).
      */
+    /**
+     * State carried across turns so a "はい / いいえ" reply after
+     * "○○さんに電話してよろしいですか?" can resolve to the right call
+     * without relying on the on-device LLM to chain tool-use correctly.
+     * Null unless a PhoneCallMatcher pending_confirmation was the most
+     * recent fast-path hit AND the 30-second window is still open.
+     */
+    private data class PendingCall(
+        val displayName: String,
+        val phone: String,
+        val expiresAt: Long,
+    )
+
+    @Volatile
+    private var pendingCall: PendingCall? = null
+
+    private fun currentPendingCall(): PendingCall? {
+        val pc = pendingCall ?: return null
+        if (pc.expiresAt < System.currentTimeMillis()) {
+            pendingCall = null
+            return null
+        }
+        return pc
+    }
+
+    private suspend fun placeConfirmedCall(pending: PendingCall) {
+        val result = toolExecutor.execute(
+            ToolCall(
+                id = "confirmed_call_${System.currentTimeMillis()}",
+                name = "make_call",
+                arguments = mapOf(
+                    "contact_name" to pending.displayName,
+                    "phone_number" to pending.phone,
+                    "confirmed" to true,
+                ),
+            )
+        )
+        val spoken = if (result.success) {
+            "${pending.displayName}さんに発信します"
+        } else {
+            "電話を発信できませんでした"
+        }
+        _lastResponse.value = spoken
+        val assistantMessage = AssistantMessage.Assistant(content = spoken)
+        conversationHistory.add(assistantMessage)
+        trimConversationHistory()
+        persistAssistantMessage(spoken)
+        _state.value = VoicePipelineState.Speaking
+        resumeWakeWordForBargeInIfEnabled()
+        speakResponse(spoken)
+        onResponseComplete()
+    }
+
+    private suspend fun speakResponse(text: String) {
+        runCatching { tts.speak(text) }
+            .onFailure { Timber.w(it, "TTS failed for confirmation speech") }
+    }
+
+    private suspend fun onResponseComplete() {
+        _state.value = VoicePipelineState.Idle
+        resumeWakeWord()
+    }
+
+    /**
+     * Auto-restart listening after a pending-call prompt finishes
+     * speaking, regardless of the `continuous_mode` preference. The
+     * user can't say "hey speaker, yes" — they expect the device to
+     * already be waiting for their yes/no answer. Narrow override for
+     * this one flow so we don't trample the global preference.
+     */
+    private fun armListeningForConfirmation() {
+        scope.launch {
+            delay(CONTINUOUS_MODE_DELAY_MS)
+            startListening()
+        }
+    }
+
+    /**
+     * Tiny JSON string-field extractor for the make_call pending-
+     * confirmation payload. Flat single-object JSON only — good enough
+     * for `{"resolved_name":"橋本","resolved_phone":"090..."}` and keeps
+     * us out of the full kotlinx.serialization ceremony for a single
+     * callsite.
+     */
+    private fun extractJsonStringField(data: String, field: String): String? {
+        val pattern = Regex("\"" + Regex.escape(field) + "\"\\s*:\\s*\"((?:\\\\\"|[^\"])*)\"")
+        val match = pattern.find(data) ?: return null
+        return match.groupValues[1]
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\")
+    }
+
     private suspend fun tryHandleFastPath(
         userText: String,
         match: com.opendash.app.voice.fastpath.FastPathMatch
     ): Boolean {
+        // Pending-call confirmation / cancellation are pure VoicePipeline
+        // concerns — no ToolExecutor route exists for them, they just
+        // pivot on the pendingCall slot we saved when make_call returned
+        // pending_confirmation.
+        if (match.toolName == "__confirm_pending_call__") {
+            val pending = currentPendingCall()
+            pendingCall = null
+            if (pending == null) {
+                return false // nothing pending → fall through to LLM path
+            }
+            Timber.d("Fast-path: confirming pending call to ${pending.displayName}")
+            placeConfirmedCall(pending)
+            return true
+        }
+        if (match.toolName == "__cancel_pending_call__") {
+            val pending = currentPendingCall()
+            pendingCall = null
+            if (pending == null) return false
+            Timber.d("Fast-path: cancelling pending call to ${pending.displayName}")
+            val spoken = "キャンセルしました"
+            _lastResponse.value = spoken
+            conversationHistory.add(AssistantMessage.Assistant(content = spoken))
+            trimConversationHistory()
+            persistAssistantMessage(spoken)
+            _state.value = VoicePipelineState.Speaking
+            resumeWakeWordForBargeInIfEnabled()
+            speakResponse(spoken)
+            onResponseComplete()
+            return true
+        }
+        // Any other fast-path utterance invalidates a stale pending call
+        // (user changed topic) — drop it so "はい" two turns later
+        // doesn't accidentally dial the old target.
+        if (match.toolName != "make_call") {
+            pendingCall = null
+        }
+
         return try {
             Timber.d("Fast-path matched: ${match.toolName ?: "(speak-only)"}")
             // Speak-only matches (e.g. "help") skip tool execution entirely.
@@ -688,6 +818,51 @@ class VoicePipeline(
                         arguments = match.arguments
                     )
                 )
+            }
+            // Special-case make_call: when the tool returns a
+            // pending_confirmation payload we store the resolved phone
+            // and speak the "○○さんに電話してよろしいですか?" prompt
+            // verbatim. The next turn's "はい" goes through
+            // ConfirmCallMatcher (handled above) to place the call.
+            if (match.toolName == "make_call" && result?.success == true) {
+                val data = result.data
+                if (data.contains("\"pending_confirmation\":true")) {
+                    val askUser = extractJsonStringField(data, "ask_user")
+                        ?: "この方に電話をかけてよろしいですか？"
+                    val resolvedName = extractJsonStringField(data, "resolved_name").orEmpty()
+                    val resolvedPhone = extractJsonStringField(data, "resolved_phone").orEmpty()
+                    if (resolvedPhone.isNotBlank()) {
+                        pendingCall = PendingCall(
+                            displayName = resolvedName.ifBlank { "この方" },
+                            phone = resolvedPhone,
+                            expiresAt = System.currentTimeMillis() + PENDING_CALL_TIMEOUT_MS,
+                        )
+                        Timber.d("Fast-path: stashed pending call to $resolvedName ($resolvedPhone)")
+                    }
+                    // Screen shows the resolved number so the user can
+                    // visually double-check STT didn't mis-hear the name.
+                    // TTS reads only the spoken prompt so it doesn't
+                    // recite a ten-digit number out loud.
+                    val displayText = if (resolvedPhone.isNotBlank()) {
+                        val displayName = resolvedName.ifBlank { "この方" }
+                        "$displayName さん（$resolvedPhone）に電話をかけてよろしいですか？"
+                    } else {
+                        askUser
+                    }
+                    val userMessage = AssistantMessage.User(content = userText)
+                    conversationHistory.add(userMessage)
+                    conversationHistory.add(AssistantMessage.Assistant(content = displayText))
+                    trimConversationHistory()
+                    persistUserMessage(userText)
+                    persistAssistantMessage(displayText)
+                    _lastResponse.value = displayText
+                    _state.value = VoicePipelineState.Speaking
+                    resumeWakeWordForBargeInIfEnabled()
+                    speakResponse(askUser)
+                    _state.value = VoicePipelineState.Idle
+                    armListeningForConfirmation()
+                    return true
+                }
             }
             val spoken = when {
                 match.spokenConfirmation != null -> match.spokenConfirmation
@@ -710,17 +885,15 @@ class VoicePipeline(
                     // avoids "Tokyo 18 Clear 65% 12 km/h"). Falls back to the
                     // regex formatter on timeout / error / non-info tool.
                     //
-                    // web_search is deliberately excluded: small on-device
-                    // LLMs (Gemma 270m-2B) frequently hallucinate "I cannot
-                    // search the web" or "I don't have enough information to
-                    // answer" even when the SERP snippet is right there in
-                    // the prompt. Speaking the top result verbatim via the
-                    // regex formatter is strictly more useful than a refusal
-                    // TTS — and the formatter now understands the PR #421
-                    // `results[]` HTML-scrape shape, so the phrasing is
-                    // already conversational.
-                    val shouldPolish = toolName in FastPathLlmPolisher.SUPPORTED_TOOLS &&
-                        toolName != "web_search"
+                    // Polish every info tool, including web_search. Previously
+                    // web_search was excluded on the theory that Gemma 270m-2B
+                    // would refuse to speak SERP snippets, but skipping polish
+                    // left us reading raw DuckDuckGo titles (which are often
+                    // ad copy — "LINE レンジャーに関してオンラインで相談…")
+                    // verbatim. On Gemma 4 E2B the polish consistently produces
+                    // a useful summary; ErrorClassifier catches any residual
+                    // refusal and falls back to the regex formatter below.
+                    val shouldPolish = toolName in FastPathLlmPolisher.SUPPORTED_TOOLS
                     val polished = if (shouldPolish) {
                         try {
                             val provider = router.resolveProvider(userInput = userText)

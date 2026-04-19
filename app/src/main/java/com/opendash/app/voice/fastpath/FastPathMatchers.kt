@@ -1249,6 +1249,114 @@ object WebSearchMatcher : FastPathMatcher {
 }
 
 /**
+ * "Xさんに電話して", "Xに発信", "call X" → `make_call` with the extracted
+ * contact name. Fast-path exists because the on-device LLM consistently
+ * fails to route `make_call` correctly (it passes the tool name as the
+ * contact_name argument or refuses to call the tool at all). Going
+ * through a regex guarantees the dialer actually opens.
+ *
+ * The first pass sends `confirmed=false`, which the executor turns into a
+ * pending_confirmation payload. LLM polish (via FastPathLlmPolisher)
+ * reads the bundled `ask_user` prompt aloud so the user still gets the
+ * "XXさんに電話してよろしいですか？" verbal check.
+ */
+object PhoneCallMatcher : FastPathMatcher {
+    private val japanesePatterns = listOf(
+        // "○○さんに電話かけて / ○○に電話して / ○○に発信 / ○○に電話をお願い"
+        Regex(
+            """^\s*(.+?)\s*(?:さん|君|くん|様|ちゃん)?\s*(?:に|へ)?\s*(?:電話|でんわ|通話|発信)\s*(?:を)?\s*(?:かけ|して|お願い|つなげ|つないで)?.*$"""
+        )
+    )
+    private val englishPatterns = listOf(
+        Regex("""^\s*call\s+(.+?)\s*[!?.]*\s*$""", RegexOption.IGNORE_CASE),
+        Regex("""^\s*dial\s+(.+?)\s*[!?.]*\s*$""", RegexOption.IGNORE_CASE),
+        Regex("""^\s*phone\s+(.+?)\s*[!?.]*\s*$""", RegexOption.IGNORE_CASE),
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        val candidate = japanesePatterns.firstNotNullOfOrNull { it.find(normalized) }
+            ?: englishPatterns.firstNotNullOfOrNull { it.find(normalized) }
+            ?: return null
+        val target = candidate.groupValues[1].trim()
+            .removeSuffix("に")
+            .removeSuffix("へ")
+            .trim()
+        if (target.isBlank()) return null
+        return FastPathMatch(
+            toolName = "make_call",
+            arguments = mapOf(
+                "contact_name" to target,
+                // confirmed=false so the executor returns a
+                // pending_confirmation payload. VoicePipeline picks it
+                // up, remembers the phone, and speaks the ask_user
+                // prompt — then the next utterance is routed through
+                // ConfirmCallMatcher / CancelCallMatcher to actually
+                // place or abort the call. Fully voice-driven, no
+                // screen tap needed.
+                "confirmed" to false,
+            )
+        )
+    }
+}
+
+/**
+ * Detects positive confirmation utterances ("yes / はい / OK / いいよ …")
+ * so a pending call saved by [PhoneCallMatcher] can be placed without
+ * any screen interaction. The matcher always matches — when there is
+ * no pending call, VoicePipeline falls through to normal routing.
+ */
+object ConfirmCallMatcher : FastPathMatcher {
+    // Exact-match utterances only. Substring / contains checks bite us
+    // because "電話して" inside "○○に電話して" would falsely trigger
+    // confirmation even when the user is initiating a new call. Each
+    // entry here is the complete user reply.
+    private val positives = setOf(
+        "はい", "はいよ", "うん", "いいよ", "よろしく", "お願い", "お願いします",
+        "そう", "そうです", "もちろん",
+        "ok", "okay", "おーけー", "オーケー", "yes", "yeah", "sure"
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        val trimmed = normalized
+            .trim()
+            .trimEnd('.', '!', '?', '。', '！', '？', '、', ',')
+            .lowercase()
+        if (trimmed.isBlank()) return null
+        if (trimmed !in positives) return null
+        return FastPathMatch(
+            toolName = "__confirm_pending_call__",
+            arguments = emptyMap(),
+        )
+    }
+}
+
+/**
+ * Detects negative / cancel utterances to abort a pending call.
+ */
+object CancelCallMatcher : FastPathMatcher {
+    // Same exact-match rule as ConfirmCallMatcher — "やめて" as a
+    // substring of a longer utterance is NOT a cancellation.
+    private val negatives = setOf(
+        "いいえ", "いや", "やめて", "やめる", "やめといて",
+        "キャンセル", "だめ", "ダメ", "違う", "やっぱやめ", "やっぱりやめ",
+        "no", "nope", "cancel", "stop", "wait"
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        val trimmed = normalized
+            .trim()
+            .trimEnd('.', '!', '?', '。', '！', '？', '、', ',')
+            .lowercase()
+        if (trimmed.isBlank()) return null
+        if (trimmed !in negatives) return null
+        return FastPathMatch(
+            toolName = "__cancel_pending_call__",
+            arguments = emptyMap(),
+        )
+    }
+}
+
+/**
  * "list devices", "what devices do I have", "デバイス一覧" →
  * get_devices_by_type with type=light as a sane default. Diagnostic
  * fast-path so the user can quickly check what's connected.

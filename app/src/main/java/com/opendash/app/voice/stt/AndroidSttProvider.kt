@@ -1,7 +1,9 @@
 package com.opendash.app.voice.stt
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -66,8 +68,32 @@ class AndroidSttProvider(private val context: Context) : SpeechToText {
                 return@withContext
             }
 
-            recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-            Timber.d("STT: Created new recognizer instance")
+            // On MIUI / non-Pixel stacks the system-wide
+            // `voice_recognition_service` secure setting is often unset,
+            // which makes `createSpeechRecognizer(context)` emit
+            //   E SpeechRecognizer: no selected voice recognition service
+            // and immediately fail with `ERROR_CLIENT`. Naming the
+            // Google TTS on-device RecognitionService explicitly avoids
+            // that binding hole on any device where Google TTS is
+            // installed (effectively all modern Android devices with
+            // Play Services). Fall back to the default resolver on the
+            // unlikely devices where that component isn't installed so
+            // Pixel / AOSP paths still work.
+            val explicit = ComponentName(
+                "com.google.android.tts",
+                "com.google.android.apps.speech.tts.googletts.service.GoogleTTSRecognitionService",
+            )
+            val explicitInstalled = runCatching {
+                context.packageManager.getServiceInfo(explicit, 0)
+                true
+            }.getOrDefault(false)
+            recognizer = if (explicitInstalled) {
+                Timber.d("STT: using explicit recognition service $explicit")
+                SpeechRecognizer.createSpeechRecognizer(context, explicit)
+            } else {
+                Timber.d("STT: using default SpeechRecognizer (no explicit component installed)")
+                SpeechRecognizer.createSpeechRecognizer(context)
+            }
         }
 
         val sr = recognizer
@@ -190,5 +216,52 @@ class AndroidSttProvider(private val context: Context) : SpeechToText {
 
     override fun stopListening() {
         // No-op, flow cancellation triggers cleanup
+    }
+
+    /**
+     * Picks the best installed `RecognitionService` component.
+     *
+     * Enumerates all services registered for `android.speech.RecognitionService`
+     * via [PackageManager.queryIntentServices] (which only requires the
+     * `<queries><intent action="android.speech.RecognitionService"/>` entry
+     * we already declare in the manifest — unlike [PackageManager.getServiceInfo]
+     * which silently fails on Android 11+ when the package isn't otherwise
+     * visible) then ranks them by a known-good priority list.
+     *
+     * `com.google.android.tts` exposes a `GoogleTTSRecognitionService` that
+     * is intended for legacy TTS engine binding and is *not* a real STT
+     * backend — binding to it succeeds but every utterance comes back as
+     * `NO_MATCH`. We therefore explicitly deprioritize it.
+     */
+    private fun preferredRecognitionService(context: Context): ComponentName? {
+        val pm = context.packageManager
+        val intent = Intent("android.speech.RecognitionService")
+        val all = runCatching {
+            @Suppress("DEPRECATION")
+            pm.queryIntentServices(intent, 0)
+        }.getOrDefault(emptyList())
+
+        if (all.isEmpty()) return null
+
+        // Higher index = higher priority. googlequicksearchbox is the real
+        // GMS-backed online recognizer; Samsung/Xiaomi/Honor variants are
+        // hit-or-miss but generally better than nothing; google.tts is a
+        // known dud that we only fall through to as a last resort.
+        val priority = listOf(
+            "com.google.android.googlequicksearchbox",
+            "com.samsung.android.bixby.agent",
+            "com.xiaomi.mibrain.speech",
+        )
+
+        val ranked = all
+            .map { it.serviceInfo }
+            .filter { it.packageName != "com.google.android.tts" } // explicit deny
+            .sortedBy { si ->
+                val idx = priority.indexOf(si.packageName)
+                if (idx >= 0) idx else Int.MAX_VALUE - 1
+            }
+
+        val pick = ranked.firstOrNull() ?: return null
+        return ComponentName(pick.packageName, pick.name)
     }
 }
