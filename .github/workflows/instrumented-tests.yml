@@ -27,11 +27,12 @@ concurrency:
 jobs:
   instrumented:
     name: connectedStandardDebugAndroidTest
-    # macOS hosts get hardware-acceleration (HVF) so AVDs boot ~5x faster than
-    # on ubuntu's nested-virt. The runner is more expensive but the wall-clock
-    # win is large enough to matter for PR feedback loops.
-    runs-on: macos-latest
-    timeout-minutes: 45
+    # ubuntu-latest with KVM is the recommended host for android-emulator-runner@v2:
+    # current GitHub-hosted ubuntu images expose /dev/kvm, so x86_64 system images
+    # boot at near-native speed. We previously tried macos-latest for HVF but the
+    # GitHub macOS-14 image is Apple Silicon and can't run x86_64 emulators.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -55,8 +56,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Required for /dev/kvm to be writable from inside the runner. Documented
+      # in reactivecircus/android-emulator-runner README.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       # Cache the AVD snapshot across runs so subsequent invocations skip the
-      # cold image boot (~3-5 min savings per run).
+      # cold image boot (~3-5 min savings per run). Cache key includes the
+      # workflow file hash so updates here invalidate the snapshot rather than
+      # silently reuse a stale one.
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
@@ -64,7 +76,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.arch }}-v2
 
       - name: Create AVD snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
