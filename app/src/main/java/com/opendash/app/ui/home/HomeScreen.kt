@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.opendash.app.ui.ambient.ActiveTimersCard
 import com.opendash.app.ui.common.isExpandedLandscape
@@ -152,8 +153,14 @@ fun HomeScreen(
                 // status bar so the eye lands on the clock, not chrome.
                 Spacer(modifier = Modifier.weight(1f))
 
-                ClockWidget(time = time, largeMode = true)
-                Spacer(modifier = Modifier.height(16.dp))
+                // Hero clock — inline instead of ClockWidget because the
+                // portrait width (~360dp on phones) can't fit ClockWidget's
+                // 180sp typography without wrapping, and ClockWidget's
+                // built-in "EEEE, MMMM d" subtitle duplicates the date that
+                // PortraitAmbientSubheader already shows. Single source of
+                // truth: time here, date+temp in the subheader below.
+                PortraitHeroClock(time = time)
+                Spacer(modifier = Modifier.height(12.dp))
                 PortraitAmbientSubheader(time = time, weatherState = onlineWeather)
 
                 // Generous gap between the hero and the secondary info
@@ -241,6 +248,32 @@ fun HomeScreen(
         // Suggestions still flow into voice / proactive paths via
         // SuggestionEngine; only the on-screen card is suppressed here.
     }
+}
+
+/**
+ * Portrait hero clock. Uses a reduced 120sp vs. ClockWidget's 180sp
+ * because on a ~360dp-wide phone the larger size wraps "HH:MM" onto a
+ * second line (observed regression). `softWrap = false` belt-and-braces
+ * against any future font that measures wider than expected.
+ *
+ * No date subtitle — [PortraitAmbientSubheader] owns date rendering so
+ * the two widgets don't duplicate.
+ */
+@Composable
+private fun PortraitHeroClock(
+    time: LocalDateTime,
+    modifier: Modifier = Modifier,
+) {
+    val use24Hour = DateFormat.is24HourFormat(LocalContext.current)
+    Text(
+        text = formatHourMinute(time, use24Hour),
+        style = MaterialTheme.typography.displayLarge.copy(fontSize = 120.sp),
+        color = SpeakerTextPrimary,
+        fontWeight = FontWeight.Thin,
+        maxLines = 1,
+        softWrap = false,
+        modifier = modifier,
+    )
 }
 
 /**
