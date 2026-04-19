@@ -1,16 +1,13 @@
 package com.opendash.app.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -56,7 +53,6 @@ fun HomeScreen(
             delay(1000L)
         }
     }
-    val weather by viewModel.weather.collectAsState()
     val onlineWeather by viewModel.onlineWeather.collectAsState()
     val headlines by viewModel.headlines.collectAsState()
     val chips by viewModel.deviceChips.collectAsState()
@@ -139,40 +135,71 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.weight(1f))
             }
         } else {
-            // Portrait / compact: same widget set, single stacked column.
-            // Clock + weather still dominate the top half; the ticker
-            // remains at the bottom so the eye rests on time and
-            // temperature first.
+            // Portrait / compact: Echo Show-style ambient layout adapted
+            // for the vertical aspect. The clock is the hero; an inline
+            // date · weather row sits directly beneath it at a softer
+            // weight (mirrors landscape's AmbientHeader but stacked).
+            // Secondary status clusters compactly above the centered
+            // news strip so the reading rhythm top-to-bottom is:
+            //   hero clock → date+temp → whitespace → status → news.
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(start = 32.dp, end = 32.dp, top = topPad, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.weight(0.2f))
+                // Top breathing space — pushes the hero down off the
+                // status bar so the eye lands on the clock, not chrome.
+                Spacer(modifier = Modifier.weight(1f))
+
                 ClockWidget(time = time, largeMode = true)
-                Spacer(modifier = Modifier.height(28.dp))
-                WeatherBlock(state = onlineWeather, sensorWeather = weather)
-                nextEvent?.let {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    NextEventCard(event = it)
+                Spacer(modifier = Modifier.height(16.dp))
+                PortraitAmbientSubheader(time = time, weatherState = onlineWeather)
+
+                // Generous gap between the hero and the secondary info
+                // cluster — this is the asymmetry that made the
+                // landscape layout feel like an Echo Show, not a
+                // dashboard. 3:2 ratio keeps the bottom content from
+                // feeling orphaned.
+                Spacer(modifier = Modifier.weight(1.2f))
+
+                // Secondary status cluster — events, timers, chips.
+                // Width-capped so on wider portrait tablets it doesn't
+                // stretch edge-to-edge and lose its card feel.
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
+                ) {
+                    nextEvent?.let {
+                        NextEventCard(event = it, modifier = Modifier.fillMaxWidth())
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                    if (activeTimers.isNotEmpty()) {
+                        ActiveTimersCard(
+                            timers = activeTimers,
+                            onCancelTimer = viewModel::onCancelTimer,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+                    if (chips.isNotEmpty()) {
+                        DeviceStatusChips(chips = chips)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
-                if (activeTimers.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    ActiveTimersCard(
-                        timers = activeTimers,
-                        onCancelTimer = viewModel::onCancelTimer
-                    )
-                }
-                Spacer(modifier = Modifier.height(36.dp))
-                if (chips.isNotEmpty()) {
-                    DeviceStatusChips(chips = chips)
-                }
+
+                // Centered headlines strip — capped like the landscape
+                // version so tile widths stay consistent across layouts.
                 HeadlinesBlock(
                     state = headlines,
-                    modifier = Modifier.padding(top = 24.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .widthIn(max = 480.dp)
+                        .fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.weight(1f))
+
+                // Bottom spacer leaves room for the NowPlayingBar /
+                // ListeningBar to slide in without masking content.
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
@@ -217,32 +244,57 @@ fun HomeScreen(
 }
 
 /**
- * Routes an online-weather [BriefingState] to the right variant of the
- * weather tile. On success with data we show the full Alexa-style card;
- * on success with null we fall back to the sensor-based [WeatherWidget]
- * (HA / SwitchBot-provided temps) so the tile doesn't disappear when
- * online data is merely unavailable but local data is present. On
- * Loading / Error we show the matching skeleton / explainer card.
+ * Portrait variant of [AmbientHeader] — a single, centered inline row
+ * that sits directly under the hero clock. Reads as a subtitle to the
+ * time: `☁  18°  ·  日 4/19  ·  Munakata`. Uses a softer typography scale
+ * than the landscape header because the clock above is already bearing
+ * the "dominant" role, so this line is deliberately de-emphasised.
+ *
+ * When the online weather fetch hasn't landed yet we still render the
+ * date — an ambient screen shouldn't go blank just because the network
+ * is slow.
  */
 @Composable
-private fun WeatherBlock(
-    state: BriefingState<com.opendash.app.tool.info.WeatherInfo?>,
-    sensorWeather: WeatherData?,
+private fun PortraitAmbientSubheader(
+    time: LocalDateTime,
+    weatherState: BriefingState<com.opendash.app.tool.info.WeatherInfo?>,
     modifier: Modifier = Modifier,
 ) {
-    when (state) {
-        BriefingState.Loading -> OnlineWeatherCardLoading(modifier = modifier)
-        is BriefingState.Success -> {
-            val info = state.data
-            if (info != null) {
-                OnlineWeatherCard(weather = info, modifier = modifier)
-            } else {
-                WeatherWidget(weather = sensorWeather, modifier = modifier)
-            }
+    val info = (weatherState as? BriefingState.Success)?.data
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (info != null) {
+            Icon(
+                imageVector = conditionIcon(info.condition),
+                contentDescription = info.condition,
+                tint = SpeakerTextSecondary,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "${info.temperatureC.toInt()}°",
+                style = MaterialTheme.typography.titleLarge,
+                color = SpeakerTextSecondary,
+                fontWeight = FontWeight.Light,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "·",
+                style = MaterialTheme.typography.titleMedium,
+                color = SpeakerTextSecondary,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
         }
-        is BriefingState.Error -> OnlineWeatherCardError(
-            kind = state.kind,
-            modifier = modifier,
+        Text(
+            text = buildString {
+                append(time.format(DateTimeFormatter.ofPattern("E M/d")))
+                if (info != null) append("  ·  ${info.location}")
+            },
+            style = MaterialTheme.typography.titleMedium,
+            color = SpeakerTextSecondary,
+            fontWeight = FontWeight.Light,
         )
     }
 }
