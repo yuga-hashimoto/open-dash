@@ -22,6 +22,9 @@ open class AndroidTtsProvider(context: Context) : TextToSpeech {
     private val _currentChunk = MutableStateFlow("")
     override val currentChunk: StateFlow<String> = _currentChunk.asStateFlow()
 
+    /** True so [TtsManager] does not seed [currentChunk] with the full text. */
+    override val streamsChunks: Boolean = true
+
     private var tts: AndroidTts? = null
     @Volatile
     private var isInitialized = false
@@ -129,15 +132,21 @@ open class AndroidTtsProvider(context: Context) : TextToSpeech {
             "TTS: ${chunks.size} chunk(s), totalChars=${cleanText.length}, mode=karaoke"
         )
 
-        try {
-            for ((i, chunk) in chunks.withIndex()) {
-                val queueMode = if (i == 0) AndroidTts.QUEUE_FLUSH else AndroidTts.QUEUE_ADD
-                speakSingle(chunk, queueMode)
-            }
-        } finally {
-            // Clear the karaoke-chunk when the whole response finishes so the UI
-            // can fall back to showing the full response (lastResponse).
-            _currentChunk.value = ""
+        // Seed the karaoke flow with the first chunk BEFORE the engine fires
+        // onStart so the UI never has to fall back to the full lastResponse
+        // while waiting for the TTS engine to wake up. Without this, the
+        // overlay flashed the full response between state→Speaking and the
+        // first onStart callback.
+        if (chunks.isNotEmpty()) _currentChunk.value = chunks.first()
+
+        // Intentionally do NOT clear _currentChunk when the loop finishes:
+        // VoicePipelineState transitions Speaking→Idle a few milliseconds
+        // later, and clearing here causes the overlay to flash the full
+        // response right at the end. The chunk is cleared on the next
+        // speak()/stop() call instead.
+        for ((i, chunk) in chunks.withIndex()) {
+            val queueMode = if (i == 0) AndroidTts.QUEUE_FLUSH else AndroidTts.QUEUE_ADD
+            speakSingle(chunk, queueMode)
         }
     }
 

@@ -22,6 +22,20 @@ interface TextToSpeech {
      */
     val currentChunk: StateFlow<String>
         get() = EMPTY_CHUNK_FLOW
+
+    /**
+     * True when this provider streams sentence-level chunks via
+     * [currentChunk] during [speak]. [TtsManager] uses this to decide
+     * whether to seed the karaoke flow with the full input text up-front
+     * (single-shot providers) or rely on the provider's own chunk
+     * emissions (streaming providers).
+     *
+     * Default false keeps single-shot providers (OpenAI / ElevenLabs /
+     * VOICEVOX) safe — the manager seeds the full text so the UI never
+     * blanks mid-Speaking even though no per-sentence chunk is forthcoming.
+     */
+    val streamsChunks: Boolean
+        get() = false
 }
 
 private val EMPTY_CHUNK_FLOW: StateFlow<String> = MutableStateFlow("").asStateFlow()
