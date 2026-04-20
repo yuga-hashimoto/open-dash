@@ -159,6 +159,12 @@ class SettingsViewModel @Inject constructor(
     private val _defaultLocation = MutableStateFlow("")
     val defaultLocation: StateFlow<String> = _defaultLocation.asStateFlow()
 
+    // Brave Search API key (https://brave.com/search/api). Free tier is
+    // ~2,000 queries/month at the time of writing. When unset, web_search
+    // falls back to the keyless DuckDuckGo HTML scraper.
+    private val _braveSearchApiKey = MutableStateFlow("")
+    val braveSearchApiKey: StateFlow<String> = _braveSearchApiKey.asStateFlow()
+
     init {
         viewModelScope.launch { preferences.observe(PreferenceKeys.HA_BASE_URL).collect { _haBaseUrl.value = it ?: "" } }
         viewModelScope.launch { preferences.observe(PreferenceKeys.OPENCLAW_GATEWAY_URL).collect { _openClawUrl.value = it ?: "" } }
@@ -199,6 +205,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferences.observe(PreferenceKeys.DEFAULT_LOCATION).collect { _defaultLocation.value = it ?: "" } }
         _openAiTtsApiKey.value = securePreferences.getString(SecurePreferences.KEY_OPENAI_TTS_API_KEY)
         _elevenLabsApiKey.value = securePreferences.getString(SecurePreferences.KEY_ELEVENLABS_API_KEY)
+        _braveSearchApiKey.value = securePreferences.getString(SecurePreferences.KEY_BRAVE_SEARCH_API_KEY)
 
         _haToken.value = securePreferences.getString(SecurePreferences.KEY_HA_TOKEN)
         _switchBotSecret.value = securePreferences.getString(SecurePreferences.KEY_SWITCHBOT_SECRET)
@@ -357,6 +364,13 @@ class SettingsViewModel @Inject constructor(
             preferences.set(PreferenceKeys.OPENAI_TTS_VOICE, voice)
             preferences.set(PreferenceKeys.OPENAI_TTS_MODEL, model)
             _openAiTtsApiKey.value = apiKey
+        }
+    }
+
+    fun saveBraveSearchApiKey(apiKey: String) {
+        viewModelScope.launch {
+            securePreferences.putString(SecurePreferences.KEY_BRAVE_SEARCH_API_KEY, apiKey)
+            _braveSearchApiKey.value = apiKey
         }
     }
 

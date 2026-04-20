@@ -22,6 +22,7 @@ import com.opendash.app.tool.info.RandomToolExecutor
 import com.opendash.app.tool.info.CurrencyToolExecutor
 import com.opendash.app.voice.fastpath.DefaultFastPathRouter
 import com.opendash.app.voice.fastpath.FastPathRouter
+import com.opendash.app.tool.info.BraveSearchProvider
 import com.opendash.app.tool.info.DuckDuckGoHtmlSearchProvider
 import com.opendash.app.tool.info.DuckDuckGoSearchProvider
 import com.opendash.app.tool.info.HtmlWebFetcher
@@ -461,7 +462,8 @@ object DeviceModule {
         announcementBroadcaster: com.opendash.app.multiroom.AnnouncementBroadcaster,
         multicastDiscovery: com.opendash.app.util.MulticastDiscovery,
         localeManager: com.opendash.app.util.LocaleManager,
-        appPreferences: AppPreferences
+        appPreferences: AppPreferences,
+        securePreferences: com.opendash.app.data.preferences.SecurePreferences
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -487,13 +489,21 @@ object DeviceModule {
                 appPreferences
             ),
             SearchToolExecutor(
-                // HTML scrape first (real SERP results); Instant-Answer API
-                // as a secondary for the few queries it handles well
-                // (unit conversions, math, well-known topics). Wikipedia
-                // fallback removed per user feedback — DDG HTML covers it.
-                // Stolen from openclaw: extensions/duckduckgo/src/ddg-client.ts
+                // Brave Search API first when the user has supplied an API
+                // key in Settings — its JSON SERP returns clean, LLM-friendly
+                // titles + descriptions and is dramatically better for
+                // Japanese / time-sensitive queries than DuckDuckGo. Brave
+                // throws when the key is unset (no implicit network call) so
+                // SearchProviderChain cleanly skips it for users who have not
+                // opted in.
+                //
+                // DuckDuckGo HTML scrape stays as the keyless default; the
+                // Instant-Answer API is the last-ditch fallback for the few
+                // queries it handles well (unit conversions, math, well-known
+                // topics). Stolen from openclaw: extensions/duckduckgo/src/ddg-client.ts
                 SearchProviderChain(
                     providers = listOf(
+                        BraveSearchProvider(client, moshi, securePreferences),
                         DuckDuckGoHtmlSearchProvider(client),
                         DuckDuckGoSearchProvider(client, moshi)
                     )

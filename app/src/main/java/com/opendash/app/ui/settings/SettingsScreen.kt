@@ -470,6 +470,17 @@ fun SettingsScreen(
 
         SettingsDivider()
 
+        // === Web Search (optional Brave Search API) ===
+        val braveSearchApiKey by viewModel.braveSearchApiKey.collectAsState()
+        SectionHeader(stringResource(R.string.settings_search_section))
+        SettingsPasswordField(
+            stringResource(R.string.settings_brave_search_api_key),
+            braveSearchApiKey
+        ) { key -> viewModel.saveBraveSearchApiKey(key) }
+        SettingsHint(stringResource(R.string.settings_brave_search_api_key_hint))
+
+        SettingsDivider()
+
         Text(
             text = stringResource(R.string.settings_about_litert),
             style = MaterialTheme.typography.bodySmall,

@@ -64,5 +64,8 @@ class SecurePreferences @Inject constructor(
 
         /** Multi-room shared secret (HMAC-SHA256). Set manually until QR-pair lands (P17.6). */
         const val KEY_MULTIROOM_SECRET = "multiroom_secret"
+
+        /** Brave Search API subscription token (https://brave.com/search/api). */
+        const val KEY_BRAVE_SEARCH_API_KEY = "brave_search_api_key"
     }
 }

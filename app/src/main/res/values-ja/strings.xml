@@ -331,4 +331,7 @@
     <string name="speaker_groups_not_seen">未検出</string>
     <string name="speaker_groups_error_name_blank">グループ名を空にはできません</string>
     <string name="speaker_groups_error_duplicate">「%1$s」グループは既に存在します</string>
+    <string name="settings_search_section">Web検索</string>
+    <string name="settings_brave_search_api_key">Brave Search APIキー</string>
+    <string name="settings_brave_search_api_key_hint">任意。brave.com/search/api で無料キーを取得できます。設定するとweb検索がBrave（日本語や時事ネタで高品質）を使い、未設定時はDuckDuckGoにフォールバックします。</string>
 </resources>

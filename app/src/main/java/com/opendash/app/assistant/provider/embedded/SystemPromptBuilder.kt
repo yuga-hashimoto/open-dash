@@ -88,6 +88,24 @@ class SystemPromptBuilder(
             sb.appendLine()
         }
 
+        if ("web_search" in toolNames && "fetch_webpage" in toolNames) {
+            // OpenClaw-style two-step retrieval: web_search returns short SERP
+            // snippets which rarely contain the actual answer for queries
+            // like prices, scores, or release dates. Tell the model to pick
+            // the most relevant URL and call fetch_webpage to read the body
+            // before answering. Without this hint Gemma 4 E2B repeatedly
+            // re-runs web_search instead of drilling in.
+            sb.appendLine(
+                "IMPORTANT (two-step search): web_search returns short snippets. " +
+                    "If the snippets do not already contain the specific value the " +
+                    "user asked for (price, score, date, number, definition body), " +
+                    "you MUST follow up by calling `fetch_webpage` on the most " +
+                    "relevant `source_url` from the search result, then answer " +
+                    "from the fetched page body. Do not call `web_search` twice in a row."
+            )
+            sb.appendLine()
+        }
+
         for (tool in tools) {
             sb.appendLine("### ${tool.name}")
             sb.appendLine(tool.description)
@@ -169,7 +187,21 @@ class SystemPromptBuilder(
                 call = """{"tool_call": {"name": "execute_command", "arguments": {"device_id": "light.living_room", "action": "turn_on"}}}"""
             )
         )
-        val chosen = candidates.filter { it.tool in available }
+        val chosen = candidates.filter { it.tool in available }.toMutableList()
+
+        // Two-step search example: when both web_search AND fetch_webpage
+        // are available, demonstrate the chain so Gemma 4 E2B learns to
+        // drill into the top URL after a SERP rather than re-searching.
+        // Only injected when both tools are exposed in the current bucket
+        // so we don't teach the model to call a tool that isn't routed.
+        if ("web_search" in available && "fetch_webpage" in available) {
+            chosen += FewShot(
+                tool = "fetch_webpage",
+                user = "(after web_search returned source_url=https://example.com/article)",
+                call = """{"tool_call": {"name": "fetch_webpage", "arguments": {"url": "https://example.com/article"}}}"""
+            )
+        }
+
         if (chosen.isEmpty()) return emptyList()
         return chosen.take(MAX_FEW_SHOT).map { shot ->
             "User: ${shot.user}\nAssistant: ${shot.call}"

@@ -330,4 +330,7 @@
     <string name="speaker_groups_not_seen">not seen</string>
     <string name="speaker_groups_error_name_blank">Group name can\'t be blank</string>
     <string name="speaker_groups_error_duplicate">Group \'%1$s\' already exists</string>
+    <string name="settings_search_section">Web Search</string>
+    <string name="settings_brave_search_api_key">Brave Search API key</string>
+    <string name="settings_brave_search_api_key_hint">Optional. Get a free key at brave.com/search/api. When set, web_search uses Brave for higher-quality results (especially for Japanese and time-sensitive queries) and falls back to DuckDuckGo otherwise.</string>
 </resources>
