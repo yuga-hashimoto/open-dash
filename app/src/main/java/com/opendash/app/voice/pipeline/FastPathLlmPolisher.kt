@@ -145,7 +145,12 @@ class FastPathLlmPolisher(
                     "a smart-speaker TTS reply. Do not repeat the data " +
                     "verbatim, do not apologize, do not mention that you " +
                     "used a tool, do not invent facts that are not in the " +
-                    "summary above. If the summary is empty, say so briefly."
+                    "summary above. If the user asked for a specific " +
+                    "number / price / score / date and the summary does " +
+                    "not contain that exact value, say honestly that the " +
+                    "search did not return it — do not stitch unrelated " +
+                    "tokens (broker ads, generic background) together to " +
+                    "fake an answer. If the summary is empty, say so briefly."
             )
         }
     }

@@ -492,12 +492,29 @@ class EmbeddedLlmProvider(
          * round of the agent loop. Explicit enough to keep Gemma 2B from
          * falling back to its "..." continuation failure mode when it
          * doesn't know what to do with a tool result in history.
+         *
+         * Honest-not-found clause: real-device logs showed Gemma fabricating
+         * answers ("日経平均は225やNYダウがほぼ4時間で少額で取引があり…")
+         * when the user asked for live data (stock prices, scores, exchange
+         * rates) and DuckDuckGo only returned generic Wikipedia/SERP fluff.
+         * The directive now explicitly authorizes — and instructs — an
+         * honest "the search did not find that" answer when the result
+         * lacks the specific number/value/date the user asked for. This
+         * protects users from confidently-wrong financial chatter while we
+         * wait on a real finance-data provider (External Service Review).
          */
         internal const val TOOL_RESULT_ANSWER_DIRECTIVE =
             "Based on the tool result above, answer the user's question " +
                 "clearly in 1-2 short sentences in their language. " +
-                "Use the facts from the result — do not say \"I don't know\" " +
-                "or apologize. Do not output ellipsis or repeat the tool " +
-                "call. Do not invent facts that are not in the summary."
+                "Use ONLY facts that appear verbatim in the result; do not " +
+                "infer, extrapolate, or paraphrase unrelated snippets as " +
+                "if they answered the question. " +
+                "If the user asked for a specific value (price, score, " +
+                "exchange rate, date, number) and the result does not " +
+                "contain that value, you MUST say so honestly — for " +
+                "example: \"検索結果には〜の具体的な値が見つかりませんでした\" " +
+                "/ \"The search did not return the current value.\" Do not " +
+                "stitch together unrelated tokens to fake an answer. " +
+                "Do not output ellipsis, repeat the tool call, or apologize."
     }
 }
