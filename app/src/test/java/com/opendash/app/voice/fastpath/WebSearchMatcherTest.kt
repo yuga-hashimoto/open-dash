@@ -149,4 +149,42 @@ class WebSearchMatcherTest {
             WebSearchMatcher.tryMatch("Pythonについて調べて")?.arguments?.get("query")
         ).isEqualTo("Python")
     }
+
+    // --- Bug D: meta-discussion containing 検索/調べ must NOT trigger fast-path ---
+    //
+    // Real-device logs showed users arguing back at the assistant with phrases
+    // like "Web で検索したらヒットすると思うよ" / "検索して俺に教えろって言ってんの".
+    // The old `(?:検索|ググ|調べ).*$` pattern matched any utterance containing a
+    // search verb anywhere — including past-tense, conditional, and quoted
+    // forms — and captured the conversational filler ("いや", "いやいや") as the
+    // search query, hijacking the conversation. The matcher must defer those
+    // turns to the LLM so the agent can answer in context.
+
+    @Test
+    fun `japanese meta past-tense conditional 検索したら does not match`() {
+        assertThat(
+            WebSearchMatcher.tryMatch("Web で検索したらヒットすると思うよ")
+        ).isNull()
+    }
+
+    @Test
+    fun `japanese meta quoted command って言ってんの does not match`() {
+        assertThat(
+            WebSearchMatcher.tryMatch("いやいや 検索して俺に教えろって言ってんの")
+        ).isNull()
+    }
+
+    @Test
+    fun `japanese filler-only query ねえ 検索 does not match`() {
+        // Bare filler before the verb leaves no real query — should not fire.
+        assertThat(WebSearchMatcher.tryMatch("いや 検索して")).isNull()
+        assertThat(WebSearchMatcher.tryMatch("いやいや 検索して")).isNull()
+    }
+
+    @Test
+    fun `japanese 検索すればわかる meta-suggestion does not match`() {
+        assertThat(
+            WebSearchMatcher.tryMatch("検索すれば出てくるかも")
+        ).isNull()
+    }
 }

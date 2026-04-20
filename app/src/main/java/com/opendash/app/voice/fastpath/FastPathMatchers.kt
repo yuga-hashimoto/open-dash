@@ -1274,33 +1274,66 @@ object WebSearchMatcher : FastPathMatcher {
         Regex("""^\s*search\s+(.+?)\s*[!?.]*\s*$""")
     )
     // "Xを検索して / ググって / について調べて / X ウェブで検索して".
-    // The verb suffix after 検索/ググ/調べ can be any (possibly empty) tail —
-    // "して", "って", "る", "て", punctuation, etc. We permit any run of
-    // chars there so conjugations like "検索して" / "ググって" / "調べてよ" all
-    // match without enumerating every ending.
     //
     // Bug A: both the topic connector (を/について/に関して) AND the
     // "Web で / ウェブ で / ネット で" filler are optional, so particle-less
     // STT output like "LINE レンジャー ウェブで検索して" still captures
-    // "LINE レンジャー" as the query. At least one of those optional
-    // parts must be present (guaranteed by the body of the utterance
-    // still containing the 検索/ググ/調べ verb), so we don't accidentally
-    // match random prose — the trailing verb anchor keeps this specific.
+    // "LINE レンジャー" as the query.
+    //
+    // Bug D: previously the verb tail was `.*$`, which matched any sentence
+    // *containing* 検索/ググ/調べ anywhere — past tense ("検索したらヒットする
+    // と思う"), quoted commands ("検索して〜って言ってんの"), suggestions
+    // ("検索すれば出てくる"). Real-device logs showed users arguing back at
+    // the assistant with those forms; the matcher captured argumentative
+    // filler ("いや", "いやいや") as the query and hijacked the conversation.
+    //
+    // The verb tail is now constrained to a short imperative-ish ending
+    // (て / って / てください / てくれ / てよ / ろ) followed by optional
+    // punctuation and end-of-string — only utterances that *end* with a
+    // search command fire the fast path. Past tense (し-た / し-たら),
+    // conditional (す-れば), and quoted forms (〜って言ってる) all bail to
+    // the LLM where conversation context can carry them.
+    // Conjugation tail accepted after the verb stem (検索 / ググ / 調べ).
+    //
+    // Japanese verb classes conjugate differently:
+    //   検索 (サ変) — 検索する → 検索して / 検索しろ / 検索してください
+    //   ググ (五段) — ググる → ググって / ググれ / ググってよ
+    //   調べ (一段) — 調べる → 調べて / 調べろ / 調べてくれ
+    //
+    // The tail therefore admits either a `し`/`っ` connector (suru-form
+    // resp. ichidan/godan te-form sound-change) followed by an imperative
+    // ending, OR a bare ichidan ending. Past tense (し-た / っ-た) and
+    // conditional (す-れば) deliberately fall through and bail to the LLM.
+    private const val IMPERATIVE_VERB_TAIL =
+        """(?:し|っ)?(?:てください|てくれ|てよ|て|ろ|れ)?\s*[!?。、,.！？]*\s*$"""
+
     private val japanesePatterns = listOf(
         Regex(
             """^\s*(.+?)\s*(?:を|について|に関して)?\s*""" +
                 """(?:(?:web|ウェブ|ネット)\s*で?\s*)?""" +
-                """(?:検索|ググ|調べ).*$""",
+                """(?:検索|ググ|調べ)""" +
+                IMPERATIVE_VERB_TAIL,
             RegexOption.IGNORE_CASE
         )
+    )
+
+    // Conversational fillers that, on their own, are not real search queries.
+    // After we strip the verb the captured group must contain something more
+    // substantive than these; otherwise the user is reacting to the assistant
+    // ("いや 検索して" / "いやいや 検索して") and the LLM should handle it.
+    private val fillerOnlyQueryRegex = Regex(
+        """^(?:いや|いやいや|ねえ|ちょっと|あの|えっと|うん|うんと|そう|それ|これ|あれ)\s*$"""
     )
 
     // Bare "search" / "web search" / "Web検索して" without a query — prompt.
     private val englishEmptyPattern = Regex(
         """^\s*(?:web\s+)?search(?:\s+the\s+web)?\s*[!?.]*\s*$"""
     )
+    // Mirrors [japanesePatterns] but with no leading query, so "検索して" /
+    // "ググって" alone triggers the prompt. Prior version used `.*$` and
+    // matched "検索すれば出てくる" which is a meta-suggestion, not a command.
     private val japaneseEmptyPattern = Regex(
-        """^\s*(?:web\s*)?(?:検索|ググ).*$"""
+        """^\s*(?:web\s*)?(?:検索|ググ)""" + IMPERATIVE_VERB_TAIL
     )
 
     // STT frequently joins the subject with its trailing connector so the
@@ -1350,12 +1383,16 @@ object WebSearchMatcher : FastPathMatcher {
         for (p in japanesePatterns) {
             val m = p.matchEntire(normalized) ?: p.find(normalized) ?: continue
             val query = cleanQuery(m.groupValues.getOrNull(1)?.trim().orEmpty())
-            if (query.isNotBlank()) {
-                return FastPathMatch(
-                    toolName = "web_search",
-                    arguments = mapOf("query" to query)
-                )
-            }
+            if (query.isBlank()) continue
+            // Conversational filler ("いや", "いやいや", "ねえ") as the entire
+            // query means the user is talking back to the assistant rather
+            // than issuing a fresh search. Defer to the LLM so it can reply
+            // in context instead of searching the filler word.
+            if (fillerOnlyQueryRegex.matches(query)) continue
+            return FastPathMatch(
+                toolName = "web_search",
+                arguments = mapOf("query" to query)
+            )
         }
         return null
     }
