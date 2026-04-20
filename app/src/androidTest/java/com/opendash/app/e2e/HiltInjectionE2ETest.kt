@@ -7,7 +7,7 @@ import com.opendash.app.data.preferences.PreferenceKeys
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +40,7 @@ class HiltInjectionE2ETest {
     }
 
     @Test
-    fun preferences_round_trip_value() = runTest {
+    fun preferences_round_trip_value() = runBlocking {
         val key = PreferenceKeys.WAKE_WORD_SENSITIVITY
         appPreferences.set(key, 0.42f)
         try {

@@ -9,7 +9,7 @@ import com.opendash.app.voice.metrics.LatencyRecorder
 import com.opendash.app.voice.pipeline.VoicePipeline
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Rule
@@ -60,7 +60,7 @@ class LatencyBudgetE2ETest {
     }
 
     @Test
-    fun fast_path_records_its_span_and_stays_within_soft_budget() = runTest {
+    fun fast_path_records_its_span_and_stays_within_soft_budget() = runBlocking {
         val before = timerManager.getActiveTimers().map { it.id }.toSet()
         try {
             withTimeout(PIPELINE_TIMEOUT_MS) {
