@@ -123,9 +123,17 @@ fun VoiceOverlay(
 
             // Bottom: AI reply — karaoke-style crossfade between chunks
             // while Speaking, fallback to the full response otherwise.
+            //
+            // During Speaking we deliberately never fall back to responseText,
+            // even when spokenText is briefly blank between sentence
+            // boundaries: the Speaking state is the karaoke window, and
+            // showing the entire reply for a frame caused a "full text
+            // flash" at the start and end of TTS playback. TtsManager
+            // seeds spokenText with the full text for single-shot
+            // providers (OpenAI / ElevenLabs / VOICEVOX), so this branch
+            // still renders a non-blank string on every supported route.
             val displayText = when {
-                voiceState is VoicePipelineState.Speaking && spokenText.isNotBlank() ->
-                    spokenText
+                voiceState is VoicePipelineState.Speaking -> spokenText
                 else -> responseText
             }
 

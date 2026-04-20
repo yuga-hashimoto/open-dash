@@ -183,6 +183,12 @@ class TtsManager(
     override suspend fun speak(text: String) {
         val provider = resolveProvider()
         _isSpeaking.value = true
+        // Single-shot providers (OpenAI / ElevenLabs / VOICEVOX) never emit
+        // per-sentence chunks. Seed the karaoke flow with the full input
+        // text so the UI can show the response while they synthesize and
+        // play in one shot. Streaming providers (AndroidTtsProvider) seed
+        // their own first chunk before suspending, so we leave them alone.
+        if (!provider.streamsChunks) _currentChunk.value = text
         try {
             provider.speak(text)
         } finally {

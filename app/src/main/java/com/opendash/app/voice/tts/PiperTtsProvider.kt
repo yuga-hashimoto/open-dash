@@ -25,6 +25,10 @@ class PiperTtsProvider(
     private val _isSpeaking = MutableStateFlow(false)
     override val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
+    /** Forward the fallback's chunk flow so the karaoke UI keeps working. */
+    override val currentChunk: StateFlow<String> = fallback.currentChunk
+    override val streamsChunks: Boolean = fallback.streamsChunks
+
     override suspend fun speak(text: String) {
         Timber.w("Piper TTS not yet wired — falling back to Android system TTS")
         _isSpeaking.value = true
