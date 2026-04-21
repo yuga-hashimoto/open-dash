@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.opendash.app.R
 import com.opendash.app.ui.settings.locale.LocalePickerRow
 import com.opendash.app.ui.settings.news.NewsFeedPickerRow
+import com.opendash.app.ui.settings.termux.TermuxBridgeSettingsCard
 import com.opendash.app.ui.settings.weather.WeatherLocationPickerRow
 
 @Composable
@@ -478,6 +479,12 @@ fun SettingsScreen(
             braveSearchApiKey
         ) { key -> viewModel.saveBraveSearchApiKey(key) }
         SettingsHint(stringResource(R.string.settings_brave_search_api_key_hint))
+
+        SettingsDivider()
+
+        // === Advanced (power-user opt-ins) ===
+        SectionHeader(stringResource(R.string.settings_advanced_section))
+        TermuxBridgeSettingsCard()
 
         SettingsDivider()
 

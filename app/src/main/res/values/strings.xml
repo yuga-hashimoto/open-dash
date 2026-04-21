@@ -333,4 +333,15 @@
     <string name="settings_search_section">Web Search</string>
     <string name="settings_brave_search_api_key">Brave Search API key</string>
     <string name="settings_brave_search_api_key_hint">Optional. Get a free key at brave.com/search/api. When set, web_search uses Brave for higher-quality results (especially for Japanese and time-sensitive queries) and falls back to DuckDuckGo otherwise.</string>
+
+    <!-- P19.2 Termux Bridge (advanced opt-in) -->
+    <string name="settings_advanced_section">Advanced</string>
+    <string name="settings_termux_bridge_title">Termux shell access</string>
+    <string name="settings_termux_bridge_description">Let the assistant run shell commands through your Termux app. Advanced power-user feature — install Termux and grant the RUN_COMMAND permission first.</string>
+    <string name="settings_termux_bridge_warning">Warning: the assistant can execute arbitrary shell commands on this device (including rm, curl, etc.). Enable only if you understand the risks.</string>
+    <string name="settings_termux_bridge_status_installed">Termux installed</string>
+    <string name="settings_termux_bridge_status_not_installed">Termux not installed</string>
+    <string name="settings_termux_bridge_status_permission_granted">RUN_COMMAND permission granted</string>
+    <string name="settings_termux_bridge_status_permission_missing">RUN_COMMAND permission missing</string>
+    <string name="settings_termux_bridge_gate_reminder">The termux_shell_exec tool stays hidden from the assistant until all items above show a check mark.</string>
 </resources>

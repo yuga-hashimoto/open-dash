@@ -334,4 +334,15 @@
     <string name="settings_search_section">Web検索</string>
     <string name="settings_brave_search_api_key">Brave Search APIキー</string>
     <string name="settings_brave_search_api_key_hint">任意。brave.com/search/api で無料キーを取得できます。設定するとweb検索がBrave（日本語や時事ネタで高品質）を使い、未設定時はDuckDuckGoにフォールバックします。</string>
+
+    <!-- P19.2 Termux Bridge (上級者向けオプトイン) -->
+    <string name="settings_advanced_section">詳細設定</string>
+    <string name="settings_termux_bridge_title">Termuxシェル連携</string>
+    <string name="settings_termux_bridge_description">Termuxアプリ経由でアシスタントにシェルコマンドを実行させます。上級者向け機能 — 先にTermuxをインストールしてRUN_COMMAND権限を付与してください。</string>
+    <string name="settings_termux_bridge_warning">警告: アシスタントがこの端末で任意のシェルコマンド（rm、curl等）を実行可能になります。リスクを理解した上で有効化してください。</string>
+    <string name="settings_termux_bridge_status_installed">Termuxがインストール済み</string>
+    <string name="settings_termux_bridge_status_not_installed">Termux未インストール</string>
+    <string name="settings_termux_bridge_status_permission_granted">RUN_COMMAND権限が付与済み</string>
+    <string name="settings_termux_bridge_status_permission_missing">RUN_COMMAND権限が未付与</string>
+    <string name="settings_termux_bridge_gate_reminder">上記すべてにチェックが付くまで、termux_shell_exec はアシスタントに公開されません。</string>
 </resources>
