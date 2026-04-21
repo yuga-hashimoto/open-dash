@@ -2,6 +2,8 @@ package com.opendash.app.ui.settings.piper
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opendash.app.data.preferences.AppPreferences
+import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.voice.tts.piper.PiperVoice
 import com.opendash.app.voice.tts.piper.PiperVoiceCatalog
 import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
@@ -19,17 +21,20 @@ import javax.inject.Inject
 /**
  * P14.9 Settings-side VM for the Piper voice catalogue. Parallels
  * `WhisperSettingsViewModel` — one row per catalogue entry, with
- * installed / downloading state derived per-row from the shared
- * [PiperVoiceDownloader] state.
+ * installed / downloading / active state derived per-row from the
+ * shared [PiperVoiceDownloader] and
+ * [PreferenceKeys.PIPER_ACTIVE_VOICE_ID].
  */
 @HiltViewModel
 class PiperSettingsViewModel @Inject constructor(
-    private val downloader: PiperVoiceDownloader
+    private val downloader: PiperVoiceDownloader,
+    private val preferences: AppPreferences
 ) : ViewModel() {
 
     data class Row(
         val voice: PiperVoice,
         val installed: Boolean,
+        val isActive: Boolean,
         val isDownloading: Boolean,
         val progress: Float,
         val downloadedMb: Int,
@@ -41,20 +46,23 @@ class PiperSettingsViewModel @Inject constructor(
 
     val rows: StateFlow<List<Row>> = combine(
         downloader.state,
-        _activeDownloadId
-    ) { state, activeId ->
+        _activeDownloadId,
+        preferences.observe(PreferenceKeys.PIPER_ACTIVE_VOICE_ID)
+    ) { state, activeDl, activePref ->
+        val activeId = activePref ?: PiperVoiceCatalog.default.id
         PiperVoiceCatalog.all.map { voice ->
-            val isActive = activeId == voice.id &&
+            val isActiveDl = activeDl == voice.id &&
                 state is PiperVoiceDownloader.State.Downloading
             val dl = state as? PiperVoiceDownloader.State.Downloading
             Row(
                 voice = voice,
                 installed = downloader.isDownloaded(voice),
-                isDownloading = isActive,
-                progress = if (isActive && dl != null) dl.progress else 0f,
-                downloadedMb = if (isActive && dl != null) dl.downloadedMb else 0,
-                totalMb = if (isActive && dl != null) dl.totalMb else voice.modelSizeMb,
-                activeFile = if (isActive && dl != null) dl.file else null
+                isActive = voice.id == activeId,
+                isDownloading = isActiveDl,
+                progress = if (isActiveDl && dl != null) dl.progress else 0f,
+                downloadedMb = if (isActiveDl && dl != null) dl.downloadedMb else 0,
+                totalMb = if (isActiveDl && dl != null) dl.totalMb else voice.modelSizeMb,
+                activeFile = if (isActiveDl && dl != null) dl.file else null
             )
         }
     }.stateIn(
@@ -64,6 +72,7 @@ class PiperSettingsViewModel @Inject constructor(
             Row(
                 voice = voice,
                 installed = false,
+                isActive = voice.id == PiperVoiceCatalog.default.id,
                 isDownloading = false,
                 progress = 0f,
                 downloadedMb = 0,
@@ -92,5 +101,11 @@ class PiperSettingsViewModel @Inject constructor(
 
     fun delete(voice: PiperVoice) {
         downloader.deleteVoice(voice)
+    }
+
+    fun setActive(voice: PiperVoice) {
+        viewModelScope.launch {
+            preferences.set(PreferenceKeys.PIPER_ACTIVE_VOICE_ID, voice.id)
+        }
     }
 }

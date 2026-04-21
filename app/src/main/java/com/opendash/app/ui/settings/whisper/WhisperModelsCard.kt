@@ -12,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,7 +63,8 @@ fun WhisperModelsCard(
                 WhisperModelRow(
                     row = row,
                     onDownload = { viewModel.startDownload(row.model) },
-                    onDelete = { viewModel.delete(row.model) }
+                    onDelete = { viewModel.delete(row.model) },
+                    onSelectActive = { viewModel.setActive(row.model) }
                 )
             }
         }
@@ -73,13 +75,22 @@ fun WhisperModelsCard(
 private fun WhisperModelRow(
     row: WhisperSettingsViewModel.Row,
     onDownload: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSelectActive: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Active-model radio lets the user pick which downloaded model
+        // WhisperSttProvider should use; clicking it only persists the
+        // preference — no download is triggered.
+        RadioButton(
+            selected = row.isActive,
+            onClick = onSelectActive,
+            enabled = row.installed
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = row.model.displayName,

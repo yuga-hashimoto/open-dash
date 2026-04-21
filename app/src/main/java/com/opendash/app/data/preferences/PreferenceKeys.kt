@@ -172,4 +172,21 @@ object PreferenceKeys {
      * Runtime-mutable; no VM rebuild needed.
      */
     val TERMUX_COMMAND_ALLOWLIST = stringPreferencesKey("termux_command_allowlist")
+
+    /**
+     * P14.1 active Whisper model id. Stores one of the `WhisperModel.id`
+     * values from the catalogue so [WhisperSttProvider] can resolve the
+     * correct file path. Empty / unset falls back to the catalogue
+     * default (tiny q5_1) so the very first download-and-use flow works
+     * without requiring the Settings step in between.
+     */
+    val WHISPER_ACTIVE_MODEL_ID = stringPreferencesKey("whisper_active_model_id")
+
+    /**
+     * P14.9 active Piper voice id. Stores one of the `PiperVoice.id`
+     * values from the catalogue so a future `PiperTtsProvider` can
+     * resolve the `.onnx` + `.onnx.json` pair. Empty / unset falls
+     * back to the catalogue default (en_US-amy-medium).
+     */
+    val PIPER_ACTIVE_VOICE_ID = stringPreferencesKey("piper_active_voice_id")
 }

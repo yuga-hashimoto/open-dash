@@ -12,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -60,7 +61,8 @@ fun PiperVoicesCard(
                 PiperVoiceRow(
                     row = row,
                     onDownload = { viewModel.startDownload(row.voice) },
-                    onDelete = { viewModel.delete(row.voice) }
+                    onDelete = { viewModel.delete(row.voice) },
+                    onSelectActive = { viewModel.setActive(row.voice) }
                 )
             }
         }
@@ -71,13 +73,19 @@ fun PiperVoicesCard(
 private fun PiperVoiceRow(
     row: PiperSettingsViewModel.Row,
     onDownload: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSelectActive: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        RadioButton(
+            selected = row.isActive,
+            onClick = onSelectActive,
+            enabled = row.installed
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = row.voice.displayName,
