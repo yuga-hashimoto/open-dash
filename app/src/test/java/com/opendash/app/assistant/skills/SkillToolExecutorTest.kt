@@ -1,6 +1,10 @@
 package com.opendash.app.assistant.skills
 
 import com.google.common.truth.Truth.assertThat
+import com.opendash.app.assistant.skills.runtime.SkillScript
+import com.opendash.app.assistant.skills.runtime.SkillScriptContext
+import com.opendash.app.assistant.skills.runtime.SkillScriptResult
+import com.opendash.app.assistant.skills.runtime.SkillScriptRuntime
 import com.opendash.app.tool.ToolCall
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
@@ -77,5 +81,154 @@ class SkillToolExecutorTest {
         assertThat(result.success).isTrue()
         assertThat(result.data).contains("\"a\"")
         assertThat(result.data).contains("\"b\"")
+    }
+
+    @Test
+    fun `run_skill_script tool hidden when runtime is unavailable`() = runTest {
+        registry.register(Skill("s", "d", "```js\nreturn 1;\n```"))
+        val withStub = SkillToolExecutor(
+            registry = registry,
+            scriptRuntime = object : SkillScriptRuntime {
+                override fun isAvailable() = false
+                override suspend fun execute(
+                    script: SkillScript,
+                    context: SkillScriptContext
+                ) = SkillScriptResult.NotAvailable("nope")
+            }
+        )
+
+        val names = withStub.availableTools().map { it.name }
+        assertThat(names).doesNotContain("run_skill_script")
+    }
+
+    @Test
+    fun `run_skill_script advertised when runtime is available`() = runTest {
+        registry.register(Skill("s", "d", "```js\nreturn 1;\n```"))
+        val withRealRuntime = SkillToolExecutor(
+            registry = registry,
+            scriptRuntime = FakeAvailableRuntime()
+        )
+
+        val names = withRealRuntime.availableTools().map { it.name }
+        assertThat(names).contains("run_skill_script")
+    }
+
+    @Test
+    fun `run_skill_script executes first block when index omitted`() = runTest {
+        val body = """
+            ```js
+            return 1;
+            ```
+
+            ```js
+            return 2;
+            ```
+        """.trimIndent()
+        registry.register(Skill("multi", "d", body))
+        val runtime = FakeAvailableRuntime()
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime)
+
+        val result = exec.execute(
+            ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "multi"))
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(runtime.lastScript?.index).isEqualTo(0)
+        assertThat(runtime.lastScript?.source).isEqualTo("return 1;")
+    }
+
+    @Test
+    fun `run_skill_script forwards script_index and input`() = runTest {
+        val body = """
+            ```js
+            return 1;
+            ```
+
+            ```js
+            return 2;
+            ```
+        """.trimIndent()
+        registry.register(Skill("multi", "d", body))
+        val runtime = FakeAvailableRuntime()
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime)
+
+        val result = exec.execute(
+            ToolCall(
+                id = "r",
+                name = "run_skill_script",
+                arguments = mapOf(
+                    "skill" to "multi",
+                    "script_index" to 1,
+                    "input" to "{\"x\":1}"
+                )
+            )
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(runtime.lastScript?.index).isEqualTo(1)
+        assertThat(runtime.lastScript?.source).isEqualTo("return 2;")
+        assertThat(runtime.lastContext?.input).isEqualTo("{\"x\":1}")
+    }
+
+    @Test
+    fun `run_skill_script out-of-range index returns error`() = runTest {
+        registry.register(Skill("s", "d", "```js\nreturn 1;\n```"))
+        val exec = SkillToolExecutor(registry, scriptRuntime = FakeAvailableRuntime())
+
+        val result = exec.execute(
+            ToolCall(
+                id = "r",
+                name = "run_skill_script",
+                arguments = mapOf("skill" to "s", "script_index" to 5)
+            )
+        )
+
+        assertThat(result.success).isFalse()
+        assertThat(result.error).contains("out of range")
+    }
+
+    @Test
+    fun `run_skill_script skill without scripts returns error`() = runTest {
+        registry.register(Skill("s", "d", "just prose"))
+        val exec = SkillToolExecutor(registry, scriptRuntime = FakeAvailableRuntime())
+
+        val result = exec.execute(
+            ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "s"))
+        )
+
+        assertThat(result.success).isFalse()
+        assertThat(result.error).contains("no embedded JavaScript")
+    }
+
+    @Test
+    fun `run_skill_script surfaces runtime failure`() = runTest {
+        registry.register(Skill("s", "d", "```js\nthrow;\n```"))
+        val runtime = FakeAvailableRuntime(
+            result = SkillScriptResult.Failure("boom")
+        )
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime)
+
+        val result = exec.execute(
+            ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "s"))
+        )
+
+        assertThat(result.success).isFalse()
+        assertThat(result.error).isEqualTo("boom")
+    }
+
+    private class FakeAvailableRuntime(
+        private val result: SkillScriptResult = SkillScriptResult.Success("ok")
+    ) : SkillScriptRuntime {
+        var lastScript: SkillScript? = null
+        var lastContext: SkillScriptContext? = null
+        override fun isAvailable() = true
+        override suspend fun execute(
+            script: SkillScript,
+            context: SkillScriptContext
+        ): SkillScriptResult {
+            lastScript = script
+            lastContext = context
+            return result
+        }
     }
 }

@@ -230,6 +230,30 @@ smoke testing).
   legacy aliases (`bbc`/`nhk`/`hackernews`) preserved; `OnlineBriefingSource`
   reads preference with NHK General fallback. Replaces the hardcoded NHK feed (#426)
 
+## Phase 19 — Priority 2 / 4: Skill runtime extensibility
+OpenClaw参考リポ (Mohd-Mursaleen/openclaw-android) の示唆を取り込む。思想のみ — Termux + Node.js + Bionic patch という脆い構成は採らず、OpenDashのnative統合のまま「shell実行 + SKILL.md全開放」の自由度を段階導入する。
+
+設計原則:
+1. 全ユーザーが安全に得られるもの = JS sandbox で SKILL.md 実行 (P19.1)
+2. Power-user が明示opt-inで得るもの = Termux越しの shell / adb / npm (P19.2)
+3. **localhost:8080 HTTP分離は採らない** — 参考リポの三層構成(Termux→localhost→LiteRT)はクラッシュ分離しか利点が無く、セキュリティ面・バッテリー面で native IPC に劣る
+
+- [ ] P19.1 (Priority 2): JS-Sandbox Skill Runtime — **skeleton done (this cycle)**:
+  `SkillScriptExtractor` parses ```js / ```javascript fenced blocks out of SKILL.md
+  bodies; `SkillScriptRuntime` interface + `SkillScriptContext` / `SkillScriptResult`
+  sealed type define the execution contract; `StubSkillScriptRuntime` is the default
+  Hilt binding (reports `isAvailable=false` so `SkillToolExecutor` does not advertise
+  `run_skill_script` to the LLM on stock builds). `SkillToolExecutor` gains a
+  capability-gated `run_skill_script(skill, script_index, input)` path that forwards
+  to the runtime when present. Tests cover extraction (js/javascript, multi-block,
+  unclosed-fence safety), stub behavior, and tool gating. **Still TODO**: real JS
+  engine (QuickJS or Hermes via JNI), tool API bridge (`call_tool`, `read_memory`),
+  timeout / memory quotas, fs/net/process lockdown. Native dependency is not added
+  in this cycle per CLAUDE.md "DO NOT add dependencies without asking" — swap
+  `StubSkillScriptRuntime` for the real engine after approval. Ref: gallery
+  (google-ai-edge), openclaw (official TS repo)
+- [ ] P19.2 (Priority 4): Termux Bridge Tool (opt-in, advanced) — `TermuxBridgeTool` 追加。Termux:API intent (`com.termux.RUN_COMMAND`) 経由で `shell_exec` / `git_clone` / `run_npm_skill` を実行。`PermissionCatalog` に `termux_shell_execute` を追加 (デフォルト denied, `Settings → Advanced → Developer tools` でのみ明示 opt-in)。Termux未インストール端末では tool を非登録にする capability gate を実装。AI が `rm -rf` 等を叩けるため、実行前に spoken confirmation (`"Run this shell command? yes/no"`) をデフォルト有効化。参考リポの `adb connect localhost:5555` 自己制御パターンも同じ gate 配下で追加可能。Ref: openclaw-android (ADB-BRIDGE.md, SETUP.md)
+
 ## Won't do — requires root (design boundary)
 - OEM modifications (CarrierConfig, RIL overrides)
 - System-wide audio routing beyond MediaSession

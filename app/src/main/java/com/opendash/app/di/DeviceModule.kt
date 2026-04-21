@@ -22,7 +22,6 @@ import com.opendash.app.tool.info.RandomToolExecutor
 import com.opendash.app.tool.info.CurrencyToolExecutor
 import com.opendash.app.voice.fastpath.DefaultFastPathRouter
 import com.opendash.app.voice.fastpath.FastPathRouter
-import com.opendash.app.tool.info.BraveSearchProvider
 import com.opendash.app.tool.info.DuckDuckGoHtmlSearchProvider
 import com.opendash.app.tool.info.DuckDuckGoSearchProvider
 import com.opendash.app.tool.info.HtmlWebFetcher
@@ -324,6 +323,15 @@ object DeviceModule {
         return com.opendash.app.assistant.skills.SkillRepository(registry, userSkillsDir)
     }
 
+    // P19.1: skeleton only — stub runtime reports `isAvailable=false`, so
+    // SkillToolExecutor does not advertise `run_skill_script` to the LLM.
+    // A real JS runtime (QuickJS / Hermes JNI) replaces this binding in a
+    // later phase once the native dependency is approved.
+    @Provides
+    @Singleton
+    fun provideSkillScriptRuntime(): com.opendash.app.assistant.skills.runtime.SkillScriptRuntime =
+        com.opendash.app.assistant.skills.runtime.StubSkillScriptRuntime()
+
     @Provides
     @Singleton
     fun provideMemoryRepository(
@@ -450,6 +458,7 @@ object DeviceModule {
         client: OkHttpClient,
         skillRegistry: SkillRegistry,
         skillInstaller: SkillInstaller,
+        skillScriptRuntime: com.opendash.app.assistant.skills.runtime.SkillScriptRuntime,
         memoryDao: MemoryDao,
         routineDao: RoutineDao,
         documentChunkDao: DocumentChunkDao,
@@ -462,8 +471,7 @@ object DeviceModule {
         announcementBroadcaster: com.opendash.app.multiroom.AnnouncementBroadcaster,
         multicastDiscovery: com.opendash.app.util.MulticastDiscovery,
         localeManager: com.opendash.app.util.LocaleManager,
-        appPreferences: AppPreferences,
-        securePreferences: com.opendash.app.data.preferences.SecurePreferences
+        appPreferences: AppPreferences
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -489,21 +497,13 @@ object DeviceModule {
                 appPreferences
             ),
             SearchToolExecutor(
-                // Brave Search API first when the user has supplied an API
-                // key in Settings — its JSON SERP returns clean, LLM-friendly
-                // titles + descriptions and is dramatically better for
-                // Japanese / time-sensitive queries than DuckDuckGo. Brave
-                // throws when the key is unset (no implicit network call) so
-                // SearchProviderChain cleanly skips it for users who have not
-                // opted in.
-                //
-                // DuckDuckGo HTML scrape stays as the keyless default; the
-                // Instant-Answer API is the last-ditch fallback for the few
-                // queries it handles well (unit conversions, math, well-known
-                // topics). Stolen from openclaw: extensions/duckduckgo/src/ddg-client.ts
+                // HTML scrape first (real SERP results); Instant-Answer API
+                // as a secondary for the few queries it handles well
+                // (unit conversions, math, well-known topics). Wikipedia
+                // fallback removed per user feedback — DDG HTML covers it.
+                // Stolen from openclaw: extensions/duckduckgo/src/ddg-client.ts
                 SearchProviderChain(
                     providers = listOf(
-                        BraveSearchProvider(client, moshi, securePreferences),
                         DuckDuckGoHtmlSearchProvider(client),
                         DuckDuckGoSearchProvider(client, moshi)
                     )
@@ -583,7 +583,7 @@ object DeviceModule {
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
-            SkillToolExecutor(skillRegistry, skillInstaller),
+            SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via
             // lambda to avoid a Hilt cycle.

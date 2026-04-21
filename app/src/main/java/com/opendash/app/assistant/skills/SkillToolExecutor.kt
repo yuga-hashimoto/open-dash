@@ -1,5 +1,9 @@
 package com.opendash.app.assistant.skills
 
+import com.opendash.app.assistant.skills.runtime.SkillScriptContext
+import com.opendash.app.assistant.skills.runtime.SkillScriptExtractor
+import com.opendash.app.assistant.skills.runtime.SkillScriptResult
+import com.opendash.app.assistant.skills.runtime.SkillScriptRuntime
 import com.opendash.app.tool.ToolCall
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
@@ -12,10 +16,14 @@ import com.opendash.app.tool.ToolSchema
  * - get_skill: fetch the full SKILL.md body to inline into the agent's context
  * - list_skills: list available skills (also visible via system prompt XML)
  * - install_skill_from_url: download + register a SKILL.md from a URL
+ * - run_skill_script: execute an embedded JS script (P19.1) — only advertised
+ *   when a real runtime is installed (stub keeps the tool hidden)
  */
 class SkillToolExecutor(
     private val registry: SkillRegistry,
-    private val installer: SkillInstaller? = null
+    private val installer: SkillInstaller? = null,
+    private val scriptRuntime: SkillScriptRuntime? = null,
+    private val scriptExtractor: SkillScriptExtractor = SkillScriptExtractor()
 ) : ToolExecutor {
 
     override suspend fun availableTools(): List<ToolSchema> {
@@ -43,6 +51,17 @@ class SkillToolExecutor(
                 )
             ))
         }
+        if (scriptRuntime?.isAvailable() == true) {
+            tools.add(ToolSchema(
+                name = "run_skill_script",
+                description = "Execute a JavaScript script block embedded in a SKILL.md body. Requires a skill with at least one ```js fenced block.",
+                parameters = mapOf(
+                    "skill" to ToolParameter("string", "Skill name", required = true),
+                    "script_index" to ToolParameter("integer", "Zero-based index of the script block within the skill body", required = false),
+                    "input" to ToolParameter("string", "Optional JSON string forwarded to the script", required = false)
+                )
+            ))
+        }
         return tools
     }
 
@@ -51,6 +70,7 @@ class SkillToolExecutor(
             "get_skill" -> executeGet(call)
             "list_skills" -> executeList(call)
             "install_skill_from_url" -> executeInstall(call)
+            "run_skill_script" -> executeRunScript(call)
             else -> ToolResult(call.id, false, "", "Unknown tool: ${call.name}")
         }
     }
@@ -85,6 +105,41 @@ class SkillToolExecutor(
                 """{"installed":"${result.skill.name.escapeJson()}","description":"${result.skill.description.escapeJson()}"}"""
             )
             is SkillInstaller.Result.Failed -> ToolResult(call.id, false, "", result.reason)
+        }
+    }
+
+    private suspend fun executeRunScript(call: ToolCall): ToolResult {
+        val runtime = scriptRuntime
+            ?: return ToolResult(call.id, false, "", "Skill script runtime is not available on this build")
+        if (!runtime.isAvailable()) {
+            return ToolResult(call.id, false, "", "Skill script runtime is not available on this build")
+        }
+
+        val skillName = call.arguments["skill"] as? String
+            ?: return ToolResult(call.id, false, "", "Missing skill")
+        val skill = registry.get(skillName)
+            ?: return ToolResult(call.id, false, "", "Skill not found: $skillName")
+
+        val scripts = scriptExtractor.extract(skill)
+        if (scripts.isEmpty()) {
+            return ToolResult(call.id, false, "", "Skill has no embedded JavaScript blocks")
+        }
+
+        val requestedIndex = (call.arguments["script_index"] as? Number)?.toInt() ?: 0
+        val script = scripts.getOrNull(requestedIndex)
+            ?: return ToolResult(
+                call.id,
+                false,
+                "",
+                "script_index $requestedIndex out of range (skill has ${scripts.size} blocks)"
+            )
+
+        val context = SkillScriptContext(input = call.arguments["input"] as? String ?: "")
+
+        return when (val result = runtime.execute(script, context)) {
+            is SkillScriptResult.Success -> ToolResult(call.id, true, result.output)
+            is SkillScriptResult.Failure -> ToolResult(call.id, false, "", result.error)
+            is SkillScriptResult.NotAvailable -> ToolResult(call.id, false, "", result.reason)
         }
     }
 
