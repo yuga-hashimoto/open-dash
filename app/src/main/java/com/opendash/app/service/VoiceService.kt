@@ -38,8 +38,7 @@ class VoiceService : Service() {
 
     @Inject lateinit var voicePipeline: VoicePipeline
     @Inject lateinit var preferences: AppPreferences
-    @Inject lateinit var batteryMonitor: com.opendash.app.util.BatteryMonitor
-    @Inject lateinit var thermalMonitor: com.opendash.app.util.ThermalMonitor
+    @Inject lateinit var saverStateProvider: com.opendash.app.util.SaverStateProvider
     @Inject lateinit var multicastDiscovery: com.opendash.app.util.MulticastDiscovery
     @Inject lateinit var announcementServer: com.opendash.app.multiroom.AnnouncementServer
     @Inject lateinit var peerLivenessTracker: com.opendash.app.multiroom.PeerLivenessTracker
@@ -247,19 +246,18 @@ class VoiceService : Service() {
 
         // Battery + thermal saver: skip wake word when either the battery is
         // low (and the device is unplugged) or the chassis is reporting a
-        // thermal throttle. Opt-in policy — defaults off so users who keep
-        // the tablet plugged in continuously aren't affected.
-        val batterySaverEnabled = preferences.observe(PreferenceKeys.BATTERY_SAVER_ENABLED).first() ?: false
-        if (batterySaverEnabled) {
-            if (batteryMonitor.status.value.isLow) {
-                Timber.d("Battery saver active (level=${batteryMonitor.status.value.level}%), skipping wake word")
-                return
-            }
-            val thermal = thermalMonitor.status.value
-            if (thermal.shouldThrottle) {
-                Timber.d("Thermal throttle active (level=$thermal), skipping wake word")
-                return
-            }
+        // thermal throttle. Single source of truth = SaverStateProvider,
+        // so the Ambient saver chip and this gate can never drift apart
+        // (P14.8). Preference defaults off, so users who keep the tablet
+        // plugged in continuously aren't affected.
+        val saver = saverStateProvider.state.value
+        if (saver.active) {
+            Timber.d(
+                "Battery/thermal saver active (reason=${saver.reason}, " +
+                    "batteryLow=${saver.batteryLow}, " +
+                    "thermalThrottling=${saver.thermalThrottling}), skipping wake word"
+            )
+            return
         }
 
         try {
