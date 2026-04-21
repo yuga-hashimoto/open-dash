@@ -8,6 +8,7 @@ import com.opendash.app.voice.stt.OfflineSttStub
 import com.opendash.app.voice.stt.SpeechToText
 import com.opendash.app.voice.stt.whisper.AudioRecordPcmSource
 import com.opendash.app.voice.stt.whisper.WhisperCppBridge
+import com.opendash.app.voice.stt.whisper.WhisperModelDownloader
 import com.opendash.app.voice.stt.whisper.WhisperSttProvider
 import dagger.Module
 import dagger.Provides
@@ -59,4 +60,14 @@ object SttModule {
             OfflineSttStub("Whisper")
         }
     }
+
+    /**
+     * P14.1 model downloader, shared across Settings UI and any
+     * first-run bootstrap code that wants to prefetch a model.
+     */
+    @Provides
+    @Singleton
+    fun provideWhisperModelDownloader(
+        @ApplicationContext context: Context
+    ): WhisperModelDownloader = WhisperModelDownloader(context)
 }

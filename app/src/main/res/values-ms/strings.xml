@@ -354,4 +354,13 @@
     <string name="settings_termux_allowlist_label">Command allowlist (optional)</string>
     <string name="settings_termux_allowlist_placeholder">/data/data/com.termux/files/usr/bin/git, ...</string>
     <string name="settings_termux_allowlist_hint">Comma-separated absolute binary paths. When set, the assistant can only run commands on this list. Leave empty for no restriction.</string>
+
+    <!-- P14.1 Whisper offline STT model management -->
+    <string name="settings_whisper_models_title">Whisper models</string>
+    <string name="settings_whisper_models_hint">Download a Whisper model to transcribe speech fully on-device. Smaller models are faster but less accurate.</string>
+    <string name="settings_whisper_model_size">%1$d MB</string>
+    <string name="settings_whisper_model_progress">%1$d / %2$d MB</string>
+    <string name="settings_whisper_model_download">Download</string>
+    <string name="settings_whisper_model_delete">Delete</string>
+    <string name="settings_whisper_model_downloading">Downloading…</string>
 </resources>

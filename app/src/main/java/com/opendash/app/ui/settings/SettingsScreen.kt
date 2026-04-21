@@ -42,6 +42,7 @@ import com.opendash.app.ui.settings.locale.LocalePickerRow
 import com.opendash.app.ui.settings.news.NewsFeedPickerRow
 import com.opendash.app.ui.settings.termux.TermuxBridgeSettingsCard
 import com.opendash.app.ui.settings.weather.WeatherLocationPickerRow
+import com.opendash.app.ui.settings.whisper.WhisperModelsCard
 
 @Composable
 fun SettingsScreen(
@@ -352,6 +353,14 @@ fun SettingsScreen(
             }
         }
         SettingsHint(stringResource(R.string.settings_stt_provider_hint))
+
+        // Whisper offline models — card is always rendered, collapses to
+        // zero height when the STT route is not whisper. Shown when the
+        // user is configuring the offline route so the models are
+        // discoverable without a separate Settings page.
+        if (sttProvider == "whisper") {
+            WhisperModelsCard()
+        }
 
         val sttLanguage by viewModel.sttLanguage.collectAsState()
         SettingsTextField(stringResource(R.string.settings_stt_language), sttLanguage) { lang ->

@@ -352,4 +352,13 @@
     <string name="saver_chip_battery">Battery saver active — wake word paused</string>
     <string name="saver_chip_thermal">Thermal saver active — wake word paused</string>
     <string name="saver_chip_icon_description">Saver active</string>
+
+    <!-- P14.1 Whisper offline STT model management -->
+    <string name="settings_whisper_models_title">Whisper models</string>
+    <string name="settings_whisper_models_hint">Download a Whisper model to transcribe speech fully on-device. Smaller models are faster but less accurate.</string>
+    <string name="settings_whisper_model_size">%1$d MB</string>
+    <string name="settings_whisper_model_progress">%1$d / %2$d MB</string>
+    <string name="settings_whisper_model_download">Download</string>
+    <string name="settings_whisper_model_delete">Delete</string>
+    <string name="settings_whisper_model_downloading">Downloading…</string>
 </resources>

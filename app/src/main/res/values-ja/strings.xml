@@ -353,4 +353,13 @@
     <string name="saver_chip_battery">バッテリーセーバー有効 — ウェイクワード停止中</string>
     <string name="saver_chip_thermal">サーマルセーバー有効 — ウェイクワード停止中</string>
     <string name="saver_chip_icon_description">セーバー有効</string>
+
+    <!-- P14.1 Whisperオフラインモデル管理 -->
+    <string name="settings_whisper_models_title">Whisperモデル</string>
+    <string name="settings_whisper_models_hint">端末内で音声認識するためのWhisperモデルをダウンロードできます。小さいモデルほど高速ですが精度は落ちます。</string>
+    <string name="settings_whisper_model_size">%1$d MB</string>
+    <string name="settings_whisper_model_progress">%1$d / %2$d MB</string>
+    <string name="settings_whisper_model_download">ダウンロード</string>
+    <string name="settings_whisper_model_delete">削除</string>
+    <string name="settings_whisper_model_downloading">ダウンロード中…</string>
 </resources>
