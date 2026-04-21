@@ -77,6 +77,7 @@ Details: [docs/conventions.md](docs/conventions.md)
 
 ## Constraints
 - **DO NOT** modify `app/src/main/cpp/llama.cpp/` (git submodule)
+- **DO NOT** modify `app/src/main/cpp/whisper.cpp/` (git submodule, pinned to v1.8.4; landed for P14.1 offline STT JNI follow-up)
 - **DO NOT** hardcode secrets — use `SecurePreferences` (EncryptedSharedPreferences)
 - **DO NOT** add dependencies without asking the user
 - **DO NOT** skip tests — always run `./gradlew test` after changes

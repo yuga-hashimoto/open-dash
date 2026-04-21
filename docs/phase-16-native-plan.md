@@ -4,7 +4,15 @@ title: Phase 16 — Offline native stack plan
 
 # Phase 16 — Offline native stack plan
 
-Status: **Planning only** — no code yet. This page captures the approach for the three native-JNI items in Phase 16 so that when we get user sign-off to add the submodules + NDK CMake entries, the wiring decisions are already made.
+Status: **Partial landing** — whisper.cpp submodule landed (pinned to v1.8.4 under `app/src/main/cpp/whisper.cpp/`). No CMake wire-up yet — the submodule sits dormant so CI builds stay green while the JNI bridge + `WhisperSttProvider` impl are designed. This page captures the approach for the three native-JNI items in Phase 16 so when each submodule + CMake entry lands, the wiring decisions are already made.
+
+### Follow-up checklist (whisper.cpp v1.8.4 landed)
+
+1. Update `.github/workflows/ci.yml` to init submodules before build (`submodules: recursive` on the `actions/checkout@v4` step) — currently only `release.yml` does this, so CI runs today see an empty `app/src/main/cpp/whisper.cpp/` directory, which is fine as long as CMake doesn't reference it.
+2. Wire `add_subdirectory(whisper.cpp)` into `app/src/main/cpp/CMakeLists.txt` behind a feature flag so debug builds without the submodule still link.
+3. Add `whisper_jni.cpp` binding + a `WhisperJni` Kotlin class mirroring the llama.cpp pattern.
+4. Replace `OfflineSttStub` routing in `DelegatingSttProvider` with a real `WhisperSttProvider` once the JNI is stable.
+5. Add a whisper model downloader mirroring `ModelDownloader`'s Range-resume support (Phase 14.6).
 
 The P14.1 (STT) and P14.9 (TTS) scaffolding already ships: `DelegatingSttProvider` + `OfflineSttStub` + `PiperTtsProvider`. They route on the same provider selector as the shipped backends; today they emit "coming soon" or fall back. This plan describes replacing the stubs with real engines.
 
