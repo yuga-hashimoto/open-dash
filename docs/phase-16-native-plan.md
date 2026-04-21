@@ -9,7 +9,7 @@ Status: **Partial landing** — whisper.cpp submodule landed (pinned to v1.8.4 u
 ### Follow-up checklist (whisper.cpp v1.8.4 landed)
 
 1. ~~Update `.github/workflows/ci.yml` to init submodules before build (`submodules: recursive` on the `actions/checkout@v4` step) — currently only `release.yml` does this.~~ **Done.** Both `ci.yml` and `lint.yml` now check out submodules recursively, so every PR build has the full whisper.cpp / llama.cpp trees available.
-2. Wire `add_subdirectory(whisper.cpp)` into `app/src/main/cpp/CMakeLists.txt` behind a feature flag so debug builds without the submodule still link.
+2. ~~Wire `add_subdirectory(whisper.cpp)` into `app/src/main/cpp/CMakeLists.txt` behind a feature flag so debug builds without the submodule still link.~~ **Done.** The submodule is added with an `EXISTS`-based guard and `EXCLUDE_FROM_ALL` so the `whisper` static library target is only built when an explicit `target_link_libraries(... whisper ...)` pulls it in. Shared GGML backend flags (GGML_OPENMP / GGML_METAL / GGML_CUDA / GGML_VULKAN) are set at top level so llama.cpp and whisper.cpp stay in sync. External-native-build is still commented out in `app/build.gradle.kts`, so the CMake graph is defined but dormant until someone re-enables native builds.
 3. Add `whisper_jni.cpp` binding + a `WhisperJni` Kotlin class mirroring the llama.cpp pattern.
 4. Replace `OfflineSttStub` routing in `DelegatingSttProvider` with a real `WhisperSttProvider` once the JNI is stable.
 5. Add a whisper model downloader mirroring `ModelDownloader`'s Range-resume support (Phase 14.6).
