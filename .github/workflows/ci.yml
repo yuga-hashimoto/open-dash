@@ -12,6 +12,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # P14.1 groundwork: init llama.cpp + whisper.cpp submodules so
+          # CMake / NDK builds (when wired up) can find the sources. Today
+          # both submodules are dormant (no CMakeLists reference), so this
+          # just ensures the working tree matches release.yml's state.
+          submodules: recursive
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

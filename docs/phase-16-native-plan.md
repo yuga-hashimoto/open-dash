@@ -8,7 +8,7 @@ Status: **Partial landing** — whisper.cpp submodule landed (pinned to v1.8.4 u
 
 ### Follow-up checklist (whisper.cpp v1.8.4 landed)
 
-1. Update `.github/workflows/ci.yml` to init submodules before build (`submodules: recursive` on the `actions/checkout@v4` step) — currently only `release.yml` does this, so CI runs today see an empty `app/src/main/cpp/whisper.cpp/` directory, which is fine as long as CMake doesn't reference it.
+1. ~~Update `.github/workflows/ci.yml` to init submodules before build (`submodules: recursive` on the `actions/checkout@v4` step) — currently only `release.yml` does this.~~ **Done.** Both `ci.yml` and `lint.yml` now check out submodules recursively, so every PR build has the full whisper.cpp / llama.cpp trees available.
 2. Wire `add_subdirectory(whisper.cpp)` into `app/src/main/cpp/CMakeLists.txt` behind a feature flag so debug builds without the submodule still link.
 3. Add `whisper_jni.cpp` binding + a `WhisperJni` Kotlin class mirroring the llama.cpp pattern.
 4. Replace `OfflineSttStub` routing in `DelegatingSttProvider` with a real `WhisperSttProvider` once the JNI is stable.
