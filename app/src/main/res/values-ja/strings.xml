@@ -362,4 +362,13 @@
     <string name="settings_whisper_model_download">ダウンロード</string>
     <string name="settings_whisper_model_delete">削除</string>
     <string name="settings_whisper_model_downloading">ダウンロード中…</string>
+
+    <!-- P14.9 Piperオフライン音声合成 -->
+    <string name="settings_piper_voices_title">Piperボイス</string>
+    <string name="settings_piper_voices_hint">端末内で音声合成するためのPiperニューラル音声をダウンロードできます。1音声あたり約60MBです。</string>
+    <string name="settings_piper_voice_size">%1$s • %2$d MB</string>
+    <string name="settings_piper_voice_progress">%1$d / %2$d MB • %3$s</string>
+    <string name="settings_piper_voice_download">ダウンロード</string>
+    <string name="settings_piper_voice_delete">削除</string>
+    <string name="settings_piper_voice_downloading">ダウンロード中…</string>
 </resources>

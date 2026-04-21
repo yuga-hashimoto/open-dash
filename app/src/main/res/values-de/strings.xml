@@ -363,4 +363,13 @@
     <string name="settings_whisper_model_download">Download</string>
     <string name="settings_whisper_model_delete">Delete</string>
     <string name="settings_whisper_model_downloading">Downloading…</string>
+
+    <!-- P14.9 Piper offline TTS voice management -->
+    <string name="settings_piper_voices_title">Piper voices</string>
+    <string name="settings_piper_voices_hint">Download a Piper neural voice to synthesize speech fully on-device. Each voice is about 60 MB.</string>
+    <string name="settings_piper_voice_size">%1$s • %2$d MB</string>
+    <string name="settings_piper_voice_progress">%1$d / %2$d MB • %3$s</string>
+    <string name="settings_piper_voice_download">Download</string>
+    <string name="settings_piper_voice_delete">Delete</string>
+    <string name="settings_piper_voice_downloading">Downloading…</string>
 </resources>

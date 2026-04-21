@@ -5,6 +5,7 @@ import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.SecurePreferences
 import com.opendash.app.voice.tts.TextToSpeech
 import com.opendash.app.voice.tts.TtsManager
+import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,4 +34,15 @@ object TtsModule {
         securePreferences: SecurePreferences,
         httpClient: OkHttpClient
     ): TextToSpeech = TtsManager(context, preferences, securePreferences, httpClient)
+
+    /**
+     * P14.9 Piper voice downloader, shared with the Settings UI. Kept
+     * singleton so the one in-flight download state is visible to
+     * whichever consumer subscribes first.
+     */
+    @Provides
+    @Singleton
+    fun providePiperVoiceDownloader(
+        @ApplicationContext context: Context
+    ): PiperVoiceDownloader = PiperVoiceDownloader(context)
 }

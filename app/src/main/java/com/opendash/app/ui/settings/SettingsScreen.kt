@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.opendash.app.R
 import com.opendash.app.ui.settings.locale.LocalePickerRow
 import com.opendash.app.ui.settings.news.NewsFeedPickerRow
+import com.opendash.app.ui.settings.piper.PiperVoicesCard
 import com.opendash.app.ui.settings.termux.TermuxBridgeSettingsCard
 import com.opendash.app.ui.settings.weather.WeatherLocationPickerRow
 import com.opendash.app.ui.settings.whisper.WhisperModelsCard
@@ -185,6 +186,13 @@ fun SettingsScreen(
             ) {
                 Text(label, color = MaterialTheme.colorScheme.onSurface)
             }
+        }
+
+        // P14.9 Piper voices — only shown when the TTS route is piper so
+        // users who stay on the Android / cloud backends don't see the
+        // downloadable-voices card.
+        if (ttsProvider == "piper") {
+            PiperVoicesCard()
         }
 
         if (ttsProvider == "openai") {
