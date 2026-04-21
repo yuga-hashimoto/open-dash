@@ -370,4 +370,5 @@
     <string name="settings_piper_voice_download">Download</string>
     <string name="settings_piper_voice_delete">Delete</string>
     <string name="settings_piper_voice_downloading">Downloading…</string>
+    <string name="settings_piper_voice_preview">Preview</string>
 </resources>

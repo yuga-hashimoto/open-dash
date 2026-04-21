@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -62,7 +63,8 @@ fun PiperVoicesCard(
                     row = row,
                     onDownload = { viewModel.startDownload(row.voice) },
                     onDelete = { viewModel.delete(row.voice) },
-                    onSelectActive = { viewModel.setActive(row.voice) }
+                    onSelectActive = { viewModel.setActive(row.voice) },
+                    onPreview = { viewModel.preview(row.voice) }
                 )
             }
         }
@@ -74,7 +76,8 @@ private fun PiperVoiceRow(
     row: PiperSettingsViewModel.Row,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
-    onSelectActive: () -> Unit
+    onSelectActive: () -> Unit,
+    onPreview: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -111,8 +114,14 @@ private fun PiperVoiceRow(
             )
         }
         when {
-            row.installed -> OutlinedButton(onClick = onDelete) {
-                Text(stringResource(R.string.settings_piper_voice_delete))
+            row.installed -> {
+                OutlinedButton(onClick = onPreview) {
+                    Text(stringResource(R.string.settings_piper_voice_preview))
+                }
+                Spacer(Modifier.width(4.dp))
+                OutlinedButton(onClick = onDelete) {
+                    Text(stringResource(R.string.settings_piper_voice_delete))
+                }
             }
             row.isDownloading -> Text(
                 text = stringResource(R.string.settings_piper_voice_downloading),

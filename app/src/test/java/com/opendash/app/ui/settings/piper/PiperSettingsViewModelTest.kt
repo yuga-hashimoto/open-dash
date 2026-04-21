@@ -4,12 +4,15 @@ import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
+import com.opendash.app.voice.tts.TextToSpeech
 import com.opendash.app.voice.tts.piper.PiperVoiceCatalog
 import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -28,6 +31,7 @@ class PiperSettingsViewModelTest {
     private lateinit var context: Context
     private lateinit var downloader: PiperVoiceDownloader
     private lateinit var preferences: AppPreferences
+    private lateinit var tts: TextToSpeech
 
     @BeforeEach
     fun setup() {
@@ -40,6 +44,8 @@ class PiperSettingsViewModelTest {
         every {
             preferences.observe(PreferenceKeys.PIPER_ACTIVE_VOICE_ID)
         } returns flowOf(null as String?)
+        tts = mockk(relaxed = true)
+        every { tts.isSpeaking } returns MutableStateFlow(false).asStateFlow()
     }
 
     @AfterEach
@@ -50,7 +56,7 @@ class PiperSettingsViewModelTest {
 
     @Test
     fun `rows initial value has one entry per catalogue voice with default active`() {
-        val vm = PiperSettingsViewModel(downloader, preferences)
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
         val rows = vm.rows.value
         assertThat(rows).hasSize(PiperVoiceCatalog.all.size)
         val active = rows.first { it.isActive }
@@ -66,7 +72,7 @@ class PiperSettingsViewModelTest {
         File(piperDir, target.configFilename).writeBytes(ByteArray(128))
         assertThat(downloader.isDownloaded(target)).isTrue()
 
-        val vm = PiperSettingsViewModel(downloader, preferences)
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
         vm.delete(target)
 
         assertThat(downloader.isDownloaded(target)).isFalse()
@@ -74,7 +80,7 @@ class PiperSettingsViewModelTest {
 
     @Test
     fun `setActive persists the id to preferences`() {
-        val vm = PiperSettingsViewModel(downloader, preferences)
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
         vm.setActive(PiperVoiceCatalog.JA_JP_TAKUMI_MEDIUM)
 
         coVerify {
@@ -84,4 +90,49 @@ class PiperSettingsViewModelTest {
             )
         }
     }
+
+    @Test
+    fun `preview on installed voice persists active and speaks sample`() {
+        val target = PiperVoiceCatalog.EN_US_AMY_MEDIUM
+        val piperDir = File(tempDir, "piper").apply { mkdirs() }
+        File(piperDir, target.modelFilename).writeBytes(ByteArray(4096))
+        File(piperDir, target.configFilename).writeBytes(ByteArray(128))
+        assertThat(downloader.isDownloaded(target)).isTrue()
+
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
+        vm.preview(target)
+
+        coVerify {
+            preferences.set(PreferenceKeys.PIPER_ACTIVE_VOICE_ID, target.id)
+        }
+        coVerify { tts.speak(match { it.contains(target.displayName) }) }
+    }
+
+    @Test
+    fun `preview on Japanese voice uses Japanese sample text`() {
+        val target = PiperVoiceCatalog.JA_JP_TAKUMI_MEDIUM
+        val piperDir = File(tempDir, "piper").apply { mkdirs() }
+        File(piperDir, target.modelFilename).writeBytes(ByteArray(4096))
+        File(piperDir, target.configFilename).writeBytes(ByteArray(128))
+
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
+        vm.preview(target)
+
+        coVerify { tts.speak(match { it.startsWith("こんにちは") && it.contains(target.displayName) }) }
+    }
+
+    @Test
+    fun `preview on uninstalled voice is a no-op`() {
+        val target = PiperVoiceCatalog.BASE_MEDIUM_OR_UNINSTALLED()
+        assertThat(downloader.isDownloaded(target)).isFalse()
+
+        val vm = PiperSettingsViewModel(downloader, preferences, tts)
+        vm.preview(target)
+
+        coVerify(exactly = 0) { tts.speak(any()) }
+    }
+
+    @Suppress("FunctionName")
+    private fun PiperVoiceCatalog.BASE_MEDIUM_OR_UNINSTALLED() =
+        PiperVoiceCatalog.EN_US_LESSAC_MEDIUM
 }

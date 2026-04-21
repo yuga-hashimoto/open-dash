@@ -371,4 +371,5 @@
     <string name="settings_piper_voice_download">ダウンロード</string>
     <string name="settings_piper_voice_delete">削除</string>
     <string name="settings_piper_voice_downloading">ダウンロード中…</string>
+    <string name="settings_piper_voice_preview">試聴</string>
 </resources>

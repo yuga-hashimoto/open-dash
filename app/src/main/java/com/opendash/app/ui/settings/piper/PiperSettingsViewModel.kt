@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
+import com.opendash.app.voice.tts.TextToSpeech
 import com.opendash.app.voice.tts.piper.PiperVoice
 import com.opendash.app.voice.tts.piper.PiperVoiceCatalog
 import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
@@ -28,7 +29,15 @@ import javax.inject.Inject
 @HiltViewModel
 class PiperSettingsViewModel @Inject constructor(
     private val downloader: PiperVoiceDownloader,
-    private val preferences: AppPreferences
+    private val preferences: AppPreferences,
+    /**
+     * Injected singleton [TextToSpeech] (typically [com.opendash.app.voice.tts.TtsManager])
+     * used by [preview] to speak a sample sentence through whichever
+     * voice the user tapped. Preview first persists the voice as active
+     * then calls `speak`, so the sample is synthesised through the very
+     * voice the user is about to commit to.
+     */
+    private val tts: TextToSpeech
 ) : ViewModel() {
 
     data class Row(
@@ -107,5 +116,29 @@ class PiperSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferences.set(PreferenceKeys.PIPER_ACTIVE_VOICE_ID, voice.id)
         }
+    }
+
+    /**
+     * Preview [voice] by persisting it as active and then speaking a
+     * localized sample through the [TtsManager]-backed [tts] singleton.
+     * No-op when the voice isn't downloaded — the Compose card disables
+     * the button in that state.
+     *
+     * Sample text is intentionally short (one sentence) so the user
+     * gets a quick taste without a 5-second synthesis wait on
+     * tiny-class voices.
+     */
+    fun preview(voice: PiperVoice) {
+        if (!downloader.isDownloaded(voice)) return
+        viewModelScope.launch {
+            preferences.set(PreferenceKeys.PIPER_ACTIVE_VOICE_ID, voice.id)
+            runCatching { tts.speak(sampleTextFor(voice)) }
+                .onFailure { Timber.w(it, "Piper preview failed for ${voice.id}") }
+        }
+    }
+
+    private fun sampleTextFor(voice: PiperVoice): String = when {
+        voice.languageTag.startsWith("ja") -> "こんにちは、これは ${voice.displayName} のサンプルです。"
+        else -> "Hello, this is a sample of ${voice.displayName}."
     }
 }
