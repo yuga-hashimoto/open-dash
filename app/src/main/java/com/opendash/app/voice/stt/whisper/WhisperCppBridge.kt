@@ -30,7 +30,7 @@ import timber.log.Timber
  * 3. CMake produces `libwhisper_jni.so` under arm64-v8a; it's packaged
  *    into the APK automatically by the Android gradle plugin
  */
-class WhisperCppBridge {
+open class WhisperCppBridge {
 
     private var contextHandle: Long = 0L
     private var isLoaded = false
@@ -41,7 +41,7 @@ class WhisperCppBridge {
      * library isn't shipped or whisper rejects the model file (typically
      * a wrong-format or truncated-download failure).
      */
-    fun loadModel(path: String): Boolean {
+    open fun loadModel(path: String): Boolean {
         if (!tryLoadLibrary()) {
             Timber.e("Cannot load whisper model: native library not available")
             return false
@@ -56,6 +56,9 @@ class WhisperCppBridge {
         }
     }
 
+    /** Visible for test overrides; returns the current loaded state. */
+    open fun isModelLoaded(): Boolean = isLoaded
+
     /**
      * Runs whisper_full on a PCM buffer and returns the transcribed text.
      *
@@ -65,7 +68,7 @@ class WhisperCppBridge {
      * @param translate when true, whisper translates non-English speech
      *   into English; when false, it transcribes in the source language.
      */
-    fun transcribe(
+    open fun transcribe(
         samples: FloatArray,
         language: String = "auto",
         translate: Boolean = false
@@ -81,8 +84,6 @@ class WhisperCppBridge {
             isLoaded = false
         }
     }
-
-    fun isModelLoaded(): Boolean = isLoaded
 
     /** `true` when both the native lib is present AND a model has been loaded. */
     fun isReady(): Boolean = libraryLoaded && isLoaded

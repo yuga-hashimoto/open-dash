@@ -4,12 +4,17 @@ import android.content.Context
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.voice.stt.AndroidSttProvider
 import com.opendash.app.voice.stt.DelegatingSttProvider
+import com.opendash.app.voice.stt.OfflineSttStub
 import com.opendash.app.voice.stt.SpeechToText
+import com.opendash.app.voice.stt.whisper.AudioRecordPcmSource
+import com.opendash.app.voice.stt.whisper.WhisperCppBridge
+import com.opendash.app.voice.stt.whisper.WhisperSttProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.io.File
 import javax.inject.Singleton
 
 /**
@@ -31,6 +36,27 @@ object SttModule {
         preferences: AppPreferences
     ): SpeechToText = DelegatingSttProvider(
         preferences = preferences,
-        android = AndroidSttProvider(context)
+        android = AndroidSttProvider(context),
+        whisperOffline = buildWhisperDelegate(context)
     )
+
+    /**
+     * The whisper route returns a real [WhisperSttProvider] when the native
+     * library can load, else falls back to the stub so user-facing error
+     * messages still say "coming soon" rather than silently hanging.
+     * `WhisperCppBridge.isAvailable()` checks both submodule + native lib
+     * state at call time so runtime toggling (e.g. feature flag, future
+     * downloadable-extension pattern) stays honest.
+     */
+    private fun buildWhisperDelegate(context: Context): SpeechToText {
+        return if (WhisperCppBridge.isAvailable()) {
+            WhisperSttProvider(
+                bridge = WhisperCppBridge(),
+                pcmSource = AudioRecordPcmSource(context),
+                modelPathProvider = { File(context.filesDir, "whisper/ggml-tiny.bin") }
+            )
+        } else {
+            OfflineSttStub("Whisper")
+        }
+    }
 }
