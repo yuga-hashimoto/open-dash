@@ -65,6 +65,12 @@ class HomeViewModelBriefingTest {
         coEvery { getActiveTimers() } returns emptyList()
     }
 
+    private fun stubSaverProvider(): com.opendash.app.util.SaverStateProvider {
+        val p = mockk<com.opendash.app.util.SaverStateProvider>()
+        every { p.state } returns MutableStateFlow(com.opendash.app.util.SaverState())
+        return p
+    }
+
     private fun newVm(briefing: OnlineBriefingSource): HomeViewModel {
         val deviceManager = mockk<DeviceManager>()
         every { deviceManager.devices } returns MutableStateFlow(emptyMap())
@@ -80,7 +86,7 @@ class HomeViewModelBriefingTest {
         val tm = mockk<com.opendash.app.util.ThermalMonitor>().apply {
             every { status } returns MutableStateFlow(com.opendash.app.util.ThermalLevel.NORMAL)
         }
-        return HomeViewModel(deviceManager, ss, te, stubbedTimerManager(), briefing, bm, tm, UpcomingEventSource.Empty)
+        return HomeViewModel(deviceManager, ss, te, stubbedTimerManager(), briefing, bm, tm, stubSaverProvider(), UpcomingEventSource.Empty)
     }
 
     @Test

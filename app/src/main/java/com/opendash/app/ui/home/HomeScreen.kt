@@ -60,6 +60,7 @@ fun HomeScreen(
     val nowPlaying by viewModel.nowPlaying.collectAsState()
     val activeTimers by viewModel.activeTimers.collectAsState()
     val thermal by viewModel.thermalLevel.collectAsState()
+    val saverState by viewModel.saverState.collectAsState()
     val nextEvent by viewModel.nextEvent.collectAsState()
 
     val wide = isExpandedLandscape()
@@ -92,6 +93,10 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(start = 32.dp, end = 32.dp, top = topPad, bottom = 32.dp)
             ) {
+                // P14.8 saver banner — only rendered when active, so the
+                // layout stays identical in the happy path.
+                HomeSaverBanner(saverState = saverState)
+
                 // Echo Show inline header: time · weather icon · temp · date+location
                 // All on a single Row at ~28 sp so the ambient screen is
                 // dominated by the centered news card, not the chrome.
@@ -149,6 +154,10 @@ fun HomeScreen(
                     .padding(start = 32.dp, end = 32.dp, top = topPad, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // P14.8 saver banner — portrait variant appears above the
+                // hero clock, else the layout stays identical.
+                HomeSaverBanner(saverState = saverState)
+
                 // Top breathing space — pushes the hero down off the
                 // status bar so the eye lands on the clock, not chrome.
                 Spacer(modifier = Modifier.weight(1f))

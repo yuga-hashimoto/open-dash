@@ -16,6 +16,8 @@ import com.opendash.app.tool.system.TimerInfo
 import com.opendash.app.tool.system.TimerManager
 import com.opendash.app.util.BatteryMonitor
 import com.opendash.app.util.BatteryStatus
+import com.opendash.app.util.SaverState
+import com.opendash.app.util.SaverStateProvider
 import com.opendash.app.util.ThermalLevel
 import com.opendash.app.util.ThermalMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,6 +43,7 @@ class HomeViewModel @Inject constructor(
     private val briefingSource: OnlineBriefingSource,
     batteryMonitor: BatteryMonitor,
     thermalMonitor: ThermalMonitor,
+    saverStateProvider: SaverStateProvider,
     private val upcomingEventSource: UpcomingEventSource,
 ) : ViewModel() {
 
@@ -73,6 +76,15 @@ class HomeViewModel @Inject constructor(
      */
     val batteryStatus: StateFlow<BatteryStatus> = batteryMonitor.status
     val thermalLevel: StateFlow<ThermalLevel> = thermalMonitor.status
+
+    /**
+     * P14.8: single source of truth for "is wake-word paused right now?".
+     * HomeScreen renders a chip when [SaverState.active] so users who keep
+     * Home in the foreground also see the reason — the Ambient chip alone
+     * misses this window. Separate StateFlow (not folded into batteryStatus)
+     * so the chip animates independently of battery-percentage changes.
+     */
+    val saverState: StateFlow<SaverState> = saverStateProvider.state
 
     val suggestions: StateFlow<List<Suggestion>> = suggestionState.current
 
