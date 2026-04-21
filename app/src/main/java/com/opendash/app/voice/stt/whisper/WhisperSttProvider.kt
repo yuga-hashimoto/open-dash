@@ -37,7 +37,12 @@ class WhisperSttProvider(
     private val bridge: WhisperCppBridge,
     private val pcmSource: WhisperPcmSource,
     private val modelPathProvider: () -> File,
-    private val language: String = "auto",
+    /**
+     * Resolved per-utterance so a user changing the language picker in
+     * Settings takes effect immediately. ISO 639-1 ("en", "ja") or
+     * "auto". Defaults to "auto".
+     */
+    private val languageProvider: () -> String = { "auto" },
     private val translate: Boolean = false,
     private val maxSeconds: Int = MAX_CAPTURE_SECONDS_DEFAULT,
     private val availabilityCheck: () -> Boolean = { WhisperCppBridge.isAvailable() }
@@ -85,7 +90,8 @@ class WhisperSttProvider(
             }
 
             val text = try {
-                bridge.transcribe(samples, language = language, translate = translate).trim()
+                val lang = languageProvider().ifBlank { "auto" }
+                bridge.transcribe(samples, language = lang, translate = translate).trim()
             } catch (e: Exception) {
                 Timber.w(e, "whisper_full threw")
                 emit(SttResult.Error("Whisper transcription failed: ${e.message.orEmpty()}"))

@@ -122,4 +122,42 @@ class WhisperSettingsViewModel @Inject constructor(
             preferences.set(PreferenceKeys.WHISPER_ACTIVE_MODEL_ID, model.id)
         }
     }
+
+    /**
+     * Current WHISPER_LANGUAGE preference mapped to one of
+     * [SUPPORTED_LANGUAGES]. Empty / unset renders as "auto".
+     * WhisperSttProvider reads the preference each `startListening()`
+     * so flipping this picker takes effect on the next utterance.
+     */
+    val language: StateFlow<String> = preferences
+        .observe(PreferenceKeys.WHISPER_LANGUAGE)
+        .let { flow ->
+            kotlinx.coroutines.flow.MutableStateFlow("auto").also { backing ->
+                viewModelScope.launch {
+                    flow.collect { v ->
+                        backing.value = v?.trim()?.ifBlank { null } ?: "auto"
+                    }
+                }
+            }
+        }
+
+    fun setLanguage(code: String) {
+        viewModelScope.launch {
+            preferences.set(PreferenceKeys.WHISPER_LANGUAGE, code)
+        }
+    }
+
+    companion object {
+        /**
+         * Whitelist for the picker. whisper.cpp speaks 99 languages; we
+         * only expose the ones the OpenDash household is likely to use
+         * + "auto" so the picker stays a 3-row radio instead of a
+         * dropdown. More can land as follow-ups.
+         */
+        val SUPPORTED_LANGUAGES: List<Pair<String, String>> = listOf(
+            "auto" to "Auto-detect",
+            "en" to "English",
+            "ja" to "日本語"
+        )
+    }
 }

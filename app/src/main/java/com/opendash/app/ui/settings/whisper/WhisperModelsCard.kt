@@ -38,6 +38,7 @@ fun WhisperModelsCard(
     viewModel: WhisperSettingsViewModel = hiltViewModel()
 ) {
     val rows by viewModel.rows.collectAsState()
+    val language by viewModel.language.collectAsState()
 
     Card(
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -66,6 +67,35 @@ fun WhisperModelsCard(
                     onDelete = { viewModel.delete(row.model) },
                     onSelectActive = { viewModel.setActive(row.model) }
                 )
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.settings_whisper_language_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.settings_whisper_language_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            WhisperSettingsViewModel.SUPPORTED_LANGUAGES.forEach { (code, label) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = language == code,
+                        onClick = { viewModel.setLanguage(code) }
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

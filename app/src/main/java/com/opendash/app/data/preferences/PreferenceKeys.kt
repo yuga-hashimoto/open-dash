@@ -189,4 +189,15 @@ object PreferenceKeys {
      * back to the catalogue default (en_US-amy-medium).
      */
     val PIPER_ACTIVE_VOICE_ID = stringPreferencesKey("piper_active_voice_id")
+
+    /**
+     * P14.1 Whisper transcription language. ISO 639-1 code ("en", "ja")
+     * or "auto". Empty / unset defaults to "auto". Passed through to
+     * whisper.cpp's `whisper_full_params.language` — "auto" lets the
+     * model detect the language per utterance at a small latency cost,
+     * while an explicit code skips detection and is more reliable for
+     * mixed-language environments where auto-detect flips between
+     * runs.
+     */
+    val WHISPER_LANGUAGE = stringPreferencesKey("whisper_language")
 }

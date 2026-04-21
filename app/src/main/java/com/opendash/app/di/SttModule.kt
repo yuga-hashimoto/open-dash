@@ -66,7 +66,8 @@ object SttModule {
             WhisperSttProvider(
                 bridge = WhisperCppBridge(),
                 pcmSource = AudioRecordPcmSource(context),
-                modelPathProvider = { resolveWhisperModelFile(context, preferences) }
+                modelPathProvider = { resolveWhisperModelFile(context, preferences) },
+                languageProvider = { resolveWhisperLanguage(preferences) }
             )
         } else {
             OfflineSttStub("Whisper")
@@ -87,6 +88,18 @@ object SttModule {
         val model = WhisperModelCatalog.all.firstOrNull { it.id == activeId }
             ?: WhisperModelCatalog.default
         return File(dir, model.filename)
+    }
+
+    /**
+     * Reads [PreferenceKeys.WHISPER_LANGUAGE] at call time. Empty /
+     * unset falls back to "auto" which matches whisper.cpp's
+     * detect-then-transcribe behaviour.
+     */
+    internal fun resolveWhisperLanguage(preferences: AppPreferences): String {
+        val raw = runBlocking {
+            preferences.observe(PreferenceKeys.WHISPER_LANGUAGE).first()
+        }
+        return raw?.trim().orEmpty().ifBlank { "auto" }
     }
 
     /**

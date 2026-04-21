@@ -372,4 +372,8 @@
     <string name="settings_piper_voice_delete">削除</string>
     <string name="settings_piper_voice_downloading">ダウンロード中…</string>
     <string name="settings_piper_voice_preview">試聴</string>
+
+    <!-- P14.1 Whisper音声認識言語 -->
+    <string name="settings_whisper_language_title">認識言語</string>
+    <string name="settings_whisper_language_hint">自動検出は少し遅く、まれに誤検出します。日本語もしくは英語のみ話す環境なら明示指定を推奨。</string>
 </resources>

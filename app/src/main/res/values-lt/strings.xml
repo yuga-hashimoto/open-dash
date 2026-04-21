@@ -373,4 +373,8 @@
     <string name="settings_piper_voice_delete">Delete</string>
     <string name="settings_piper_voice_downloading">Downloading…</string>
     <string name="settings_piper_voice_preview">Preview</string>
+
+    <!-- P14.1 Whisper transcription language -->
+    <string name="settings_whisper_language_title">Transcription language</string>
+    <string name="settings_whisper_language_hint">Auto-detect is slower and occasionally picks the wrong language. Force a specific one when you know the household speaks mostly English or Japanese.</string>
 </resources>
