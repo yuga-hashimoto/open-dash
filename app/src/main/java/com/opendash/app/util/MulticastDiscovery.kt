@@ -181,6 +181,11 @@ class MulticastDiscovery @Inject constructor(
                 Timber.d("Resolve failed: ${serviceInfo.serviceName} ($errorCode)")
             }
             override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+                // NsdServiceInfo.host is deprecated on API 34 (hostAddresses
+                // returns a List<InetAddress> for IPv6-aware callers); until
+                // the minSdk floor lifts we stick with the IPv4-focused
+                // single-host accessor.
+                @Suppress("DEPRECATION")
                 val host = serviceInfo.host?.hostAddress
                 val port = serviceInfo.port
                 _speakers.value = _speakers.value.map {
@@ -190,6 +195,10 @@ class MulticastDiscovery @Inject constructor(
                 }
             }
         }
+        // resolveService(NsdServiceInfo, ResolveListener) deprecated on
+        // API 34 in favour of registerServiceInfoCallback. Same min-SDK
+        // rationale as the host accessor above.
+        @Suppress("DEPRECATION")
         runCatching { nsdManager.resolveService(service, resolver) }
             .onFailure { Timber.w(it, "mDNS resolve threw") }
     }

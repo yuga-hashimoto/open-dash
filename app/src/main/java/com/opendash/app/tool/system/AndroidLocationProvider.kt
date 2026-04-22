@@ -6,10 +6,13 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.os.Build
+import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 
 /**
@@ -42,25 +45,46 @@ class AndroidLocationProvider(
             return lastKnown.toResult()
         }
 
-        // Otherwise request a single update with a timeout
+        // Otherwise request a single update with a timeout. API 30+ has
+        // LocationManager.getCurrentLocation which handles the one-shot
+        // "give me a fresh fix and stop" pattern natively + respects
+        // cancellation; older devices fall back to the deprecated
+        // requestSingleUpdate pattern via a LocationListener.
         return withTimeoutOrNull(TIMEOUT_MS) {
             suspendCancellableCoroutine<LocationResult?> { cont ->
-                val listener = android.location.LocationListener { loc ->
-                    if (cont.isActive) cont.resume(loc.toResult())
-                }
-
-                try {
-                    @SuppressLint("MissingPermission")
-                    locationManager.requestSingleUpdate(providerName, listener, context.mainLooper)
-                } catch (e: Exception) {
-                    Timber.w(e, "requestSingleUpdate failed")
-                    if (cont.isActive) cont.resume(lastKnown?.toResult())
-                }
-
-                cont.invokeOnCancellation {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val cancellation = CancellationSignal()
+                    cont.invokeOnCancellation { runCatching { cancellation.cancel() } }
                     try {
-                        locationManager.removeUpdates(listener)
-                    } catch (_: Exception) { }
+                        @SuppressLint("MissingPermission")
+                        locationManager.getCurrentLocation(
+                            providerName,
+                            cancellation,
+                            Executors.newSingleThreadExecutor()
+                        ) { loc ->
+                            if (cont.isActive) cont.resume(loc?.toResult() ?: lastKnown?.toResult())
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "getCurrentLocation failed")
+                        if (cont.isActive) cont.resume(lastKnown?.toResult())
+                    }
+                } else {
+                    val listener = android.location.LocationListener { loc ->
+                        if (cont.isActive) cont.resume(loc.toResult())
+                    }
+                    try {
+                        @SuppressLint("MissingPermission")
+                        @Suppress("DEPRECATION")
+                        locationManager.requestSingleUpdate(providerName, listener, context.mainLooper)
+                    } catch (e: Exception) {
+                        Timber.w(e, "requestSingleUpdate failed")
+                        if (cont.isActive) cont.resume(lastKnown?.toResult())
+                    }
+                    cont.invokeOnCancellation {
+                        try {
+                            locationManager.removeUpdates(listener)
+                        } catch (_: Exception) { }
+                    }
                 }
             }
         } ?: lastKnown?.toResult()

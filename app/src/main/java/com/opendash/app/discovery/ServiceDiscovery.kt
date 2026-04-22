@@ -57,11 +57,20 @@ class ServiceDiscovery @Inject constructor(
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo) {
                 Timber.d("mDNS service found: ${serviceInfo.serviceName}")
+                // resolveService(serviceInfo, ResolveListener) is deprecated
+                // on API 34 in favour of registerServiceInfoCallback — we
+                // still target pre-API 34 devices, so suppress + keep the
+                // old API until the minSdk floor lifts. NsdServiceInfo.host
+                // is also deprecated on 34; hostAddresses replaces it for
+                // IPv6-aware callers, but the old host is still populated
+                // for IPv4 scenarios we care about today.
+                @Suppress("DEPRECATION")
                 nsdManager.resolveService(serviceInfo, object : NsdManager.ResolveListener {
                     override fun onResolveFailed(info: NsdServiceInfo, errorCode: Int) {
                         Timber.w("mDNS resolve failed: $errorCode")
                     }
 
+                    @Suppress("DEPRECATION")
                     override fun onServiceResolved(info: NsdServiceInfo) {
                         val service = DiscoveredService(
                             name = info.serviceName,
