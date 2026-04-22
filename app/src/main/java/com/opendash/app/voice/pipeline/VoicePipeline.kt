@@ -6,6 +6,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
+import com.opendash.app.assistant.agent.AgentToolDispatcher
 import com.opendash.app.assistant.model.AssistantMessage
 import com.opendash.app.assistant.model.AssistantSession
 import com.opendash.app.assistant.router.ConversationRouter
@@ -52,7 +53,8 @@ class VoicePipeline(
     private val wakeWordDetector: WakeWordDetector? = null,
     private val fastPathRouter: FastPathRouter? = null,
     private val latencyRecorder: LatencyRecorder = LatencyRecorder(),
-    private val fastPathLlmPolisher: FastPathLlmPolisher = FastPathLlmPolisher()
+    private val fastPathLlmPolisher: FastPathLlmPolisher = FastPathLlmPolisher(),
+    private val toolDispatcher: AgentToolDispatcher = AgentToolDispatcher(toolExecutor, moshi)
 ) {
     /** Exposed for diagnostics / Settings debug screen. */
     fun latencySummary() = latencyRecorder.summarize()
@@ -345,33 +347,27 @@ class VoicePipeline(
                         conversationHistory.add(response)
 
                         if (response.toolCalls.isNotEmpty()) {
-                            for (toolCallReq in response.toolCalls) {
-                                val args = parseToolArguments(toolCallReq.arguments)
-                                val toolCall = ToolCall(
-                                    id = toolCallReq.id,
-                                    name = toolCallReq.name,
-                                    arguments = args
-                                )
-                                latencyRecorder.startSpan(
-                                    LatencyRecorder.Span.TOOL_EXECUTION,
-                                    key = "tool_${toolCallReq.id}"
-                                )
-                                val toolResult = toolExecutor.execute(toolCall)
-                                latencyRecorder.endSpan(
-                                    LatencyRecorder.Span.TOOL_EXECUTION,
-                                    key = "tool_${toolCallReq.id}"
-                                )
-                                Timber.d(
-                                    "Agent round $toolRounds: called=${toolCallReq.name}, " +
-                                        "result=${toolResult.success}"
-                                )
-                                val resultMessage = AssistantMessage.ToolCallResult(
-                                    callId = toolCallReq.id,
-                                    result = if (toolResult.success) toolResult.data else (toolResult.error ?: "Error"),
-                                    isError = !toolResult.success
-                                )
-                                conversationHistory.add(resultMessage)
+                            val tracer = AgentToolDispatcher.ToolTracer { phase, req, success ->
+                                when (phase) {
+                                    AgentToolDispatcher.ToolTracer.Phase.START ->
+                                        latencyRecorder.startSpan(
+                                            LatencyRecorder.Span.TOOL_EXECUTION,
+                                            key = "tool_${req.id}"
+                                        )
+                                    AgentToolDispatcher.ToolTracer.Phase.END -> {
+                                        latencyRecorder.endSpan(
+                                            LatencyRecorder.Span.TOOL_EXECUTION,
+                                            key = "tool_${req.id}"
+                                        )
+                                        Timber.d(
+                                            "Agent round $toolRounds: called=${req.name}, " +
+                                                "result=$success"
+                                        )
+                                    }
+                                }
                             }
+                            val resultMessages = toolDispatcher.dispatch(response.toolCalls, tracer)
+                            conversationHistory.addAll(resultMessages)
                             toolRounds++
                             continue
                         }
@@ -994,15 +990,6 @@ class VoicePipeline(
 
     private fun resetWatchdog() { startWatchdog() }
     private fun cancelWatchdog() { watchdogJob?.cancel(); watchdogJob = null }
-
-    // --- Tool Arguments ---
-
-    @Suppress("UNCHECKED_CAST")
-    private fun parseToolArguments(json: String): Map<String, Any?> {
-        return try {
-            moshi.adapter(Map::class.java).fromJson(json) as? Map<String, Any?> ?: emptyMap()
-        } catch (e: Exception) { emptyMap() }
-    }
 
     fun destroy() {
         toneGenerator?.release()

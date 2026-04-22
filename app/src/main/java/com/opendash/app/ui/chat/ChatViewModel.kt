@@ -2,12 +2,12 @@ package com.opendash.app.ui.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.opendash.app.assistant.agent.AgentToolDispatcher
 import com.opendash.app.assistant.model.AssistantMessage
 import com.opendash.app.assistant.model.AssistantSession
 import com.opendash.app.assistant.model.ConversationState
 import com.opendash.app.assistant.model.ToolCallRequest
 import com.opendash.app.assistant.router.ConversationRouter
-import com.opendash.app.tool.ToolCall
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.voice.pipeline.VoicePipeline
 import com.opendash.app.voice.pipeline.VoicePipelineState
@@ -39,6 +39,8 @@ class ChatViewModel @Inject constructor(
 
     private val _streamingContent = MutableStateFlow("")
     val streamingContent: StateFlow<String> = _streamingContent.asStateFlow()
+
+    private val toolDispatcher = AgentToolDispatcher(toolExecutor, moshi)
 
     private var session: AssistantSession? = null
 
@@ -109,21 +111,8 @@ class ChatViewModel @Inject constructor(
                     conversationMessages.add(assistantResponse)
 
                     if (toolCalls.isNotEmpty()) {
-                        for (toolCallReq in toolCalls) {
-                            val args = parseToolArguments(toolCallReq.arguments)
-                            val toolCall = ToolCall(
-                                id = toolCallReq.id,
-                                name = toolCallReq.name,
-                                arguments = args
-                            )
-                            val toolResult = toolExecutor.execute(toolCall)
-                            val resultMsg = AssistantMessage.ToolCallResult(
-                                callId = toolCallReq.id,
-                                result = if (toolResult.success) toolResult.data else (toolResult.error ?: "Error"),
-                                isError = !toolResult.success
-                            )
-                            conversationMessages.add(resultMsg)
-                        }
+                        val results = toolDispatcher.dispatch(toolCalls)
+                        conversationMessages.addAll(results)
                         toolRounds++
                         continue
                     }
@@ -145,12 +134,4 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun parseToolArguments(json: String): Map<String, Any?> {
-        return try {
-            moshi.adapter(Map::class.java).fromJson(json) as? Map<String, Any?> ?: emptyMap()
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
 }
