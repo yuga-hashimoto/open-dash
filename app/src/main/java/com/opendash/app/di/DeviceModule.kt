@@ -264,6 +264,7 @@ object DeviceModule {
         peerLivenessTracker: com.opendash.app.multiroom.PeerLivenessTracker,
         deviceManager: DeviceManager,
         batteryMonitor: com.opendash.app.util.BatteryMonitor,
+        thermalMonitor: com.opendash.app.util.ThermalMonitor,
     ): com.opendash.app.assistant.proactive.SuggestionEngine =
         com.opendash.app.assistant.proactive.SuggestionEngine(
             rules = listOf(
@@ -276,6 +277,9 @@ object DeviceModule {
                 com.opendash.app.assistant.proactive.StalePeerRule(peerLivenessTracker),
                 com.opendash.app.assistant.proactive.LowBatteryRule(
                     statusSupplier = { batteryMonitor.status.value }
+                ),
+                com.opendash.app.assistant.proactive.ThermalWarningRule(
+                    levelSupplier = { thermalMonitor.status.value }
                 ),
                 com.opendash.app.assistant.proactive.ForgotLightsAtBedtimeRule(
                     devicesSupplier = { deviceManager.devices.value.values }
