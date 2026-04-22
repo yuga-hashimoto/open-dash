@@ -5,6 +5,14 @@ import com.opendash.app.assistant.model.ToolCallRequest
 import com.squareup.moshi.Moshi
 import timber.log.Timber
 
+// JSON-shaped map alias — the moshi adapter returns Map<String, Any?>
+// for arbitrary JSON objects, and every nested lookup immediately casts
+// back to this shape. Keeping a local alias cuts repetition and pushes
+// the one UNCHECKED_CAST suppression to the top-level function where it
+// belongs.
+private typealias JsonMap = Map<String, Any?>
+
+@Suppress("UNCHECKED_CAST")
 class OpenAiStreamParser(private val moshi: Moshi) {
 
     fun parseLine(line: String): AssistantMessage.Delta? {
@@ -13,10 +21,9 @@ class OpenAiStreamParser(private val moshi: Moshi) {
         val json = if (trimmed.startsWith("data: ")) trimmed.removePrefix("data: ") else return null
 
         return try {
-            @Suppress("UNCHECKED_CAST")
-            val map = moshi.adapter(Map::class.java).fromJson(json) as? Map<String, Any?> ?: return null
-            val choices = (map["choices"] as? List<*>)?.firstOrNull() as? Map<String, Any?> ?: return null
-            val delta = choices["delta"] as? Map<String, Any?>
+            val map = moshi.adapter(Map::class.java).fromJson(json) as? JsonMap ?: return null
+            val choices = (map["choices"] as? List<*>)?.firstOrNull() as? JsonMap ?: return null
+            val delta = choices["delta"] as? JsonMap
             val finishReason = choices["finish_reason"] as? String
 
             val content = delta?.get("content") as? String ?: ""
@@ -35,12 +42,11 @@ class OpenAiStreamParser(private val moshi: Moshi) {
 
     fun parseFullResponse(json: String): AssistantMessage {
         return try {
-            @Suppress("UNCHECKED_CAST")
-            val map = moshi.adapter(Map::class.java).fromJson(json) as? Map<String, Any?>
+            val map = moshi.adapter(Map::class.java).fromJson(json) as? JsonMap
                 ?: return AssistantMessage.Assistant(content = "")
-            val choices = (map["choices"] as? List<*>)?.firstOrNull() as? Map<String, Any?>
+            val choices = (map["choices"] as? List<*>)?.firstOrNull() as? JsonMap
                 ?: return AssistantMessage.Assistant(content = "")
-            val message = choices["message"] as? Map<String, Any?>
+            val message = choices["message"] as? JsonMap
                 ?: return AssistantMessage.Assistant(content = "")
 
             val content = message["content"] as? String ?: ""
@@ -56,12 +62,11 @@ class OpenAiStreamParser(private val moshi: Moshi) {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun parseToolCalls(message: Map<String, Any?>): List<ToolCallRequest> {
+    private fun parseToolCalls(message: JsonMap): List<ToolCallRequest> {
         val toolCalls = message["tool_calls"] as? List<*> ?: return emptyList()
         return toolCalls.mapNotNull { tc ->
-            val call = tc as? Map<String, Any?> ?: return@mapNotNull null
-            val function = call["function"] as? Map<String, Any?> ?: return@mapNotNull null
+            val call = tc as? JsonMap ?: return@mapNotNull null
+            val function = call["function"] as? JsonMap ?: return@mapNotNull null
             ToolCallRequest(
                 id = call["id"] as? String ?: "",
                 name = function["name"] as? String ?: "",
@@ -70,11 +75,10 @@ class OpenAiStreamParser(private val moshi: Moshi) {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun parseToolCallDelta(delta: Map<String, Any?>?): ToolCallRequest? {
+    private fun parseToolCallDelta(delta: JsonMap?): ToolCallRequest? {
         val toolCalls = delta?.get("tool_calls") as? List<*> ?: return null
-        val firstCall = toolCalls.firstOrNull() as? Map<String, Any?> ?: return null
-        val function = firstCall["function"] as? Map<String, Any?> ?: return null
+        val firstCall = toolCalls.firstOrNull() as? JsonMap ?: return null
+        val function = firstCall["function"] as? JsonMap ?: return null
         return ToolCallRequest(
             id = firstCall["id"] as? String ?: "",
             name = function["name"] as? String ?: "",
