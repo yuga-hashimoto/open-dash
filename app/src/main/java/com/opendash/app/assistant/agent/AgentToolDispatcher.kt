@@ -109,12 +109,18 @@ class AgentToolDispatcher(
     private fun parseArguments(json: String): Map<String, Any?> {
         if (json.isBlank()) return emptyMap()
         val adapter = moshi?.adapter(Map::class.java) ?: defaultAdapter
-        return try {
+        val raw = try {
             adapter.fromJson(json) as? Map<String, Any?> ?: emptyMap()
         } catch (e: Exception) {
             Timber.w(e, "Failed to parse tool arguments: $json")
-            emptyMap()
+            return emptyMap()
         }
+        // Smaller on-device LLMs sometimes emit {"seconds": "60"} or
+        // {"include_news": "true"} — the right value, wrong JSON type.
+        // Massage the parsed map so downstream `as? Number` / `as?
+        // Boolean` checks still hit. Conservative: only round-trip-safe
+        // numeric strings and exact true/false words get coerced.
+        return ToolArgumentCoercion.coerceMap(raw)
     }
 
     private companion object {
