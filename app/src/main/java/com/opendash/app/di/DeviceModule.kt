@@ -631,6 +631,9 @@ object DeviceModule {
             )
         )
         compositeHolder[0] = composite
-        return composite
+        return com.opendash.app.tool.cache.CachingToolExecutor(
+            delegate = composite,
+            policy = com.opendash.app.tool.cache.DefaultCachePolicy.INSTANCE
+        )
     }
 }
