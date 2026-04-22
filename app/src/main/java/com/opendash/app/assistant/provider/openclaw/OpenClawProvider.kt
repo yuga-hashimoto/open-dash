@@ -54,12 +54,12 @@ class OpenClawProvider(
         ws.send(payload)
 
         val responseBuilder = StringBuilder()
-        val toolCalls = mutableListOf<ToolCallRequest>()
+        val aggregator = com.opendash.app.assistant.agent.StreamingToolCallAggregator()
         var finished = false
         ws.messages.collect { raw ->
             if (finished) return@collect
             val parsed = parseResponse(raw)
-            parsed.toolCallDelta?.let { toolCalls.add(it) }
+            parsed.toolCallDelta?.let { aggregator.accept(it) }
             if (parsed.finishReason != null) {
                 finished = true
                 return@collect
@@ -68,7 +68,7 @@ class OpenClawProvider(
         }
         return AssistantMessage.Assistant(
             content = responseBuilder.toString(),
-            toolCalls = toolCalls
+            toolCalls = aggregator.complete()
         )
     }
 

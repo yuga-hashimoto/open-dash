@@ -3,10 +3,10 @@ package com.opendash.app.ui.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opendash.app.assistant.agent.AgentToolDispatcher
+import com.opendash.app.assistant.agent.StreamingToolCallAggregator
 import com.opendash.app.assistant.model.AssistantMessage
 import com.opendash.app.assistant.model.AssistantSession
 import com.opendash.app.assistant.model.ConversationState
-import com.opendash.app.assistant.model.ToolCallRequest
 import com.opendash.app.assistant.router.ConversationRouter
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.voice.pipeline.VoicePipeline
@@ -95,14 +95,15 @@ class ChatViewModel @Inject constructor(
                 while (toolRounds < MAX_TOOL_ROUNDS) {
                     _streamingContent.value = ""
                     val responseBuilder = StringBuilder()
-                    val toolCalls = mutableListOf<ToolCallRequest>()
+                    val toolCallAggregator = StreamingToolCallAggregator()
 
                     provider.sendStreaming(session!!, conversationMessages, tools)
                         .collect { delta ->
                             responseBuilder.append(delta.contentDelta)
                             _streamingContent.value = responseBuilder.toString()
-                            delta.toolCallDelta?.let { toolCalls.add(it) }
+                            delta.toolCallDelta?.let { toolCallAggregator.accept(it) }
                         }
+                    val toolCalls = toolCallAggregator.complete()
 
                     val assistantResponse = AssistantMessage.Assistant(
                         content = responseBuilder.toString(),
