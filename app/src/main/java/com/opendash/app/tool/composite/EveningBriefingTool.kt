@@ -5,8 +5,6 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
-import timber.log.Timber
-import java.util.UUID
 
 /**
  * "Evening / wind-down briefing" — pulls unread notifications, tomorrow's
@@ -46,29 +44,16 @@ class EveningBriefingTool(
         val includeCalendar = call.arguments["include_calendar"] as? Boolean ?: true
         val includeTimers = call.arguments["include_timers"] as? Boolean ?: true
 
-        val parts = mutableListOf<String>()
-        val inner = executor()
-
-        suspend fun callOpt(name: String, key: String) {
-            try {
-                val r = inner.execute(
-                    ToolCall(
-                        id = "eb_${UUID.randomUUID()}",
-                        name = name,
-                        arguments = emptyMap()
-                    )
-                )
-                parts += "\"$key\":" + (if (r.success) r.data else "null")
-            } catch (e: Exception) {
-                Timber.w(e, "evening_briefing inner call failed: $name")
-                parts += "\"$key\":null"
-            }
-        }
-
-        if (includeNotifications) callOpt("list_notifications", "notifications")
-        if (includeCalendar) callOpt("get_calendar_events", "calendar")
-        if (includeTimers) callOpt("get_timers", "timers")
-
-        return ToolResult(call.id, true, "{${parts.joinToString(",")}}")
+        val json = ParallelSubTools.runParallel(
+            inner = executor(),
+            idPrefix = "eb",
+            logTag = "evening_briefing",
+            subs = listOf(
+                ParallelSubTools.Sub(includeNotifications, "notifications", "list_notifications"),
+                ParallelSubTools.Sub(includeCalendar, "calendar", "get_calendar_events"),
+                ParallelSubTools.Sub(includeTimers, "timers", "get_timers")
+            )
+        )
+        return ToolResult(call.id, true, json)
     }
 }

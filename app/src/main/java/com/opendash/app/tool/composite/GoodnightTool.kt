@@ -5,8 +5,6 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
-import timber.log.Timber
-import java.util.UUID
 
 /**
  * One-shot wind-down: turn off all lights, pause media, cancel any active
@@ -37,43 +35,27 @@ class GoodnightTool(
         val includeMedia = call.arguments["include_media"] as? Boolean ?: true
         val includeTimers = call.arguments["include_timers"] as? Boolean ?: true
 
-        val inner = executor()
-        val parts = mutableListOf<String>()
-
-        suspend fun callInner(name: String, args: Map<String, Any?>, label: String) {
-            try {
-                val r = inner.execute(
-                    ToolCall(
-                        id = "gn_${UUID.randomUUID()}",
-                        name = name,
-                        arguments = args
-                    )
+        val json = ParallelSubTools.runParallel(
+            inner = executor(),
+            idPrefix = "gn",
+            logTag = "goodnight",
+            subs = listOf(
+                ParallelSubTools.Sub(
+                    includeLights, "lights_off", "execute_command",
+                    arguments = mapOf("device_type" to "light", "action" to "turn_off"),
+                    render = ParallelSubTools.RenderKind.Success
+                ),
+                ParallelSubTools.Sub(
+                    includeMedia, "media_paused", "execute_command",
+                    arguments = mapOf("device_type" to "media_player", "action" to "media_pause"),
+                    render = ParallelSubTools.RenderKind.Success
+                ),
+                ParallelSubTools.Sub(
+                    includeTimers, "timers_cancelled", "cancel_all_timers",
+                    render = ParallelSubTools.RenderKind.Success
                 )
-                parts += "\"$label\":" + (if (r.success) "true" else "false")
-            } catch (e: Exception) {
-                Timber.w(e, "goodnight inner call failed: $name")
-                parts += "\"$label\":false"
-            }
-        }
-
-        if (includeLights) {
-            callInner(
-                "execute_command",
-                mapOf("device_type" to "light", "action" to "turn_off"),
-                "lights_off"
             )
-        }
-        if (includeMedia) {
-            callInner(
-                "execute_command",
-                mapOf("device_type" to "media_player", "action" to "media_pause"),
-                "media_paused"
-            )
-        }
-        if (includeTimers) {
-            callInner("cancel_all_timers", emptyMap(), "timers_cancelled")
-        }
-
-        return ToolResult(call.id, true, "{${parts.joinToString(",")}}")
+        )
+        return ToolResult(call.id, true, json)
     }
 }

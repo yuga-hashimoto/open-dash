@@ -5,8 +5,6 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
-import timber.log.Timber
-import java.util.UUID
 
 /**
  * "I'm home" / "leaving" presence shortcuts. Mirror Alexa's "I'm home"
@@ -50,43 +48,46 @@ class PresenceTool(
     private suspend fun arriveHome(call: ToolCall): ToolResult {
         val includeLights = call.arguments["include_lights"] as? Boolean ?: true
         val includeVolume = call.arguments["include_volume"] as? Boolean ?: true
-        val parts = mutableListOf<String>()
-        val inner = executor()
-        if (includeLights) {
-            parts += run("execute_command", mapOf("device_type" to "light", "action" to "turn_on"), inner, "lights_on")
-        }
-        if (includeVolume) {
-            parts += run("set_volume", mapOf("level" to 50.0), inner, "volume_50")
-        }
-        return ToolResult(call.id, true, "{${parts.joinToString(",")}}")
+        val json = ParallelSubTools.runParallel(
+            inner = executor(),
+            idPrefix = "presence",
+            logTag = "arrive_home",
+            subs = listOf(
+                ParallelSubTools.Sub(
+                    includeLights, "lights_on", "execute_command",
+                    arguments = mapOf("device_type" to "light", "action" to "turn_on"),
+                    render = ParallelSubTools.RenderKind.Success
+                ),
+                ParallelSubTools.Sub(
+                    includeVolume, "volume_50", "set_volume",
+                    arguments = mapOf("level" to 50.0),
+                    render = ParallelSubTools.RenderKind.Success
+                )
+            )
+        )
+        return ToolResult(call.id, true, json)
     }
 
     private suspend fun leaveHome(call: ToolCall): ToolResult {
         val includeLights = call.arguments["include_lights"] as? Boolean ?: true
         val includeMedia = call.arguments["include_media"] as? Boolean ?: true
-        val parts = mutableListOf<String>()
-        val inner = executor()
-        if (includeLights) {
-            parts += run("execute_command", mapOf("device_type" to "light", "action" to "turn_off"), inner, "lights_off")
-        }
-        if (includeMedia) {
-            parts += run("execute_command", mapOf("device_type" to "media_player", "action" to "media_pause"), inner, "media_paused")
-        }
-        return ToolResult(call.id, true, "{${parts.joinToString(",")}}")
-    }
-
-    private suspend fun run(
-        name: String,
-        args: Map<String, Any?>,
-        inner: ToolExecutor,
-        label: String
-    ): String = try {
-        val r = inner.execute(
-            ToolCall(id = "presence_${UUID.randomUUID()}", name = name, arguments = args)
+        val json = ParallelSubTools.runParallel(
+            inner = executor(),
+            idPrefix = "presence",
+            logTag = "leave_home",
+            subs = listOf(
+                ParallelSubTools.Sub(
+                    includeLights, "lights_off", "execute_command",
+                    arguments = mapOf("device_type" to "light", "action" to "turn_off"),
+                    render = ParallelSubTools.RenderKind.Success
+                ),
+                ParallelSubTools.Sub(
+                    includeMedia, "media_paused", "execute_command",
+                    arguments = mapOf("device_type" to "media_player", "action" to "media_pause"),
+                    render = ParallelSubTools.RenderKind.Success
+                )
+            )
         )
-        "\"$label\":" + (if (r.success) "true" else "false")
-    } catch (e: Exception) {
-        Timber.w(e, "presence inner call failed: $name")
-        "\"$label\":false"
+        return ToolResult(call.id, true, json)
     }
 }

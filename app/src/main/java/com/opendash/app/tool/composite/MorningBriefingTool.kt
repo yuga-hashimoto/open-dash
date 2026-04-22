@@ -5,8 +5,6 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
-import timber.log.Timber
-import java.util.UUID
 
 /**
  * Composite "morning briefing" — runs weather + news + calendar via the
@@ -55,29 +53,16 @@ class MorningBriefingTool(
         val includeWeather = call.arguments["include_weather"] as? Boolean ?: true
         val includeCalendar = call.arguments["include_calendar"] as? Boolean ?: true
 
-        val parts = mutableListOf<String>()
-        val inner = executor()
-
-        suspend fun callOpt(name: String, key: String) {
-            try {
-                val r = inner.execute(
-                    ToolCall(
-                        id = "mb_${UUID.randomUUID()}",
-                        name = name,
-                        arguments = emptyMap()
-                    )
-                )
-                parts += "\"$key\":" + (if (r.success) r.data else "null")
-            } catch (e: Exception) {
-                Timber.w(e, "morning_briefing inner call failed: $name")
-                parts += "\"$key\":null"
-            }
-        }
-
-        if (includeWeather) callOpt("get_weather", "weather")
-        if (includeNews) callOpt("get_news", "news")
-        if (includeCalendar) callOpt("get_calendar_events", "calendar")
-
-        return ToolResult(call.id, true, "{${parts.joinToString(",")}}")
+        val json = ParallelSubTools.runParallel(
+            inner = executor(),
+            idPrefix = "mb",
+            logTag = "morning_briefing",
+            subs = listOf(
+                ParallelSubTools.Sub(includeWeather, "weather", "get_weather"),
+                ParallelSubTools.Sub(includeNews, "news", "get_news"),
+                ParallelSubTools.Sub(includeCalendar, "calendar", "get_calendar_events")
+            )
+        )
+        return ToolResult(call.id, true, json)
     }
 }
