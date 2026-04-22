@@ -11,6 +11,7 @@ import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OfflineStackViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
