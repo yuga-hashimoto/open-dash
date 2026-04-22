@@ -7,6 +7,7 @@ import android.hardware.display.VirtualDisplay
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -104,17 +105,32 @@ class MediaProjectionScreenRecorder(
 
         val outFile = File(activity.cacheDir, "screen").apply { mkdirs() }
             .let { File(it, "rec_${UUID.randomUUID()}.mp4") }
-        val metrics = DisplayMetrics().also {
-            (activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
-                .defaultDisplay.getMetrics(it)
+        val windowManager = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val widthPx: Int
+        val heightPx: Int
+        val densityDpi: Int
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            widthPx = bounds.width()
+            heightPx = bounds.height()
+            densityDpi = activity.resources.configuration.densityDpi
+        } else {
+            @Suppress("DEPRECATION")
+            val metrics = DisplayMetrics().also { windowManager.defaultDisplay.getMetrics(it) }
+            widthPx = metrics.widthPixels
+            heightPx = metrics.heightPixels
+            densityDpi = metrics.densityDpi
         }
 
-        val recorder = MediaRecorder().apply {
+        val recorder = (
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MediaRecorder(activity)
+            else @Suppress("DEPRECATION") MediaRecorder()
+        ).apply {
             if (request.includeAudio) setAudioSource(MediaRecorder.AudioSource.MIC)
             setVideoSource(MediaRecorder.VideoSource.SURFACE)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setOutputFile(outFile.absolutePath)
-            setVideoSize(metrics.widthPixels, metrics.heightPixels)
+            setVideoSize(widthPx, heightPx)
             setVideoEncoder(MediaRecorder.VideoEncoder.H264)
             setVideoFrameRate(30)
             setVideoEncodingBitRate(5_000_000)
@@ -126,9 +142,9 @@ class MediaProjectionScreenRecorder(
         return try {
             val display = projection.createVirtualDisplay(
                 "OpenDashRecording",
-                metrics.widthPixels,
-                metrics.heightPixels,
-                metrics.densityDpi,
+                widthPx,
+                heightPx,
+                densityDpi,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 recorder.surface,
                 null,

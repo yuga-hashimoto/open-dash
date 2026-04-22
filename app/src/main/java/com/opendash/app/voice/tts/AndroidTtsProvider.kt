@@ -82,7 +82,7 @@ open class AndroidTtsProvider(context: Context) : TextToSpeech {
 
         // Select best offline voice for the language
         try {
-            val targetLang = t.language?.language
+            val targetLang = t.voice?.locale?.language ?: locale.language
             val bestVoice = t.voices
                 ?.filter { it.locale.language == targetLang }
                 ?.firstOrNull { !it.isNetworkConnectionRequired }
