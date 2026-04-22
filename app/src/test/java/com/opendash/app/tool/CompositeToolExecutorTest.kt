@@ -4,6 +4,9 @@ import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -88,6 +91,37 @@ class CompositeToolExecutorTest {
         withStats.execute(ToolCall("2", "tool_c", emptyMap()))
 
         assertThat(calls).containsExactly("tool_a" to true, "tool_c" to false).inOrder()
+    }
+
+    @Test
+    fun `refresh that throws mid-flight does not wipe the existing route map`() = runTest {
+        // Regression guard for the atomic-swap behaviour: availableTools()
+        // used to clear() the live map first, then repopulate in place.
+        // If an executor's availableTools() threw halfway through, we
+        // were left with a half-populated map and a concurrent execute()
+        // would fall through to "Unknown tool". Atomic swap means the
+        // old snapshot stays visible until a new one is fully built.
+        var shouldThrow = false
+        val flakyFirst = object : ToolExecutor {
+            override suspend fun availableTools(): List<ToolSchema> {
+                if (shouldThrow) throw IllegalStateException("boom")
+                return listOf(ToolSchema("tool_stable", "S", emptyMap()))
+            }
+            override suspend fun execute(call: ToolCall) =
+                ToolResult(call.id, true, "stable_ok")
+        }
+        val comp = com.opendash.app.tool.CompositeToolExecutor(listOf(flakyFirst, executor2))
+        comp.availableTools() // prime with both executors' tools visible
+
+        shouldThrow = true
+        runCatching { comp.availableTools() } // refresh blows up on the first exec
+
+        // tool_stable must still route correctly — atomic swap means the
+        // last-known-good map is still in effect. In-place clear-then-fill
+        // would have wiped it.
+        val afterThrow = comp.execute(ToolCall("s", "tool_stable", emptyMap()))
+        assertThat(afterThrow.success).isTrue()
+        assertThat(afterThrow.data).isEqualTo("stable_ok")
     }
 
     @Test
