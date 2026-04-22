@@ -10,6 +10,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -26,6 +27,7 @@ import java.nio.file.Files
  * [com.opendash.app.voice.stt.whisper.WhisperModelDownloaderTest] with
  * MockWebServer.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class WhisperSettingsViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
