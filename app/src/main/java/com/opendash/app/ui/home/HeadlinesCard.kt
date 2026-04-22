@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
@@ -94,7 +94,7 @@ fun HeadlinesCard(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.Article,
+                Icons.AutoMirrored.Filled.Article,
                 contentDescription = null,
                 tint = SpeakerTextSecondary,
                 modifier = Modifier.size(18.dp),
@@ -130,7 +130,7 @@ fun HeadlinesCardLoading(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.Article,
+                Icons.AutoMirrored.Filled.Article,
                 contentDescription = null,
                 tint = SpeakerTextSecondary,
                 modifier = Modifier.size(18.dp),
@@ -165,7 +165,7 @@ fun HeadlinesCardError(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.Article,
+                Icons.AutoMirrored.Filled.Article,
                 contentDescription = null,
                 tint = SpeakerTextSecondary,
                 modifier = Modifier.size(18.dp),

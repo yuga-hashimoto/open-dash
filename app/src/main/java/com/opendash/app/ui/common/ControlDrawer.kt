@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,7 +83,7 @@ fun ControlDrawer(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Filled.VolumeUp, contentDescription = null, tint = SpeakerTextSecondary, modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = SpeakerTextSecondary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
                 Text("Volume", style = MaterialTheme.typography.bodySmall, color = SpeakerTextSecondary, modifier = Modifier.width(80.dp))
                 Slider(
