@@ -26,6 +26,7 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 - **[Multi-room protocol](multi-room-protocol.md)** — WebSocket message bus design
 - **[Multi-room FAQ](multi-room-faq.md)** — answers to common questions about pairing, privacy, and scope
 - **[Real-device smoke test](real-device-smoke-test.md)** — on-device validation run before each release
+- **[Offline stack smoke test](offline-stack-smoke-test.md)** — Whisper STT + Piper TTS end-to-end checklist (P14.1 / P14.9)
 - **[Latency budgets](latency-budgets.md)** — per-span timing targets for the voice pipeline
 
 ## Running locally
