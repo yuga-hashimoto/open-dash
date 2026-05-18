@@ -8,7 +8,7 @@ import com.opendash.app.voice.stt.SttResult
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +51,7 @@ class FakeSttPipelineE2ETest {
     }
 
     @Test
-    fun queued_results_emit_in_order_and_terminate_on_final() = runTest {
+    fun queued_results_emit_in_order_and_terminate_on_final() = runBlocking {
         fakeStt.queue(SttResult.Partial("set timer"))
         fakeStt.queue(SttResult.Partial("set timer for 5"))
         fakeStt.queue(SttResult.Final("set timer for 5 minutes"))
@@ -66,7 +66,7 @@ class FakeSttPipelineE2ETest {
     }
 
     @Test
-    fun error_result_terminates_listening() = runTest {
+    fun error_result_terminates_listening() = runBlocking {
         fakeStt.queue(SttResult.Partial("hello"))
         fakeStt.queue(SttResult.Error("NETWORK"))
 
@@ -77,7 +77,7 @@ class FakeSttPipelineE2ETest {
     }
 
     @Test
-    fun reset_allows_a_second_listening_session() = runTest {
+    fun reset_allows_a_second_listening_session() = runBlocking {
         fakeStt.queue(SttResult.Final("first"))
         val first = realInterface.startListening().toList()
         assertThat(first).hasSize(1)

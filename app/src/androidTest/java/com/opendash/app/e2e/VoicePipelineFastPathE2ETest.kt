@@ -7,7 +7,7 @@ import com.opendash.app.tool.system.TimerManager
 import com.opendash.app.voice.pipeline.VoicePipeline
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Rule
@@ -57,7 +57,7 @@ class VoicePipelineFastPathE2ETest {
     }
 
     @Test
-    fun english_set_timer_speaks_confirmation_and_creates_timer() = runTest {
+    fun english_set_timer_speaks_confirmation_and_creates_timer() = runBlocking {
         // Snapshot any pre-existing timers so the assertion below is
         // strictly about the timer this test created.
         val before = timerManager.getActiveTimers().map { it.id }.toSet()
@@ -87,7 +87,7 @@ class VoicePipelineFastPathE2ETest {
     }
 
     @Test
-    fun japanese_set_timer_speaks_confirmation_and_creates_timer() = runTest {
+    fun japanese_set_timer_speaks_confirmation_and_creates_timer() = runBlocking {
         val before = timerManager.getActiveTimers().map { it.id }.toSet()
         try {
             withTimeout(PIPELINE_TIMEOUT_MS) {

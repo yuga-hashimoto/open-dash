@@ -10,7 +10,7 @@ import com.opendash.app.e2e.fakes.FakeTextToSpeech
 import com.opendash.app.voice.pipeline.VoicePipeline
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +50,7 @@ class AssistantProviderE2ETest {
     private lateinit var fakeAssistant: FakeAssistantProvider
 
     @Before
-    fun setUp() = runTest {
+    fun setUp() = runBlocking {
         hiltRule.inject()
         fakeTts.reset()
 
@@ -64,7 +64,7 @@ class AssistantProviderE2ETest {
     }
 
     @Test
-    fun llm_response_is_spoken_via_tts() = runTest {
+    fun llm_response_is_spoken_via_tts() = runBlocking {
         val canned = "Quantum computing uses qubits."
         fakeAssistant.queueResponse(AssistantMessage.Assistant(content = canned))
 
@@ -88,7 +88,7 @@ class AssistantProviderE2ETest {
     }
 
     @Test
-    fun fake_provider_is_resolved_under_manual_policy() = runTest {
+    fun fake_provider_is_resolved_under_manual_policy() = runBlocking {
         // Independent guard: setUp already selected fakeAssistant. Make
         // sure resolveProvider returns it so future tests don't get
         // silently routed to a real provider if model download finishes
