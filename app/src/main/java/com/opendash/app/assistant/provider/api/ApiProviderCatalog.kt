@@ -32,7 +32,7 @@ object ApiProviderCatalog {
         Preset("xai", "xAI (Grok)", "https://api.x.ai", true, "bearer"),
         Preset("ollama", "Ollama (local)", "http://localhost:11434", false, "none"),
         Preset("lmstudio", "LM Studio (local)", "http://localhost:1234", false, "none"),
-        Preset("custom", "Custom", "", false, "bearer")
+        Preset("custom", "Custom", "", true, "bearer")
     )
 
     fun find(id: String): Preset? = presets.find { it.id == id }
