@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Lisa pakkuja</string>
     <string name="providers_mode_restart_hint">Muudatused jõustuvad pärast rakenduse taaskäivitamist.</string>
     <string name="reminder_notification_title">Meeldetuletus</string>
+    <string name="alarm_notification_title">Alarm</string>
 </resources>

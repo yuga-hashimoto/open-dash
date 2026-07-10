@@ -416,4 +416,5 @@
     <string name="providers_add_provider">প্রদানকারী যোগ করুন</string>
     <string name="providers_mode_restart_hint">পরিবর্তনগুলো অ্যাপ পুনরায় চালু করার পর কার্যকর হবে।</string>
     <string name="reminder_notification_title">অনুস্মারক</string>
+    <string name="alarm_notification_title">অ্যালার্ম</string>
 </resources>

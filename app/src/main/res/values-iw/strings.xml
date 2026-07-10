@@ -416,4 +416,5 @@
     <string name="providers_add_provider">הוספת ספק</string>
     <string name="providers_mode_restart_hint">השינויים ייכנסו לתוקף לאחר הפעלה מחדש של האפליקציה.</string>
     <string name="reminder_notification_title">תזכורת</string>
+    <string name="alarm_notification_title">התראה</string>
 </resources>

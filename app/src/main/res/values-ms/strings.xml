@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Tambah pembekal</string>
     <string name="providers_mode_restart_hint">Perubahan berkuat kuasa selepas aplikasi dimulakan semula.</string>
     <string name="reminder_notification_title">Peringatan</string>
+    <string name="alarm_notification_title">Penggera</string>
 </resources>

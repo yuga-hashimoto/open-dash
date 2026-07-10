@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Afegeix un proveïdor</string>
     <string name="providers_mode_restart_hint">Els canvis tenen efecte després de reiniciar l\'aplicació.</string>
     <string name="reminder_notification_title">Recordatori</string>
+    <string name="alarm_notification_title">Alarma</string>
 </resources>

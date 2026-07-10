@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Добавить провайдера</string>
     <string name="providers_mode_restart_hint">Изменения вступят в силу после перезапуска приложения.</string>
     <string name="reminder_notification_title">Напоминание</string>
+    <string name="alarm_notification_title">Будильник</string>
 </resources>

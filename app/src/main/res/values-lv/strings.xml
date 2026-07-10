@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Pievienot pakalpojumu sniedzēju</string>
     <string name="providers_mode_restart_hint">Izmaiņas stājas spēkā pēc lietotnes restartēšanas.</string>
     <string name="reminder_notification_title">Atgādinājums</string>
+    <string name="alarm_notification_title">Modinātājs</string>
 </resources>

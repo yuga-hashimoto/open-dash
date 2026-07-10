@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Προσθήκη παρόχου</string>
     <string name="providers_mode_restart_hint">Οι αλλαγές ισχύουν μετά την επανεκκίνηση της εφαρμογής.</string>
     <string name="reminder_notification_title">Υπενθύμιση</string>
+    <string name="alarm_notification_title">Ξυπνητήρι</string>
 </resources>

@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Dodaj dostawcę</string>
     <string name="providers_mode_restart_hint">Zmiany zaczynają obowiązywać po ponownym uruchomieniu aplikacji.</string>
     <string name="reminder_notification_title">Przypomnienie</string>
+    <string name="alarm_notification_title">Alarm</string>
 </resources>

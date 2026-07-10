@@ -416,4 +416,5 @@
     <string name="providers_add_provider">فراہم کنندہ شامل کریں</string>
     <string name="providers_mode_restart_hint">تبدیلیاں ایپ کو دوبارہ شروع کرنے کے بعد نافذ ہوں گی۔</string>
     <string name="reminder_notification_title">یاد دہانی</string>
+    <string name="alarm_notification_title">الارم</string>
 </resources>

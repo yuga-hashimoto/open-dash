@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Přidat poskytovatele</string>
     <string name="providers_mode_restart_hint">Změny se projeví po restartování aplikace.</string>
     <string name="reminder_notification_title">Připomenutí</string>
+    <string name="alarm_notification_title">Budík</string>
 </resources>

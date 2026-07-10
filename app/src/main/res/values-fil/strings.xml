@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Magdagdag ng provider</string>
     <string name="providers_mode_restart_hint">Magkakabisa ang mga pagbabago pagkatapos i-restart ang app.</string>
     <string name="reminder_notification_title">Paalala</string>
+    <string name="alarm_notification_title">Alarm</string>
 </resources>

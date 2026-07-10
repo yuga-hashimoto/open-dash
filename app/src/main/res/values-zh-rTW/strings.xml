@@ -416,4 +416,5 @@
     <string name="providers_add_provider">新增提供者</string>
     <string name="providers_mode_restart_hint">變更將在重新啟動應用程式後生效。</string>
     <string name="reminder_notification_title">提醒</string>
+    <string name="alarm_notification_title">鬧鐘</string>
 </resources>

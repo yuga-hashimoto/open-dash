@@ -416,4 +416,5 @@
     <string name="providers_add_provider">Lägg till leverantör</string>
     <string name="providers_mode_restart_hint">Ändringarna träder i kraft efter att appen har startats om.</string>
     <string name="reminder_notification_title">Påminnelse</string>
+    <string name="alarm_notification_title">Alarm</string>
 </resources>

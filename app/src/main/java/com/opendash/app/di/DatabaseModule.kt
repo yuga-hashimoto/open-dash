@@ -2,6 +2,7 @@ package com.opendash.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.opendash.app.data.db.AlarmDao
 import com.opendash.app.data.db.AppDatabase
 import com.opendash.app.data.db.DocumentChunkDao
 import com.opendash.app.data.db.MemoryDao
@@ -68,4 +69,7 @@ object DatabaseModule {
 
     @Provides
     fun provideReminderDao(db: AppDatabase): ReminderDao = db.reminderDao()
+
+    @Provides
+    fun provideAlarmDao(db: AppDatabase): AlarmDao = db.alarmDao()
 }
