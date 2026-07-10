@@ -83,11 +83,12 @@ class AnthropicProvider(
             throw RuntimeException("HTTP ${response.code}: ${response.body?.string()}")
         }
 
-        val reader = BufferedReader(InputStreamReader(response.body!!.byteStream()))
+        val responseBody = response.body ?: throw RuntimeException("Empty response body")
+        val reader = BufferedReader(InputStreamReader(responseBody.byteStream()))
         reader.use {
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                val parsed = parser.parseLine(line!!) ?: continue
+            val lines = reader.lineSequence().iterator()
+            while (lines.hasNext()) {
+                val parsed = parser.parseLine(lines.next()) ?: continue
                 emit(parsed)
                 if (parsed.finishReason != null) break
             }
@@ -132,7 +133,10 @@ class AnthropicProvider(
         val msgList = messages.mapNotNull { msg ->
             when (msg) {
                 is AssistantMessage.User -> mapOf("role" to "user", "content" to msg.content)
-                is AssistantMessage.Assistant -> mapOf("role" to "assistant", "content" to msg.content)
+                is AssistantMessage.Assistant -> mapOf(
+                    "role" to "assistant",
+                    "content" to assistantContent(msg)
+                )
                 is AssistantMessage.ToolCallResult -> mapOf(
                     "role" to "user",
                     "content" to listOf(
@@ -183,5 +187,32 @@ class AnthropicProvider(
         }
 
         return moshi.adapter(Map::class.java).toJson(payload as Map<Any?, Any?>) ?: "{}"
+    }
+
+    private fun assistantContent(msg: AssistantMessage.Assistant): Any {
+        if (msg.toolCalls.isEmpty()) return msg.content
+
+        return buildList {
+            if (msg.content.isNotBlank()) add(mapOf("type" to "text", "text" to msg.content))
+            msg.toolCalls.forEach { toolCall ->
+                add(
+                    mapOf(
+                        "type" to "tool_use",
+                        "id" to toolCall.id,
+                        "name" to toolCall.name,
+                        "input" to parseToolCallArguments(toolCall.arguments)
+                    )
+                )
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseToolCallArguments(arguments: String): Map<String, Any?> {
+        return try {
+            moshi.adapter(Map::class.java).fromJson(arguments) as? Map<String, Any?> ?: emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
     }
 }

@@ -2,8 +2,12 @@ package com.opendash.app.assistant.provider.anthropic
 
 import com.google.common.truth.Truth.assertThat
 import com.opendash.app.assistant.model.AssistantMessage
+import com.opendash.app.assistant.model.ToolCallRequest
+import com.opendash.app.tool.ToolParameter
+import com.opendash.app.tool.ToolSchema
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -91,5 +95,110 @@ class AnthropicProviderTest {
     fun `isAvailable returns false on error status`() = runTest {
         server.enqueue(MockResponse().setResponseCode(401))
         assertThat(provider().isAvailable()).isFalse()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun requestBodyAsMap(): Map<String, Any?> {
+        val json = server.takeRequest().body.readUtf8()
+        return moshi.adapter(Map::class.java).fromJson(json) as Map<String, Any?>
+    }
+
+    @Test
+    fun `send with tools produces an input_schema block, not parameters`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"content":[{"type":"text","text":"ok"}]}"""))
+        val p = provider()
+        val tools = listOf(
+            ToolSchema(
+                name = "get_weather",
+                description = "Get the weather",
+                parameters = mapOf(
+                    "location" to ToolParameter(type = "string", description = "City name", required = true)
+                )
+            )
+        )
+        p.send(p.startSession(), listOf(AssistantMessage.User(content = "weather?")), tools)
+
+        val requestBody = requestBodyAsMap()
+        val sentTools = requestBody["tools"] as List<Map<String, Any?>>
+        assertThat(sentTools).hasSize(1)
+        assertThat(sentTools[0]["name"]).isEqualTo("get_weather")
+        assertThat(sentTools[0]["parameters"]).isNull()
+        assertThat(sentTools[0]["input_schema"]).isNotNull()
+        val inputSchema = sentTools[0]["input_schema"] as Map<String, Any?>
+        assertThat(inputSchema["type"]).isEqualTo("object")
+    }
+
+    @Test
+    fun `send with a System message produces a top-level system field`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"content":[{"type":"text","text":"ok"}]}"""))
+        val p = provider()
+        p.send(
+            p.startSession(),
+            listOf(
+                AssistantMessage.System(content = "You are a helpful assistant."),
+                AssistantMessage.User(content = "hi")
+            ),
+            emptyList()
+        )
+
+        val requestBody = requestBodyAsMap()
+        assertThat(requestBody["system"]).isEqualTo("You are a helpful assistant.")
+        val messages = requestBody["messages"] as List<Map<String, Any?>>
+        assertThat(messages.none { it["role"] == "system" }).isTrue()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `send builds tool_use and tool_result content blocks for a multi-turn tool conversation`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"content":[{"type":"text","text":"ok"}]}"""))
+        val p = provider()
+        p.send(
+            p.startSession(),
+            listOf(
+                AssistantMessage.User(content = "what's the weather in Tokyo?"),
+                AssistantMessage.Assistant(
+                    content = "",
+                    toolCalls = listOf(
+                        ToolCallRequest(id = "toolu_1", name = "get_weather", arguments = """{"location":"Tokyo"}""")
+                    )
+                ),
+                AssistantMessage.ToolCallResult(callId = "toolu_1", result = "72F and sunny")
+            ),
+            emptyList()
+        )
+
+        val requestBody = requestBodyAsMap()
+        val messages = requestBody["messages"] as List<Map<String, Any?>>
+
+        val assistantMessage = messages.first { it["role"] == "assistant" }
+        val assistantContent = assistantMessage["content"] as List<Map<String, Any?>>
+        val toolUseBlock = assistantContent.first { it["type"] == "tool_use" }
+        assertThat(toolUseBlock["id"]).isEqualTo("toolu_1")
+        assertThat(toolUseBlock["input"]).isEqualTo(mapOf("location" to "Tokyo"))
+
+        val toolResultUserMessage = messages.last { it["role"] == "user" }
+        val userContent = toolResultUserMessage["content"] as List<Map<String, Any?>>
+        val toolResultBlock = userContent.first { it["type"] == "tool_result" }
+        assertThat(toolResultBlock["tool_use_id"]).isEqualTo("toolu_1")
+    }
+
+    @Test
+    fun `sendStreaming emits text deltas followed by a terminal delta with finishReason`() = runTest {
+        val sse = """
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi"}}
+
+            data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" there"}}
+
+            data: {"type":"message_delta","delta":{"stop_reason":"end_turn"}}
+
+        """.trimIndent()
+        server.enqueue(MockResponse().setResponseCode(200).setBody(sse))
+        val p = provider()
+
+        val deltas = p.sendStreaming(p.startSession(), listOf(AssistantMessage.User(content = "hi")), emptyList())
+            .toList()
+
+        assertThat(deltas.joinToString("") { it.contentDelta }).isEqualTo("Hi there")
+        assertThat(deltas.last().finishReason).isEqualTo("end_turn")
     }
 }
