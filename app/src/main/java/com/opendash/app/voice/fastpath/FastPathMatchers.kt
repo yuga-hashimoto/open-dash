@@ -2489,3 +2489,159 @@ object LocaleSwitchMatcher : FastPathMatcher {
         spokenConfirmation = "Switching to ${option.spokenLabel}."
     )
 }
+
+/**
+ * "what is 5 plus 3", "6 times 7", "5たす3" — fast-paths two-operand
+ * arithmetic straight to the `calculate` tool on
+ * [com.opendash.app.tool.info.CalculatorToolExecutor] without an LLM
+ * round trip. Deliberately narrow: exactly two operands and one
+ * recognized operator word. Anything with more than two operands,
+ * parentheses, or a function call (sqrt, sin, ...) doesn't match this
+ * shape and falls through to the LLM, which can still reach the same
+ * `calculate` tool with a richer expression string.
+ */
+object CalculateMatcher : FastPathMatcher {
+    private val englishOps = linkedMapOf(
+        "multiplied by" to "*",
+        "divided by" to "/",
+        "plus" to "+",
+        "minus" to "-",
+        "times" to "*"
+    )
+    private val englishOpsPattern = englishOps.keys.joinToString("|") { Regex.escape(it) }
+    private val englishRegex = Regex(
+        """^(?:what(?:'s| is)\s+)?(?:calculate\s+)?(-?\d+(?:\.\d+)?)\s+($englishOpsPattern)\s+(-?\d+(?:\.\d+)?)\s*\??\.?$"""
+    )
+
+    private val japaneseOps = linkedMapOf(
+        "足す" to "+",
+        "たす" to "+",
+        "引く" to "-",
+        "ひく" to "-",
+        "掛ける" to "*",
+        "かける" to "*",
+        "割る" to "/",
+        "わる" to "/"
+    )
+    private val japaneseOpsPattern = japaneseOps.keys.joinToString("|")
+    private val japaneseRegex = Regex(
+        """^(-?\d+(?:\.\d+)?)\s*($japaneseOpsPattern)\s*(-?\d+(?:\.\d+)?)\s*(?:は)?\s*[?？.。]?$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishRegex.matchEntire(normalized)?.let { m ->
+            val symbol = englishOps[m.groupValues[2]] ?: return null
+            return buildMatch(m.groupValues[1], symbol, m.groupValues[3])
+        }
+        japaneseRegex.matchEntire(normalized)?.let { m ->
+            val symbol = japaneseOps[m.groupValues[2]] ?: return null
+            return buildMatch(m.groupValues[1], symbol, m.groupValues[3])
+        }
+        return null
+    }
+
+    private fun buildMatch(a: String, symbol: String, b: String): FastPathMatch = FastPathMatch(
+        toolName = "calculate",
+        arguments = mapOf("expression" to "$a $symbol $b")
+    )
+}
+
+/**
+ * "convert 5 km to miles", "5 kilometers to miles", "how many miles is
+ * 5 km" — fast-paths to `convert_units` on
+ * [com.opendash.app.tool.info.UnitConverterToolExecutor]. English only:
+ * `UnitConverter` itself only recognizes English unit names/abbreviations,
+ * so a Japanese-phrase variant would have nothing to route to.
+ * Unit-name validity isn't checked here — the tool itself reports
+ * `UnknownUnit` at execution time, same as an LLM-issued call would.
+ */
+object UnitConversionMatcher : FastPathMatcher {
+    private val convertRegex = Regex(
+        """^convert\s+(-?\d+(?:\.\d+)?)\s*([a-z]+)\s+(?:to|into)\s+([a-z]+)\s*\.?$"""
+    )
+    private val impliedRegex = Regex(
+        """^(-?\d+(?:\.\d+)?)\s*([a-z]+)\s+(?:to|into)\s+([a-z]+)\s*\.?$"""
+    )
+    private val howManyRegex = Regex(
+        """^how many\s+([a-z]+)\s+(?:is|are|in)\s+(-?\d+(?:\.\d+)?)\s*([a-z]+)\s*\??\.?$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        convertRegex.matchEntire(normalized)?.let { m ->
+            return buildMatch(m.groupValues[1], m.groupValues[2], m.groupValues[3])
+        }
+        howManyRegex.matchEntire(normalized)?.let { m ->
+            // "how many miles is 5 km" -> value=5, from=km, to=miles
+            return buildMatch(m.groupValues[2], m.groupValues[3], m.groupValues[1])
+        }
+        impliedRegex.matchEntire(normalized)?.let { m ->
+            return buildMatch(m.groupValues[1], m.groupValues[2], m.groupValues[3])
+        }
+        return null
+    }
+
+    private fun buildMatch(value: String, from: String, to: String): FastPathMatch = FastPathMatch(
+        toolName = "convert_units",
+        arguments = mapOf("value" to value.toDouble(), "from" to from, "to" to to)
+    )
+}
+
+/**
+ * "tell me a joke", "say something funny", "ジョークを言って" —
+ * fast-paths to `tell_joke` on
+ * [com.opendash.app.tool.entertainment.FunToolExecutor].
+ */
+object TellJokeMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """^(?:tell me\s+|tell\s+)?(?:a\s+)?joke\.?$|^say something funny\.?$"""
+    )
+    private val japaneseRegex = Regex(
+        """^(?:ジョーク(?:を)?言って|面白い話をして)\s*(?:ください|下さい)?[。.]?$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        if (englishRegex.matches(normalized) || japaneseRegex.matches(normalized)) {
+            return FastPathMatch(toolName = "tell_joke")
+        }
+        return null
+    }
+}
+
+/**
+ * "add milk to my shopping list", "add call mom to my todo list",
+ * "買い物リストに牛乳を追加して" — fast-paths straight to
+ * `add_list_item` on
+ * [com.opendash.app.tool.shopping.ShoppingListToolExecutor]. Scoped to
+ * the two canonical list names (shopping / todo) the composite tools
+ * expect; anything else ("add X to my reading list") falls through to
+ * the LLM, which can still call `add_list_item` with an arbitrary
+ * `list_name`.
+ */
+object AddShoppingListItemMatcher : FastPathMatcher {
+    private val englishRegex = Regex(
+        """^add\s+(.+?)\s+to\s+(?:my|the)\s+(shopping|to-do|todo|to do)\s*list\.?$"""
+    )
+    private val japaneseRegex = Regex(
+        """^買い物リストに(.+?)を追加(?:して)?\s*(?:ください|下さい)?[。.]?$"""
+    )
+
+    override fun tryMatch(normalized: String): FastPathMatch? {
+        englishRegex.matchEntire(normalized)?.let { m ->
+            val item = m.groupValues[1].trim()
+            if (item.isEmpty()) return null
+            val listName = if (m.groupValues[2] == "shopping") "shopping" else "todo"
+            return buildMatch(item, listName)
+        }
+        japaneseRegex.matchEntire(normalized)?.let { m ->
+            val item = m.groupValues[1].trim()
+            if (item.isEmpty()) return null
+            return buildMatch(item, "shopping")
+        }
+        return null
+    }
+
+    private fun buildMatch(item: String, listName: String): FastPathMatch = FastPathMatch(
+        toolName = "add_list_item",
+        arguments = mapOf("item" to item, "list_name" to listName)
+    )
+}
