@@ -414,4 +414,5 @@
     <string name="providers_mode_local">本地 LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">添加提供商</string>
+    <string name="providers_mode_restart_hint">更改将在重启应用后生效。</string>
 </resources>

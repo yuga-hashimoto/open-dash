@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Жергілікті LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Провайдер қосу</string>
+    <string name="providers_mode_restart_hint">Өзгерістер қолданбаны қайта іске қосқаннан кейін күшіне енеді.</string>
 </resources>

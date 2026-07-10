@@ -412,4 +412,5 @@
     <string name="providers_mode_local">ローカルLLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">プロバイダーを追加</string>
+    <string name="providers_mode_restart_hint">変更はアプリを再起動すると反映されます。</string>
 </resources>

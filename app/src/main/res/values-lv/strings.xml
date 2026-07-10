@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Lokālais LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Pievienot pakalpojumu sniedzēju</string>
+    <string name="providers_mode_restart_hint">Izmaiņas stājas spēkā pēc lietotnes restartēšanas.</string>
 </resources>

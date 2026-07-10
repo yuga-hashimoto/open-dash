@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Lokal LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Tilføj udbyder</string>
+    <string name="providers_mode_restart_hint">Ændringer træder i kraft, når appen genstartes.</string>
 </resources>

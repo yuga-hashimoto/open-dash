@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Τοπικό LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Προσθήκη παρόχου</string>
+    <string name="providers_mode_restart_hint">Οι αλλαγές ισχύουν μετά την επανεκκίνηση της εφαρμογής.</string>
 </resources>

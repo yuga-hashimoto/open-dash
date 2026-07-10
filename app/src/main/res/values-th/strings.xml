@@ -414,4 +414,5 @@
     <string name="providers_mode_local">LLM ในเครื่อง</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">เพิ่มผู้ให้บริการ</string>
+    <string name="providers_mode_restart_hint">การเปลี่ยนแปลงจะมีผลหลังจากรีสตาร์ทแอป</string>
 </resources>

@@ -414,4 +414,5 @@
     <string name="providers_mode_local">LLM local</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Ajouter un fournisseur</string>
+    <string name="providers_mode_restart_hint">Les modifications prennent effet après le redémarrage de l\'application.</string>
 </resources>

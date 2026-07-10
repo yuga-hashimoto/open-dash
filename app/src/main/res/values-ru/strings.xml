@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Локальная LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Добавить провайдера</string>
+    <string name="providers_mode_restart_hint">Изменения вступят в силу после перезапуска приложения.</string>
 </resources>

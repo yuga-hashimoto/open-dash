@@ -414,4 +414,5 @@
     <string name="providers_mode_local">لوکل LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">فراہم کنندہ شامل کریں</string>
+    <string name="providers_mode_restart_hint">تبدیلیاں ایپ کو دوبارہ شروع کرنے کے بعد نافذ ہوں گی۔</string>
 </resources>

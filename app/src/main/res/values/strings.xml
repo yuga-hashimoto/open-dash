@@ -113,6 +113,7 @@
     <string name="providers_mode_local">Local LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Add provider</string>
+    <string name="providers_mode_restart_hint">Changes take effect after restarting the app.</string>
 
     <!-- Provider mode (first-run + settings) -->
     <string name="provider_mode_title">Choose how OpenDash thinks</string>

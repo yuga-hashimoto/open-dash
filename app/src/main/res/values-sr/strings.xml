@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Локални LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Додај добављача</string>
+    <string name="providers_mode_restart_hint">Промене ступају на снагу након поновног покретања апликације.</string>
 </resources>

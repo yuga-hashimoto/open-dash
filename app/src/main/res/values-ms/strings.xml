@@ -414,4 +414,5 @@
     <string name="providers_mode_local">LLM setempat</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Tambah pembekal</string>
+    <string name="providers_mode_restart_hint">Perubahan berkuat kuasa selepas aplikasi dimulakan semula.</string>
 </resources>

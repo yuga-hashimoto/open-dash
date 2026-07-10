@@ -414,4 +414,5 @@
     <string name="providers_mode_local">LLM cục bộ</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Thêm nhà cung cấp</string>
+    <string name="providers_mode_restart_hint">Các thay đổi có hiệu lực sau khi khởi động lại ứng dụng.</string>
 </resources>

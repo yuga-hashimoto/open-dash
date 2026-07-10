@@ -414,4 +414,5 @@
     <string name="providers_mode_local">Lokalni LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Dodaj pružatelja usluge</string>
+    <string name="providers_mode_restart_hint">Promjene stupaju na snagu nakon ponovnog pokretanja aplikacije.</string>
 </resources>

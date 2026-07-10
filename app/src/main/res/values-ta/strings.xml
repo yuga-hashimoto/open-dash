@@ -414,4 +414,5 @@
     <string name="providers_mode_local">லோக்கல் LLM</string>
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">வழங்குநரைச் சேர்க்கவும்</string>
+    <string name="providers_mode_restart_hint">மாற்றங்கள் பயன்பாட்டை மறுதொடக்கம் செய்த பிறகு நடைமுறைக்கு வரும்.</string>
 </resources>

@@ -133,6 +133,12 @@ private fun ModeCard(
                 ) { Text(stringResource(R.string.providers_mode_api)) }
             }
             Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.providers_mode_restart_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.size(8.dp))
             TextButton(onClick = onAddProvider) {
                 Text(stringResource(R.string.providers_add_provider))
             }
