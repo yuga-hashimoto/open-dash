@@ -10,6 +10,7 @@ import com.opendash.app.data.db.MultiroomRejectionDao
 import com.opendash.app.data.db.MultiroomTrafficDao
 import com.opendash.app.data.db.RoutineDao
 import com.opendash.app.data.db.SessionDao
+import com.opendash.app.data.db.ShoppingListDao
 import com.opendash.app.data.db.SpeakerGroupDao
 import com.opendash.app.data.db.ToolUsageDao
 import dagger.Module
@@ -60,4 +61,7 @@ object DatabaseModule {
 
     @Provides
     fun provideMultiroomRejectionDao(db: AppDatabase): MultiroomRejectionDao = db.multiroomRejectionDao()
+
+    @Provides
+    fun provideShoppingListDao(db: AppDatabase): ShoppingListDao = db.shoppingListDao()
 }

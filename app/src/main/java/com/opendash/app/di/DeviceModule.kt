@@ -56,7 +56,9 @@ import com.opendash.app.tool.analytics.PersistentToolUsageStats
 import com.opendash.app.tool.analytics.ToolUsageRecorder
 import com.opendash.app.data.db.MemoryDao
 import com.opendash.app.data.db.RoutineDao
+import com.opendash.app.data.db.ShoppingListDao
 import com.opendash.app.tool.memory.MemoryToolExecutor
+import com.opendash.app.tool.shopping.ShoppingListToolExecutor
 import com.opendash.app.tool.rag.RagService
 import com.opendash.app.tool.rag.RagToolExecutor
 import com.opendash.app.tool.system.AndroidAppLauncher
@@ -483,6 +485,7 @@ object DeviceModule {
         skillScriptRuntime: com.opendash.app.assistant.skills.runtime.SkillScriptRuntime,
         memoryDao: MemoryDao,
         routineDao: RoutineDao,
+        shoppingListDao: ShoppingListDao,
         documentChunkDao: DocumentChunkDao,
         cameraProviderHolder: CameraProviderHolder,
         screenRecorderHolder: ScreenRecorderHolder,
@@ -607,6 +610,7 @@ object DeviceModule {
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
+            ShoppingListToolExecutor(shoppingListDao),
             SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via
