@@ -109,6 +109,10 @@
     <string name="providers_badge_streaming">Streaming</string>
     <string name="providers_badge_tools">Tools</string>
     <string name="providers_badge_vision">Vision</string>
+    <string name="providers_mode_card_title">Assistant mode</string>
+    <string name="providers_mode_local">Local LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Add provider</string>
 
     <!-- Provider mode (first-run + settings) -->
     <string name="provider_mode_title">Choose how OpenDash thinks</string>
