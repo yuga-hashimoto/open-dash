@@ -5,19 +5,28 @@ import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ApiProviderConfigStoreTest {
 
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    private val listAdapter = moshi.adapter<List<ApiProviderConfig>>(
+        Types.newParameterizedType(List::class.java, ApiProviderConfig::class.java)
+    )
     private lateinit var appPreferences: AppPreferences
     private lateinit var securePreferences: SecurePreferences
     private lateinit var store: ApiProviderConfigStore
@@ -110,5 +119,30 @@ class ApiProviderConfigStoreTest {
         val result = store.list()
 
         assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `observeList reactively reflects each emission from the underlying preference flow`() = runTest {
+        val configJson = listAdapter.toJson(listOf(sampleConfig()))
+        val preferenceFlow = MutableStateFlow<String?>(null)
+        every { appPreferences.observe(PreferenceKeys.API_PROVIDER_CONFIGS) } returns preferenceFlow
+
+        val collected = mutableListOf<List<ApiProviderConfig>>()
+        val job = launch { store.observeList().toList(collected) }
+        runCurrent()
+
+        preferenceFlow.value = configJson
+        runCurrent()
+
+        preferenceFlow.value = null
+        runCurrent()
+
+        job.cancel()
+
+        assertThat(collected).hasSize(3)
+        assertThat(collected[0]).isEmpty()
+        assertThat(collected[1]).hasSize(1)
+        assertThat(collected[1].first().id).isEqualTo("cfg-1")
+        assertThat(collected[2]).isEmpty()
     }
 }

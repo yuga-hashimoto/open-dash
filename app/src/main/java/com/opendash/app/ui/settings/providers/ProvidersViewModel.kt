@@ -15,7 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -118,9 +118,9 @@ class ProvidersViewModel @Inject constructor(
         .observe(PreferenceKeys.ASSISTANT_MODE)
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val hasConfiguredApiProviders: StateFlow<Boolean> = flow {
-        emit(apiProviderConfigStore.list().isNotEmpty())
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val hasConfiguredApiProviders: StateFlow<Boolean> = apiProviderConfigStore.observeList()
+        .map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun setMode(mode: String) {
         viewModelScope.launch {

@@ -5,7 +5,9 @@ import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,8 +21,13 @@ class ApiProviderConfigStore @Inject constructor(
     private val listType = Types.newParameterizedType(List::class.java, ApiProviderConfig::class.java)
     private val adapter = moshi.adapter<List<ApiProviderConfig>>(listType)
 
-    suspend fun list(): List<ApiProviderConfig> {
-        val json = appPreferences.observe(PreferenceKeys.API_PROVIDER_CONFIGS).first()
+    suspend fun list(): List<ApiProviderConfig> =
+        parseConfigs(appPreferences.observe(PreferenceKeys.API_PROVIDER_CONFIGS).first())
+
+    fun observeList(): Flow<List<ApiProviderConfig>> =
+        appPreferences.observe(PreferenceKeys.API_PROVIDER_CONFIGS).map { json -> parseConfigs(json) }
+
+    private fun parseConfigs(json: String?): List<ApiProviderConfig> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
             adapter.fromJson(json).orEmpty()

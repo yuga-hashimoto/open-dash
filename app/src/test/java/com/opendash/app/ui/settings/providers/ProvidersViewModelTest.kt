@@ -242,11 +242,13 @@ class ProvidersViewModelTest {
     @Test
     fun `hasConfiguredApiProviders is true when at least one config exists`() = runTest {
         val store = mockk<ApiProviderConfigStore>()
-        coEvery { store.list() } returns listOf(
-            ApiProviderConfig(
-                id = "x", presetId = "openai", displayName = "OpenAI",
-                baseUrl = "https://api.openai.com", modelId = "gpt-5.5",
-                authStyle = "bearer", createdAt = 1L
+        every { store.observeList() } returns MutableStateFlow(
+            listOf(
+                ApiProviderConfig(
+                    id = "x", presetId = "openai", displayName = "OpenAI",
+                    baseUrl = "https://api.openai.com", modelId = "gpt-5.5",
+                    authStyle = "bearer", createdAt = 1L
+                )
             )
         )
 
@@ -254,6 +256,28 @@ class ProvidersViewModelTest {
         advanceUntilIdle()
 
         assertThat(vm.hasConfiguredApiProviders.first()).isTrue()
+    }
+
+    @Test
+    fun `hasConfiguredApiProviders reacts when a provider is added after construction`() = runTest {
+        val store = mockk<ApiProviderConfigStore>()
+        val configs = MutableStateFlow<List<ApiProviderConfig>>(emptyList())
+        every { store.observeList() } returns configs
+
+        val vm = buildVm(apiProviderConfigStore = store)
+        advanceUntilIdle()
+        assertThat(vm.hasConfiguredApiProviders.value).isFalse()
+
+        configs.value = listOf(
+            ApiProviderConfig(
+                id = "x", presetId = "openai", displayName = "OpenAI",
+                baseUrl = "https://api.openai.com", modelId = "gpt-5.5",
+                authStyle = "bearer", createdAt = 1L
+            )
+        )
+        advanceUntilIdle()
+
+        assertThat(vm.hasConfiguredApiProviders.value).isTrue()
     }
 
     @Test
@@ -279,7 +303,7 @@ class ProvidersViewModelTest {
 
     private fun emptyApiProviderConfigStore(): ApiProviderConfigStore {
         val store = mockk<ApiProviderConfigStore>()
-        coEvery { store.list() } returns emptyList()
+        every { store.observeList() } returns MutableStateFlow(emptyList())
         return store
     }
 
