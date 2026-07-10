@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Pārvaldīt nodrošinātājus…</string>
+    <string name="settings_providers_button_hint">Izvēlieties starp lokālā LLM un API režīmu, pievienojiet mākoņa API nodrošinātājus (OpenAI, Anthropic un citus) un norādiet, kurš reģistrētais nodrošinātājs ir aktīvs.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Izvēlieties, kā domās OpenDash</string>
+    <string name="provider_mode_subtitle">Vēlāk to varēsiet mainīt Iestatījumos.</string>
+    <string name="provider_mode_local_title">Lokālais LLM</string>
+    <string name="provider_mode_local_description">Darbojas pilnībā šajā ierīcē. Darbojas bezsaistē, taču ir mazāk spējīgs nekā mākoņa modeļi.</string>
+    <string name="provider_mode_api_title">API pakalpojumu sniedzējs</string>
+    <string name="provider_mode_api_description">Izveidojiet savienojumu ar OpenAI, Anthropic vai citu mākoņa pakalpojumu sniedzēju, izmantojot savu API atslēgu. Nepieciešams internets.</string>
+    <string name="add_provider_title">Pievienot pakalpojumu sniedzēju</string>
+    <string name="add_provider_select_preset">Izvēlieties pakalpojumu sniedzēju</string>
+    <string name="add_provider_display_name_label">Attēlotais nosaukums</string>
+    <string name="add_provider_base_url_label">Bāzes URL</string>
+    <string name="add_provider_api_key_label">API atslēga</string>
+    <string name="add_provider_fetch_models">Ielādēt modeļus</string>
+    <string name="add_provider_model_fetch_failed">Modeļa ID (ievadiet manuāli)</string>
+    <string name="add_provider_save">Saglabāt</string>
+    <string name="add_provider_cancel">Atcelt</string>
+    <string name="providers_mode_card_title">Asistenta režīms</string>
+    <string name="providers_mode_local">Lokālais LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Pievienot pakalpojumu sniedzēju</string>
+    <string name="providers_mode_restart_hint">Izmaiņas stājas spēkā pēc lietotnes restartēšanas.</string>
 </resources>

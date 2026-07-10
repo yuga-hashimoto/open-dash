@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Spravovať poskytovateľov…</string>
+    <string name="settings_providers_button_hint">Vyberte medzi režimom lokálneho LLM a API, pridajte cloudových poskytovateľov API (OpenAI, Anthropic a ďalších) a zvoľte, ktorý zaregistrovaný poskytovateľ je aktívny.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Vyberte, ako bude OpenDash rozmýšľať</string>
+    <string name="provider_mode_subtitle">Toto môžete neskôr zmeniť v Nastaveniach.</string>
+    <string name="provider_mode_local_title">Lokálne LLM</string>
+    <string name="provider_mode_local_description">Beží úplne na tomto zariadení. Funguje offline, ale je menej schopné ako cloudové modely.</string>
+    <string name="provider_mode_api_title">Poskytovateľ API</string>
+    <string name="provider_mode_api_description">Pripojte sa k OpenAI, Anthropic alebo inému cloudovému poskytovateľovi pomocou vlastného API kľúča. Vyžaduje internet.</string>
+    <string name="add_provider_title">Pridať poskytovateľa</string>
+    <string name="add_provider_select_preset">Vyberte poskytovateľa</string>
+    <string name="add_provider_display_name_label">Zobrazované meno</string>
+    <string name="add_provider_base_url_label">Základná URL</string>
+    <string name="add_provider_api_key_label">API kľúč</string>
+    <string name="add_provider_fetch_models">Načítať modely</string>
+    <string name="add_provider_model_fetch_failed">ID modelu (zadajte ručne)</string>
+    <string name="add_provider_save">Uložiť</string>
+    <string name="add_provider_cancel">Zrušiť</string>
+    <string name="providers_mode_card_title">Režim asistenta</string>
+    <string name="providers_mode_local">Lokálne LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Pridať poskytovateľa</string>
+    <string name="providers_mode_restart_hint">Zmeny sa prejavia po reštartovaní aplikácie.</string>
 </resources>

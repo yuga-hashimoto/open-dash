@@ -1,6 +1,10 @@
 package com.opendash.app.assistant.provider
 
 import android.content.Context
+import com.opendash.app.assistant.provider.anthropic.AnthropicConfig
+import com.opendash.app.assistant.provider.anthropic.AnthropicProvider
+import com.opendash.app.assistant.provider.api.ApiProviderConfig
+import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
 import com.opendash.app.assistant.provider.embedded.EmbeddedLlmConfig
 import com.opendash.app.assistant.provider.embedded.EmbeddedLlmProvider
 import com.opendash.app.assistant.provider.embedded.HardwareProfile
@@ -36,17 +40,44 @@ class ProviderManager @Inject constructor(
     private val client: OkHttpClient,
     private val moshi: Moshi,
     private val skillRegistry: SkillRegistry,
-    private val deviceManager: DeviceManager
+    private val deviceManager: DeviceManager,
+    private val apiProviderConfigStore: ApiProviderConfigStore
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val modelManager = ModelManager(context)
 
     fun initialize() {
         scope.launch {
-            registerEmbeddedLlm()
+            migrateLegacyLocalLlmSettingIfNeeded()
+            val mode = preferences.observe(PreferenceKeys.ASSISTANT_MODE).first()
+            if (mode == PreferenceKeys.MODE_API) {
+                registerConfiguredApiProviders()
+            } else {
+                registerEmbeddedLlm()
+            }
             registerOpenClawIfConfigured()
-            registerOpenAiCompatibleIfConfigured()
+            restoreActiveProviderSelection()
         }
+    }
+
+    private suspend fun migrateLegacyLocalLlmSettingIfNeeded() {
+        if (apiProviderConfigStore.list().isNotEmpty()) return
+        val legacyUrl = preferences.observe(PreferenceKeys.LOCAL_LLM_BASE_URL).first()
+        if (legacyUrl.isNullOrBlank()) return
+        val legacyModel = preferences.observe(PreferenceKeys.LOCAL_LLM_MODEL).first() ?: "gemma-4-e2b"
+        val legacyApiKey = securePreferences.getString(SecurePreferences.KEY_LOCAL_LLM_API_KEY)
+        val migrated = ApiProviderConfig(
+            id = java.util.UUID.randomUUID().toString(),
+            presetId = "custom",
+            displayName = "Migrated Local LLM",
+            baseUrl = legacyUrl,
+            modelId = legacyModel,
+            authStyle = "bearer",
+            createdAt = java.lang.System.currentTimeMillis()
+        )
+        apiProviderConfigStore.add(migrated, legacyApiKey)
+        preferences.set(PreferenceKeys.ASSISTANT_MODE, PreferenceKeys.MODE_API)
+        Timber.d("Migrated legacy LOCAL_LLM_BASE_URL into ApiProviderConfig ${migrated.id}")
     }
 
     private suspend fun registerEmbeddedLlm() {
@@ -85,6 +116,36 @@ class ProviderManager @Inject constructor(
         }
     }
 
+    private suspend fun registerConfiguredApiProviders() {
+        apiProviderConfigStore.list().forEach { config ->
+            try {
+                val apiKey = apiProviderConfigStore.apiKeyFor(config.id)
+                val routerId = "api_${config.id}"
+                val provider: AssistantProvider = if (config.authStyle == "anthropic") {
+                    AnthropicProvider(
+                        client = client,
+                        moshi = moshi,
+                        config = AnthropicConfig(baseUrl = config.baseUrl, apiKey = apiKey, model = config.modelId),
+                        id = routerId,
+                        displayName = config.displayName
+                    )
+                } else {
+                    OpenAiCompatibleProvider(
+                        client = client,
+                        moshi = moshi,
+                        config = OpenAiCompatibleConfig(baseUrl = config.baseUrl, apiKey = apiKey, model = config.modelId),
+                        id = routerId,
+                        displayName = config.displayName
+                    )
+                }
+                router.registerProvider(provider)
+                Timber.d("Registered API provider: ${config.displayName} ($routerId)")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to register API provider ${config.id}")
+            }
+        }
+    }
+
     private suspend fun registerOpenClawIfConfigured() {
         try {
             val url = preferences.observe(PreferenceKeys.OPENCLAW_GATEWAY_URL).first()
@@ -102,24 +163,10 @@ class ProviderManager @Inject constructor(
         }
     }
 
-    private suspend fun registerOpenAiCompatibleIfConfigured() {
-        try {
-            val url = preferences.observe(PreferenceKeys.LOCAL_LLM_BASE_URL).first()
-            val model = preferences.observe(PreferenceKeys.LOCAL_LLM_MODEL).first()
-            if (!url.isNullOrBlank()) {
-                val provider = OpenAiCompatibleProvider(
-                    client = client,
-                    moshi = moshi,
-                    config = OpenAiCompatibleConfig(
-                        baseUrl = url,
-                        model = model ?: "gemma-4-e2b"
-                    )
-                )
-                router.registerProvider(provider)
-                Timber.d("Registered OpenAiCompatibleProvider: $url")
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to register OpenAiCompatibleProvider")
+    private suspend fun restoreActiveProviderSelection() {
+        val activeId = preferences.observe(PreferenceKeys.ACTIVE_PROVIDER_ID).first() ?: return
+        if (router.availableProviders.value.any { it.id == activeId }) {
+            router.selectProvider(activeId)
         }
     }
 

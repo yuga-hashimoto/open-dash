@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Провайдерлерді басқару…</string>
+    <string name="settings_providers_button_hint">Жергілікті LLM мен API режимінің арасынан таңдаңыз, бұлттық API провайдерлерін қосыңыз (OpenAI, Anthropic және басқалар) және қай тіркелген провайдер белсенді болатынын таңдаңыз.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">OpenDash қалай ойлайтынын таңдаңыз</string>
+    <string name="provider_mode_subtitle">Мұны кейінірек Параметрлерде өзгертуге болады.</string>
+    <string name="provider_mode_local_title">Жергілікті LLM</string>
+    <string name="provider_mode_local_description">Толығымен осы құрылғыда жұмыс істейді. Интернетсіз жұмыс істейді, бірақ бұлттық модельдерге қарағанда мүмкіндігі аз.</string>
+    <string name="provider_mode_api_title">API провайдері</string>
+    <string name="provider_mode_api_description">Өз API кілтіңізді пайдаланып OpenAI, Anthropic немесе басқа бұлттық провайдерге қосылыңыз. Интернет қажет.</string>
+    <string name="add_provider_title">Провайдер қосу</string>
+    <string name="add_provider_select_preset">Провайдерді таңдаңыз</string>
+    <string name="add_provider_display_name_label">Көрсетілетін атау</string>
+    <string name="add_provider_base_url_label">Негізгі URL</string>
+    <string name="add_provider_api_key_label">API кілті</string>
+    <string name="add_provider_fetch_models">Модельдерді алу</string>
+    <string name="add_provider_model_fetch_failed">Модель идентификаторы (қолмен енгізіңіз)</string>
+    <string name="add_provider_save">Сақтау</string>
+    <string name="add_provider_cancel">Бас тарту</string>
+    <string name="providers_mode_card_title">Көмекші режимі</string>
+    <string name="providers_mode_local">Жергілікті LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Провайдер қосу</string>
+    <string name="providers_mode_restart_hint">Өзгерістер қолданбаны қайта іске қосқаннан кейін күшіне енеді.</string>
 </resources>

@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">مدیریت ارائه‌دهندگان…</string>
+    <string name="settings_providers_button_hint">بین حالت LLM محلی و API انتخاب کنید، ارائه‌دهندگان API ابری (OpenAI، Anthropic و موارد دیگر) را اضافه کنید و مشخص کنید کدام ارائه‌دهنده ثبت‌شده فعال باشد.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">انتخاب کنید OpenDash چگونه فکر کند</string>
+    <string name="provider_mode_subtitle">می‌توانید این را بعداً در تنظیمات تغییر دهید.</string>
+    <string name="provider_mode_local_title">LLM محلی</string>
+    <string name="provider_mode_local_description">به‌طور کامل روی این دستگاه اجرا می‌شود. به‌صورت آفلاین کار می‌کند، اما نسبت به مدل‌های ابری توانمندی کمتری دارد.</string>
+    <string name="provider_mode_api_title">ارائه‌دهنده API</string>
+    <string name="provider_mode_api_description">با استفاده از کلید API خودتان به OpenAI، Anthropic یا ارائه‌دهنده ابری دیگری متصل شوید. نیاز به اینترنت دارد.</string>
+    <string name="add_provider_title">افزودن ارائه‌دهنده</string>
+    <string name="add_provider_select_preset">انتخاب ارائه‌دهنده</string>
+    <string name="add_provider_display_name_label">نام نمایشی</string>
+    <string name="add_provider_base_url_label">URL پایه</string>
+    <string name="add_provider_api_key_label">کلید API</string>
+    <string name="add_provider_fetch_models">دریافت مدل‌ها</string>
+    <string name="add_provider_model_fetch_failed">شناسه مدل (به‌صورت دستی وارد کنید)</string>
+    <string name="add_provider_save">ذخیره</string>
+    <string name="add_provider_cancel">لغو</string>
+    <string name="providers_mode_card_title">حالت دستیار</string>
+    <string name="providers_mode_local">LLM محلی</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">افزودن ارائه‌دهنده</string>
+    <string name="providers_mode_restart_hint">تغییرات پس از راه‌اندازی مجدد برنامه اعمال می‌شوند.</string>
 </resources>

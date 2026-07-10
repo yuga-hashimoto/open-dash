@@ -24,11 +24,11 @@ import kotlin.coroutines.resumeWithException
 class OpenAiCompatibleProvider(
     private val client: OkHttpClient,
     private val moshi: Moshi,
-    private val config: OpenAiCompatibleConfig
+    private val config: OpenAiCompatibleConfig,
+    override val id: String = "openai_compatible",
+    override val displayName: String = "Local LLM"
 ) : AssistantProvider {
 
-    override val id: String = "openai_compatible"
-    override val displayName: String = "Local LLM"
     override val capabilities = ProviderCapabilities(
         supportsStreaming = true,
         supportsTools = true,

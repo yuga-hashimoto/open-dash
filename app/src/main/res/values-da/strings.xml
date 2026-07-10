@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Administrer udbydere…</string>
+    <string name="settings_providers_button_hint">Vælg mellem Lokal LLM- og API-tilstand, tilføj cloud-API-udbydere (OpenAI, Anthropic og flere), og vælg hvilken registreret udbyder der er aktiv.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Vælg, hvordan OpenDash tænker</string>
+    <string name="provider_mode_subtitle">Du kan ændre dette senere i Indstillinger.</string>
+    <string name="provider_mode_local_title">Lokal LLM</string>
+    <string name="provider_mode_local_description">Kører helt på denne enhed. Fungerer offline, men er mindre dygtig end cloud-modeller.</string>
+    <string name="provider_mode_api_title">API-udbyder</string>
+    <string name="provider_mode_api_description">Opret forbindelse til OpenAI, Anthropic eller en anden cloud-udbyder med din egen API-nøgle. Kræver internet.</string>
+    <string name="add_provider_title">Tilføj udbyder</string>
+    <string name="add_provider_select_preset">Vælg udbyder</string>
+    <string name="add_provider_display_name_label">Visningsnavn</string>
+    <string name="add_provider_base_url_label">Basis-URL</string>
+    <string name="add_provider_api_key_label">API-nøgle</string>
+    <string name="add_provider_fetch_models">Hent modeller</string>
+    <string name="add_provider_model_fetch_failed">Model-id (indtast manuelt)</string>
+    <string name="add_provider_save">Gem</string>
+    <string name="add_provider_cancel">Annuller</string>
+    <string name="providers_mode_card_title">Assistenttilstand</string>
+    <string name="providers_mode_local">Lokal LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Tilføj udbyder</string>
+    <string name="providers_mode_restart_hint">Ændringer træder i kraft, når appen genstartes.</string>
 </resources>

@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Providers beheren…</string>
+    <string name="settings_providers_button_hint">Kies tussen Lokale LLM- en API-modus, voeg cloud-API-providers toe (OpenAI, Anthropic en meer) en selecteer welke geregistreerde provider actief is.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Kies hoe OpenDash denkt</string>
+    <string name="provider_mode_subtitle">Je kunt dit later wijzigen in Instellingen.</string>
+    <string name="provider_mode_local_title">Lokale LLM</string>
+    <string name="provider_mode_local_description">Draait volledig op dit apparaat. Werkt offline, maar is minder krachtig dan cloudmodellen.</string>
+    <string name="provider_mode_api_title">API-provider</string>
+    <string name="provider_mode_api_description">Maak verbinding met OpenAI, Anthropic of een andere cloudprovider met je eigen API-sleutel. Internet vereist.</string>
+    <string name="add_provider_title">Provider toevoegen</string>
+    <string name="add_provider_select_preset">Selecteer provider</string>
+    <string name="add_provider_display_name_label">Weergavenaam</string>
+    <string name="add_provider_base_url_label">Basis-URL</string>
+    <string name="add_provider_api_key_label">API-sleutel</string>
+    <string name="add_provider_fetch_models">Modellen ophalen</string>
+    <string name="add_provider_model_fetch_failed">Model-ID (handmatig invoeren)</string>
+    <string name="add_provider_save">Opslaan</string>
+    <string name="add_provider_cancel">Annuleren</string>
+    <string name="providers_mode_card_title">Assistentmodus</string>
+    <string name="providers_mode_local">Lokale LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Provider toevoegen</string>
+    <string name="providers_mode_restart_hint">Wijzigingen worden van kracht nadat de app opnieuw is gestart.</string>
 </resources>

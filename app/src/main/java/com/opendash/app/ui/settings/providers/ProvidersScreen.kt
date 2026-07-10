@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +25,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.annotation.StringRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opendash.app.R
+import com.opendash.app.data.preferences.PreferenceKeys
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +47,16 @@ fun ProvidersScreen(
 ) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
     val multiroom by viewModel.multiroomState.collectAsStateWithLifecycle()
+    val assistantMode by viewModel.assistantMode.collectAsStateWithLifecycle()
+    val hasConfiguredApiProviders by viewModel.hasConfiguredApiProviders.collectAsStateWithLifecycle()
+    var showAddProviderDialog by remember { mutableStateOf(false) }
+
+    if (showAddProviderDialog) {
+        AddApiProviderDialog(
+            onDismiss = { showAddProviderDialog = false },
+            onSaved = { showAddProviderDialog = false }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -50,31 +66,81 @@ fun ProvidersScreen(
             )
         }
     ) { padding ->
-        if (rows.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(R.string.providers_empty),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.size(16.dp))
-                MultiroomCard(state = multiroom)
-            }
-            return@Scaffold
-        }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp)
         ) {
-            items(rows, key = { it.id }) { row ->
-                ProviderRow(row = row, onSelect = { viewModel.select(row.id) })
+            item(key = "__mode__") {
+                ModeCard(
+                    mode = assistantMode,
+                    hasConfiguredApiProviders = hasConfiguredApiProviders,
+                    onSelectLocal = { viewModel.setMode(PreferenceKeys.MODE_LOCAL) },
+                    onSelectApi = { viewModel.setMode(PreferenceKeys.MODE_API) },
+                    onAddProvider = { showAddProviderDialog = true }
+                )
+            }
+            if (rows.isEmpty()) {
+                item(key = "__empty__") {
+                    Text(
+                        stringResource(R.string.providers_empty),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                items(rows, key = { it.id }) { row ->
+                    ProviderRow(row = row, onSelect = { viewModel.select(row.id) })
+                }
             }
             item(key = "__multiroom__") {
                 Spacer(Modifier.size(8.dp))
                 MultiroomCard(state = multiroom)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeCard(
+    mode: String?,
+    hasConfiguredApiProviders: Boolean,
+    onSelectLocal: () -> Unit,
+    onSelectApi: () -> Unit,
+    onAddProvider: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.providers_mode_card_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.size(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onSelectLocal,
+                    colors = if (mode == PreferenceKeys.MODE_LOCAL) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    }
+                ) { Text(stringResource(R.string.providers_mode_local)) }
+                Button(
+                    onClick = {
+                        if (hasConfiguredApiProviders) onSelectApi() else onAddProvider()
+                    },
+                    colors = if (mode == PreferenceKeys.MODE_API) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    }
+                ) { Text(stringResource(R.string.providers_mode_api)) }
+            }
+            Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.providers_mode_restart_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.size(8.dp))
+            TextButton(onClick = onAddProvider) {
+                Text(stringResource(R.string.providers_add_provider))
             }
         }
     }

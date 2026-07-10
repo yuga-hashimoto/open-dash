@@ -5,4 +5,5 @@ sealed class AppRoute(val route: String) {
     data object Devices : AppRoute("devices")
     data object Settings : AppRoute("settings")
     data object SpeakerGroups : AppRoute("settings/speaker-groups")
+    data object Providers : AppRoute("settings/providers")
 }

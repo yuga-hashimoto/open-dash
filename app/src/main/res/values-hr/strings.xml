@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Upravljanje pružateljima usluga…</string>
+    <string name="settings_providers_button_hint">Odaberite između načina rada Lokalni LLM i API, dodajte pružatelje API-ja u oblaku (OpenAI, Anthropic i druge) te odaberite koji je registrirani pružatelj aktivan.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Odaberite kako OpenDash razmišlja</string>
+    <string name="provider_mode_subtitle">Ovo možete kasnije promijeniti u Postavkama.</string>
+    <string name="provider_mode_local_title">Lokalni LLM</string>
+    <string name="provider_mode_local_description">Radi u potpunosti na ovom uređaju. Radi izvan mreže, ali je manje sposoban od cloud modela.</string>
+    <string name="provider_mode_api_title">API pružatelj usluge</string>
+    <string name="provider_mode_api_description">Povežite se s OpenAI, Anthropic ili drugim cloud pružateljem usluge pomoću vlastitog API ključa. Potreban je internet.</string>
+    <string name="add_provider_title">Dodaj pružatelja usluge</string>
+    <string name="add_provider_select_preset">Odaberite pružatelja usluge</string>
+    <string name="add_provider_display_name_label">Prikazano ime</string>
+    <string name="add_provider_base_url_label">Osnovni URL</string>
+    <string name="add_provider_api_key_label">API ključ</string>
+    <string name="add_provider_fetch_models">Dohvati modele</string>
+    <string name="add_provider_model_fetch_failed">ID modela (unesite ručno)</string>
+    <string name="add_provider_save">Spremi</string>
+    <string name="add_provider_cancel">Odustani</string>
+    <string name="providers_mode_card_title">Način rada asistenta</string>
+    <string name="providers_mode_local">Lokalni LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Dodaj pružatelja usluge</string>
+    <string name="providers_mode_restart_hint">Promjene stupaju na snagu nakon ponovnog pokretanja aplikacije.</string>
 </resources>

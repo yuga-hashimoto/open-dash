@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">จัดการผู้ให้บริการ…</string>
+    <string name="settings_providers_button_hint">เลือกระหว่างโหมด LLM ในเครื่องกับ API เพิ่มผู้ให้บริการ API บนคลาวด์ (OpenAI, Anthropic และอื่นๆ) และเลือกว่าผู้ให้บริการที่ลงทะเบียนไว้รายใดที่ใช้งานอยู่</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">เลือกวิธีที่ OpenDash คิด</string>
+    <string name="provider_mode_subtitle">คุณสามารถเปลี่ยนได้ภายหลังในการตั้งค่า</string>
+    <string name="provider_mode_local_title">LLM ในเครื่อง</string>
+    <string name="provider_mode_local_description">ทำงานทั้งหมดบนอุปกรณ์นี้ ทำงานได้แบบออฟไลน์ แต่มีความสามารถน้อยกว่าโมเดลบนคลาวด์</string>
+    <string name="provider_mode_api_title">ผู้ให้บริการ API</string>
+    <string name="provider_mode_api_description">เชื่อมต่อกับ OpenAI, Anthropic หรือผู้ให้บริการคลาวด์อื่นโดยใช้คีย์ API ของคุณเอง ต้องใช้อินเทอร์เน็ต</string>
+    <string name="add_provider_title">เพิ่มผู้ให้บริการ</string>
+    <string name="add_provider_select_preset">เลือกผู้ให้บริการ</string>
+    <string name="add_provider_display_name_label">ชื่อที่แสดง</string>
+    <string name="add_provider_base_url_label">URL พื้นฐาน</string>
+    <string name="add_provider_api_key_label">คีย์ API</string>
+    <string name="add_provider_fetch_models">ดึงข้อมูลโมเดล</string>
+    <string name="add_provider_model_fetch_failed">รหัสโมเดล (ป้อนด้วยตนเอง)</string>
+    <string name="add_provider_save">บันทึก</string>
+    <string name="add_provider_cancel">ยกเลิก</string>
+    <string name="providers_mode_card_title">โหมดผู้ช่วย</string>
+    <string name="providers_mode_local">LLM ในเครื่อง</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">เพิ่มผู้ให้บริการ</string>
+    <string name="providers_mode_restart_hint">การเปลี่ยนแปลงจะมีผลหลังจากรีสตาร์ทแอป</string>
 </resources>

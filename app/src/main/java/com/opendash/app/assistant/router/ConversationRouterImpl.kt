@@ -1,6 +1,8 @@
 package com.opendash.app.assistant.router
 
 import com.opendash.app.assistant.provider.AssistantProvider
+import com.opendash.app.data.preferences.AppPreferences
+import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.util.NetworkMonitor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +13,8 @@ import javax.inject.Singleton
 
 @Singleton
 class ConversationRouterImpl @Inject constructor(
-    private val networkMonitor: NetworkMonitor
+    private val networkMonitor: NetworkMonitor,
+    private val appPreferences: AppPreferences
 ) : ConversationRouter {
 
     private val _availableProviders = MutableStateFlow<List<AssistantProvider>>(emptyList())
@@ -42,6 +45,7 @@ class ConversationRouterImpl @Inject constructor(
             ?: throw IllegalArgumentException("Provider not found: $providerId")
         _activeProvider.value = provider
         _policy.value = RoutingPolicy.Manual(providerId)
+        appPreferences.set(PreferenceKeys.ACTIVE_PROVIDER_ID, providerId)
     }
 
     override suspend fun setPolicy(policy: RoutingPolicy) {

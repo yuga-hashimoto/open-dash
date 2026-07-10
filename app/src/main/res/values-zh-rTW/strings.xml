@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">管理提供者…</string>
+    <string name="settings_providers_button_hint">在本機 LLM 與 API 模式之間選擇，新增雲端 API 提供者（OpenAI、Anthropic 等），並選擇哪個已註冊的提供者為使用中。</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">選擇 OpenDash 的運作方式</string>
+    <string name="provider_mode_subtitle">您之後可以在設定中變更此項目。</string>
+    <string name="provider_mode_local_title">本機 LLM</string>
+    <string name="provider_mode_local_description">完全在此裝置上執行。可離線運作，但能力不如雲端模型。</string>
+    <string name="provider_mode_api_title">API 提供者</string>
+    <string name="provider_mode_api_description">使用您自己的 API 金鑰連接 OpenAI、Anthropic 或其他雲端提供者。需要網際網路連線。</string>
+    <string name="add_provider_title">新增提供者</string>
+    <string name="add_provider_select_preset">選擇提供者</string>
+    <string name="add_provider_display_name_label">顯示名稱</string>
+    <string name="add_provider_base_url_label">基本 URL</string>
+    <string name="add_provider_api_key_label">API 金鑰</string>
+    <string name="add_provider_fetch_models">取得模型</string>
+    <string name="add_provider_model_fetch_failed">模型 ID（手動輸入）</string>
+    <string name="add_provider_save">儲存</string>
+    <string name="add_provider_cancel">取消</string>
+    <string name="providers_mode_card_title">助理模式</string>
+    <string name="providers_mode_local">本機 LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">新增提供者</string>
+    <string name="providers_mode_restart_hint">變更將在重新啟動應用程式後生效。</string>
 </resources>

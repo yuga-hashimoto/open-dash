@@ -31,12 +31,14 @@ import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.service.VoiceService
 import com.opendash.app.ui.common.ModeScaffold
 import com.opendash.app.ui.onboarding.OnboardingScreen
+import com.opendash.app.ui.onboarding.ProviderModeScreen
 import com.opendash.app.ui.setup.ModelSetupScreen
 import com.opendash.app.ui.theme.OpenDashTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -99,25 +101,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             OpenDashTheme {
                 val downloadState by modelDownloader.state.collectAsState()
+                val assistantMode by appPreferences
+                    .observe(PreferenceKeys.ASSISTANT_MODE)
+                    .collectAsState(initial = null)
                 val setupCompleted by appPreferences
                     .observe(PreferenceKeys.SETUP_COMPLETED)
                     .collectAsState(initial = null)
                 var onboardingDismissed by remember { mutableStateOf(false) }
+                var modeDismissed by remember { mutableStateOf(false) }
 
-                when (downloadState) {
-                    is ModelDownloadState.Ready -> {
-                        if (!providerInitialized) {
-                            providerInitialized = true
-                            providerManager.initialize()
-                        }
-                        val needsOnboarding = setupCompleted == false && !onboardingDismissed
-                        if (needsOnboarding) {
-                            OnboardingScreen(onDone = { onboardingDismissed = true })
-                        } else {
-                            ModeScaffold()
-                        }
+                when {
+                    assistantMode == null && !modeDismissed -> {
+                        ProviderModeScreen(onModeSelected = { modeDismissed = true })
                     }
-                    else -> {
+                    assistantMode == PreferenceKeys.MODE_LOCAL && downloadState !is ModelDownloadState.Ready -> {
                         val models by modelDownloader.availableModels.collectAsState()
                         val selected by modelDownloader.selectedModel.collectAsState()
 
@@ -130,16 +127,31 @@ class MainActivity : ComponentActivity() {
                             onRetry = { scope.launch { modelDownloader.downloadSelectedModel() } }
                         )
                     }
+                    else -> {
+                        if (!providerInitialized) {
+                            providerInitialized = true
+                            providerManager.initialize()
+                        }
+                        val needsOnboarding = setupCompleted == false && !onboardingDismissed
+                        if (needsOnboarding) {
+                            OnboardingScreen(onDone = { onboardingDismissed = true })
+                        } else {
+                            ModeScaffold()
+                        }
+                    }
                 }
             }
         }
 
         requestPermissionsAndStart()
         scope.launch {
-            if (modelDownloader.isModelDownloaded()) {
-                modelDownloader.ensureModelAvailable()
-            } else {
-                modelDownloader.fetchAvailableModels()
+            val mode = appPreferences.observe(PreferenceKeys.ASSISTANT_MODE).first()
+            if (mode != PreferenceKeys.MODE_API) {
+                if (modelDownloader.isModelDownloaded()) {
+                    modelDownloader.ensureModelAvailable()
+                } else {
+                    modelDownloader.fetchAvailableModels()
+                }
             }
         }
 

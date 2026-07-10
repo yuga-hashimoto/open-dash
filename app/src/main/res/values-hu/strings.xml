@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Szolgáltatók kezelése…</string>
+    <string name="settings_providers_button_hint">Válasszon a Helyi LLM és API mód között, adjon hozzá felhőalapú API-szolgáltatókat (OpenAI, Anthropic és mások), és jelölje ki, melyik regisztrált szolgáltató legyen aktív.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Válaszd ki, hogyan gondolkodjon az OpenDash</string>
+    <string name="provider_mode_subtitle">Ezt később a Beállításokban módosíthatod.</string>
+    <string name="provider_mode_local_title">Helyi LLM</string>
+    <string name="provider_mode_local_description">Teljesen ezen az eszközön fut. Offline is működik, de kevésbé tudásos, mint a felhőalapú modellek.</string>
+    <string name="provider_mode_api_title">API-szolgáltató</string>
+    <string name="provider_mode_api_description">Csatlakozz az OpenAI-hoz, az Anthropichoz vagy más felhőszolgáltatóhoz a saját API-kulcsoddal. Internetkapcsolat szükséges.</string>
+    <string name="add_provider_title">Szolgáltató hozzáadása</string>
+    <string name="add_provider_select_preset">Válassz szolgáltatót</string>
+    <string name="add_provider_display_name_label">Megjelenített név</string>
+    <string name="add_provider_base_url_label">Alap URL</string>
+    <string name="add_provider_api_key_label">API-kulcs</string>
+    <string name="add_provider_fetch_models">Modellek lekérése</string>
+    <string name="add_provider_model_fetch_failed">Modellazonosító (kézi megadás)</string>
+    <string name="add_provider_save">Mentés</string>
+    <string name="add_provider_cancel">Mégse</string>
+    <string name="providers_mode_card_title">Asszisztens mód</string>
+    <string name="providers_mode_local">Helyi LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Szolgáltató hozzáadása</string>
+    <string name="providers_mode_restart_hint">A módosítások az alkalmazás újraindítása után lépnek életbe.</string>
 </resources>

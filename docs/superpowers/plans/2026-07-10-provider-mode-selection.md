@@ -88,7 +88,7 @@ class ConversationRouterImplTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.router.ConversationRouterImplTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.router.ConversationRouterImplTest"`
 Expected: FAIL — compile error, `ConversationRouterImpl` takes 1 arg not 2 (since the production constructor hasn't changed yet), or `set` was never called.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -135,7 +135,7 @@ Only the class header (constructor) and `selectProvider` body change; every othe
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.router.ConversationRouterImplTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.router.ConversationRouterImplTest"`
 Expected: PASS (all existing tests + the new one).
 
 - [ ] **Step 5: Commit**
@@ -272,7 +272,7 @@ class ApiProviderConfigStoreTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderConfigStoreTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderConfigStoreTest"`
 Expected: FAIL — `ApiProviderConfig` and `ApiProviderConfigStore` don't exist yet.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -381,7 +381,7 @@ class ApiProviderConfigStore @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderConfigStoreTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderConfigStoreTest"`
 Expected: PASS (7 tests).
 
 - [ ] **Step 5: Commit**
@@ -460,7 +460,7 @@ class ApiProviderCatalogTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderCatalogTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderCatalogTest"`
 Expected: FAIL — `ApiProviderCatalog` doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -509,7 +509,7 @@ object ApiProviderCatalog {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderCatalogTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ApiProviderCatalogTest"`
 Expected: PASS (7 tests).
 
 - [ ] **Step 5: Commit**
@@ -614,7 +614,7 @@ class OpenAiCompatibleProviderTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.openai.OpenAiCompatibleProviderTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.openai.OpenAiCompatibleProviderTest"`
 Expected: FAIL — constructor doesn't accept `id`/`displayName` params yet.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -644,7 +644,7 @@ class OpenAiCompatibleProvider(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.openai.OpenAiCompatibleProviderTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.openai.OpenAiCompatibleProviderTest"`
 Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
@@ -747,7 +747,7 @@ class AnthropicStreamParserTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicStreamParserTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicStreamParserTest"`
 Expected: FAIL — `AnthropicStreamParser` doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -851,7 +851,7 @@ class AnthropicStreamParser(private val moshi: Moshi) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicStreamParserTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicStreamParserTest"`
 Expected: PASS (7 tests).
 
 - [ ] **Step 5: Commit**
@@ -976,7 +976,7 @@ class AnthropicProviderTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicProviderTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicProviderTest"`
 Expected: FAIL — `AnthropicConfig`/`AnthropicProvider` don't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -1186,7 +1186,7 @@ class AnthropicProvider(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicProviderTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.anthropic.AnthropicProviderTest"`
 Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
@@ -1293,7 +1293,7 @@ class ModelListFetcherTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ModelListFetcherTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ModelListFetcherTest"`
 Expected: FAIL — `ModelListFetcher` doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -1349,7 +1349,7 @@ class ModelListFetcher @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ModelListFetcherTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.api.ModelListFetcherTest"`
 Expected: PASS (5 tests).
 
 - [ ] **Step 5: Commit**
@@ -1504,7 +1504,7 @@ class ProviderManagerTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.ProviderManagerTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.ProviderManagerTest"`
 Expected: FAIL — `ProviderManager` constructor doesn't take `apiProviderConfigStore` yet, and the mode-conditional logic doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -1686,7 +1686,7 @@ class ProviderManager @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.assistant.provider.ProviderManagerTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.assistant.provider.ProviderManagerTest"`
 Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
@@ -1711,7 +1711,7 @@ This task must land before Task 10 (`MainActivity` mode gate), which imports `Pr
 **Interfaces:**
 - Produces: `ProviderModeViewModel.selectMode(mode: String)` (suspend-free public API backed by `viewModelScope`), reads/writes `PreferenceKeys.ASSISTANT_MODE` via `AppPreferences`. `ProviderModeScreen(onModeSelected: () -> Unit, viewModel: ProviderModeViewModel = hiltViewModel())`.
 
-Note on strings: this task's Composable references `R.string.provider_mode_*` keys. Task 15 adds those keys to every locale file. Until Task 15 lands, `LocaleStringsParityTest` (part of `testDebugUnitTest`) will fail on drift — this task's Step 3 adds the English `values/strings.xml` entries only; Task 15 fans them out to the other 43 locales.
+Note on strings: this task's Composable references `R.string.provider_mode_*` keys. Task 15 adds those keys to every locale file. Until Task 15 lands, `LocaleStringsParityTest` (part of `testStandardDebugUnitTest`) will fail on drift — this task's Step 3 adds the English `values/strings.xml` entries only; Task 15 fans them out to the other 43 locales.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1759,7 +1759,7 @@ class ProviderModeViewModelTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.onboarding.ProviderModeViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.onboarding.ProviderModeViewModelTest"`
 Expected: FAIL — `ProviderModeViewModel` doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -1891,7 +1891,7 @@ Add the English strings to `app/src/main/res/values/strings.xml` (near the `<!--
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.onboarding.ProviderModeViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.onboarding.ProviderModeViewModelTest"`
 Expected: PASS (2 tests).
 
 - [ ] **Step 5: Commit**
@@ -1901,7 +1901,7 @@ git add app/src/main/java/com/opendash/app/ui/onboarding/ProviderModeViewModel.k
 git commit -m "feat: add ProviderModeScreen for first-run local-vs-API choice"
 ```
 
-Note: `./gradlew assembleDebug` will not fully succeed until Task 15 adds these keys to every locale file (`LocaleStringsParityTest` runs under `testDebugUnitTest`, not `assembleDebug`, so the debug APK itself will build — but the unit test suite will fail on parity until Task 15). Run `testDebugUnitTest --tests "*ProviderModeViewModelTest"` scoped as above to confirm this task in isolation; the full suite is green again after Task 15.
+Note: `./gradlew assembleDebug` will not fully succeed until Task 15 adds these keys to every locale file (`LocaleStringsParityTest` runs under `testStandardDebugUnitTest`, not `assembleDebug`, so the debug APK itself will build — but the unit test suite will fail on parity until Task 15). Run `testStandardDebugUnitTest --tests "*ProviderModeViewModelTest"` scoped as above to confirm this task in isolation; the full suite is green again after Task 15.
 
 ---
 
@@ -2046,7 +2046,7 @@ On-device / emulator check (mirrors the existing `docs/real-device-smoke-test.md
 2. Launch — `ProviderModeScreen` appears before `ModelSetupScreen`.
 3. Choose "Local LLM" — `ModelSetupScreen` appears next, exactly as before this change.
 4. Clear app data again, relaunch, choose "API" — `ModelSetupScreen` is skipped entirely; flow goes straight to `OnboardingScreen` (permissions) then `ModeScaffold`.
-5. Confirm `./gradlew testDebugUnitTest` still passes in full (no regression in unrelated suites).
+5. Confirm `./gradlew testStandardDebugUnitTest` still passes in full (no regression in unrelated suites).
 
 - [ ] **Step 4: Commit**
 
@@ -2177,7 +2177,7 @@ class ApiProviderSetupViewModelTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ApiProviderSetupViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ApiProviderSetupViewModelTest"`
 Expected: FAIL — `ApiProviderSetupViewModel` doesn't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -2291,7 +2291,7 @@ class ApiProviderSetupViewModel @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ApiProviderSetupViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ApiProviderSetupViewModelTest"`
 Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
@@ -2599,7 +2599,7 @@ Then append the new tests, using `buildVm`'s new `apiProviderConfigStore` parame
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ProvidersViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ProvidersViewModelTest"`
 Expected: FAIL — `ProvidersViewModel` constructor doesn't take `apiProviderConfigStore`, and `assistantMode`/`hasConfiguredApiProviders`/`setMode` don't exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -2645,7 +2645,7 @@ class ProvidersViewModel @Inject constructor(
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ProvidersViewModelTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.ui.settings.providers.ProvidersViewModelTest"`
 Expected: PASS (all existing tests + 3 new ones).
 
 - [ ] **Step 5: Update `ProvidersScreen.kt` to render the mode card + add-provider entry**
@@ -2916,7 +2916,7 @@ Do this for: `values-ar`, `values-bg`, `values-bn`, `values-ca`, `values-cs`, `v
 
 - [ ] **Step 3: Run the parity test**
 
-Run: `./gradlew testDebugUnitTest --tests "com.opendash.app.util.LocaleStringsParityTest"`
+Run: `./gradlew testStandardDebugUnitTest --tests "com.opendash.app.util.LocaleStringsParityTest"`
 Expected: PASS — zero drift entries.
 
 - [ ] **Step 4: Commit**
@@ -2934,7 +2934,7 @@ git commit -m "i18n: add provider mode + add-provider strings to all 44 locales"
 
 - [ ] **Step 1: Run the full unit test suite**
 
-Run: `./gradlew testDebugUnitTest`
+Run: `./gradlew testStandardDebugUnitTest`
 Expected: BUILD SUCCESSFUL, 0 failures (this includes every test added in Tasks 1–13 plus `LocaleStringsParityTest` from Task 15, plus every pre-existing test in the suite — no regressions).
 
 - [ ] **Step 2: Run the debug build**

@@ -4,6 +4,8 @@ import androidx.datastore.preferences.core.Preferences
 import com.google.common.truth.Truth.assertThat
 import com.opendash.app.assistant.provider.AssistantProvider
 import com.opendash.app.assistant.provider.ProviderCapabilities
+import com.opendash.app.assistant.provider.api.ApiProviderConfig
+import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
 import com.opendash.app.assistant.router.ConversationRouter
 import com.opendash.app.assistant.router.RoutingPolicy
 import com.opendash.app.data.preferences.AppPreferences
@@ -21,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -112,7 +115,7 @@ class ProvidersViewModelTest {
             )
         }
 
-        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker)
+        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker, emptyApiProviderConfigStore())
         advanceUntilIdle()
 
         val state = vm.multiroomState.value
@@ -136,7 +139,7 @@ class ProvidersViewModelTest {
         every { discovery.speakers } returns MutableStateFlow(emptyList())
         val tracker = PeerLivenessTracker()
 
-        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker)
+        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker, emptyApiProviderConfigStore())
         advanceUntilIdle()
 
         assertThat(vm.multiroomState.value.broadcastingAs).isNull()
@@ -155,7 +158,7 @@ class ProvidersViewModelTest {
         )
         val tracker = PeerLivenessTracker() // no heartbeats yet
 
-        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker)
+        val vm = ProvidersViewModel(router, prefs, secure, discovery, tracker, emptyApiProviderConfigStore())
         advanceUntilIdle()
 
         assertThat(vm.multiroomState.value.peerCount).isEqualTo(3)
@@ -226,13 +229,83 @@ class ProvidersViewModelTest {
         assertThat(hint.messageRes).isEqualTo(com.opendash.app.R.string.multiroom_hint_healthy)
     }
 
+    @Test
+    fun `assistantMode reflects the stored preference`() = runTest {
+        val prefs = prefsWith(Pair(PreferenceKeys.ASSISTANT_MODE, PreferenceKeys.MODE_API))
+
+        val vm = buildVm(prefs = prefs)
+        advanceUntilIdle()
+
+        assertThat(vm.assistantMode.first()).isEqualTo(PreferenceKeys.MODE_API)
+    }
+
+    @Test
+    fun `hasConfiguredApiProviders is true when at least one config exists`() = runTest {
+        val store = mockk<ApiProviderConfigStore>()
+        every { store.observeList() } returns MutableStateFlow(
+            listOf(
+                ApiProviderConfig(
+                    id = "x", presetId = "openai", displayName = "OpenAI",
+                    baseUrl = "https://api.openai.com", modelId = "gpt-5.5",
+                    authStyle = "bearer", createdAt = 1L
+                )
+            )
+        )
+
+        val vm = buildVm(apiProviderConfigStore = store)
+        advanceUntilIdle()
+
+        assertThat(vm.hasConfiguredApiProviders.first()).isTrue()
+    }
+
+    @Test
+    fun `hasConfiguredApiProviders reacts when a provider is added after construction`() = runTest {
+        val store = mockk<ApiProviderConfigStore>()
+        val configs = MutableStateFlow<List<ApiProviderConfig>>(emptyList())
+        every { store.observeList() } returns configs
+
+        val vm = buildVm(apiProviderConfigStore = store)
+        advanceUntilIdle()
+        assertThat(vm.hasConfiguredApiProviders.value).isFalse()
+
+        configs.value = listOf(
+            ApiProviderConfig(
+                id = "x", presetId = "openai", displayName = "OpenAI",
+                baseUrl = "https://api.openai.com", modelId = "gpt-5.5",
+                authStyle = "bearer", createdAt = 1L
+            )
+        )
+        advanceUntilIdle()
+
+        assertThat(vm.hasConfiguredApiProviders.value).isTrue()
+    }
+
+    @Test
+    fun `setMode persists the chosen mode`() = runTest {
+        val prefs = mockk<AppPreferences>(relaxed = true)
+        every { prefs.observe<Any>(any()) } returns flowOf(null)
+
+        val vm = buildVm(prefs = prefs)
+        vm.setMode(PreferenceKeys.MODE_LOCAL)
+        advanceUntilIdle()
+
+        coVerify { prefs.set(PreferenceKeys.ASSISTANT_MODE, PreferenceKeys.MODE_LOCAL) }
+    }
+
     private fun buildVm(
         router: ConversationRouter = idleRouter(),
         prefs: AppPreferences = prefsWith(),
         secure: SecurePreferences = emptySecurePrefs(),
         discovery: MulticastDiscovery = emptyDiscovery(),
-        tracker: PeerLivenessTracker = PeerLivenessTracker()
-    ) = ProvidersViewModel(router, prefs, secure, discovery, tracker)
+        tracker: PeerLivenessTracker = PeerLivenessTracker(),
+        apiProviderConfigStore: ApiProviderConfigStore = emptyApiProviderConfigStore()
+    ) = ProvidersViewModel(router, prefs, secure, discovery, tracker, apiProviderConfigStore)
+
+    private fun emptyApiProviderConfigStore(): ApiProviderConfigStore {
+        val store = mockk<ApiProviderConfigStore>()
+        every { store.observeList() } returns MutableStateFlow(emptyList())
+        return store
+    }
 
     private fun idleRouter(): ConversationRouter {
         val router = mockk<ConversationRouter>(relaxed = true)

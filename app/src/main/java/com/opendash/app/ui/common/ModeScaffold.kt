@@ -80,6 +80,7 @@ fun ModeScaffold(
     val isOnline by viewModel.isOnline.collectAsState()
     val pagerState = rememberPagerState(initialPage = 0) { 3 }
     var showSettings by remember { mutableStateOf(false) }
+    var showProviders by remember { mutableStateOf(false) }
     var showNightClock by remember { mutableStateOf(false) }
     var showControlDrawer by remember { mutableStateOf(false) }
     // Keep the ambient Home visible while the mic is still listening:
@@ -194,7 +195,19 @@ fun ModeScaffold(
             enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it },
             exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it }
         ) {
-            SettingsScreen(onBack = { showSettings = false })
+            SettingsScreen(
+                onBack = { showSettings = false },
+                onOpenProviders = { showProviders = true }
+            )
+        }
+
+        // Providers overlay (mode card + add-provider entry), reached from Settings
+        AnimatedVisibility(
+            visible = showProviders,
+            enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it },
+            exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it }
+        ) {
+            com.opendash.app.ui.settings.providers.ProvidersScreen(onBack = { showProviders = false })
         }
 
         // Night clock overlay

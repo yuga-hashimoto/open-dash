@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Kelola penyedia…</string>
+    <string name="settings_providers_button_hint">Pilih antara mode LLM Lokal dan API, tambahkan penyedia API cloud (OpenAI, Anthropic, dan lainnya), serta pilih penyedia terdaftar mana yang aktif.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Pilih cara OpenDash berpikir</string>
+    <string name="provider_mode_subtitle">Anda dapat mengubahnya nanti di Pengaturan.</string>
+    <string name="provider_mode_local_title">LLM lokal</string>
+    <string name="provider_mode_local_description">Berjalan sepenuhnya di perangkat ini. Berfungsi secara offline, tetapi kurang mumpuni dibandingkan model cloud.</string>
+    <string name="provider_mode_api_title">Penyedia API</string>
+    <string name="provider_mode_api_description">Hubungkan ke OpenAI, Anthropic, atau penyedia cloud lain menggunakan kunci API Anda sendiri. Memerlukan internet.</string>
+    <string name="add_provider_title">Tambahkan penyedia</string>
+    <string name="add_provider_select_preset">Pilih penyedia</string>
+    <string name="add_provider_display_name_label">Nama tampilan</string>
+    <string name="add_provider_base_url_label">URL dasar</string>
+    <string name="add_provider_api_key_label">Kunci API</string>
+    <string name="add_provider_fetch_models">Ambil model</string>
+    <string name="add_provider_model_fetch_failed">ID model (masukkan manual)</string>
+    <string name="add_provider_save">Simpan</string>
+    <string name="add_provider_cancel">Batal</string>
+    <string name="providers_mode_card_title">Mode asisten</string>
+    <string name="providers_mode_local">LLM lokal</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Tambahkan penyedia</string>
+    <string name="providers_mode_restart_hint">Perubahan berlaku setelah aplikasi dimulai ulang.</string>
 </resources>

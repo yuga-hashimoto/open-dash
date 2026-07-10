@@ -109,6 +109,30 @@
     <string name="providers_badge_streaming">Streaming</string>
     <string name="providers_badge_tools">Tools</string>
     <string name="providers_badge_vision">Vision</string>
+    <string name="providers_mode_card_title">Assistant mode</string>
+    <string name="providers_mode_local">Local LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Add provider</string>
+    <string name="providers_mode_restart_hint">Changes take effect after restarting the app.</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Choose how OpenDash thinks</string>
+    <string name="provider_mode_subtitle">You can change this later in Settings.</string>
+    <string name="provider_mode_local_title">Local LLM</string>
+    <string name="provider_mode_local_description">Runs fully on this device. Works offline, but less capable than cloud models.</string>
+    <string name="provider_mode_api_title">API provider</string>
+    <string name="provider_mode_api_description">Connect OpenAI, Anthropic, or another cloud provider using your own API key. Requires internet.</string>
+
+    <!-- Add API provider dialog -->
+    <string name="add_provider_title">Add provider</string>
+    <string name="add_provider_select_preset">Select provider</string>
+    <string name="add_provider_display_name_label">Display name</string>
+    <string name="add_provider_base_url_label">Base URL</string>
+    <string name="add_provider_api_key_label">API key</string>
+    <string name="add_provider_fetch_models">Fetch models</string>
+    <string name="add_provider_model_fetch_failed">Model ID (enter manually)</string>
+    <string name="add_provider_save">Save</string>
+    <string name="add_provider_cancel">Cancel</string>
 
     <!-- Multi-room card + mesh health -->
     <string name="multiroom_title">Multi-room</string>
@@ -279,6 +303,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Manage providers…</string>
+    <string name="settings_providers_button_hint">Choose Local LLM vs API mode, add cloud API providers (OpenAI, Anthropic, and more), and pick which registered provider is active.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

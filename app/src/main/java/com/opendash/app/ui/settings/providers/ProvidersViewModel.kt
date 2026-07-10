@@ -3,6 +3,7 @@ package com.opendash.app.ui.settings.providers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opendash.app.assistant.provider.AssistantProvider
+import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
 import com.opendash.app.assistant.router.ConversationRouter
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
@@ -14,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,7 +36,8 @@ class ProvidersViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
     private val securePreferences: SecurePreferences,
     private val discovery: MulticastDiscovery,
-    private val liveness: PeerLivenessTracker
+    private val liveness: PeerLivenessTracker,
+    private val apiProviderConfigStore: ApiProviderConfigStore
 ) : ViewModel() {
 
     data class Row(
@@ -110,6 +113,20 @@ class ProvidersViewModel @Inject constructor(
             goneCount = gone
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, MultiroomState.Empty)
+
+    val assistantMode: StateFlow<String?> = appPreferences
+        .observe(PreferenceKeys.ASSISTANT_MODE)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val hasConfiguredApiProviders: StateFlow<Boolean> = apiProviderConfigStore.observeList()
+        .map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setMode(mode: String) {
+        viewModelScope.launch {
+            appPreferences.set(PreferenceKeys.ASSISTANT_MODE, mode)
+        }
+    }
 
     fun select(providerId: String) {
         viewModelScope.launch {

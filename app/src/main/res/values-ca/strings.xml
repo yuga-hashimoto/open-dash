@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Gestiona els proveïdors…</string>
+    <string name="settings_providers_button_hint">Tria entre el mode LLM local o API, afegeix proveïdors d\'API al núvol (OpenAI, Anthropic i més) i selecciona quin proveïdor registrat està actiu.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Trieu com pensa OpenDash</string>
+    <string name="provider_mode_subtitle">Podeu canviar-ho més endavant a Configuració.</string>
+    <string name="provider_mode_local_title">LLM local</string>
+    <string name="provider_mode_local_description">S\'executa completament en aquest dispositiu. Funciona sense connexió, però és menys capaç que els models al núvol.</string>
+    <string name="provider_mode_api_title">Proveïdor d\'API</string>
+    <string name="provider_mode_api_description">Connecteu-vos a OpenAI, Anthropic o un altre proveïdor al núvol amb la vostra pròpia clau d\'API. Cal connexió a Internet.</string>
+    <string name="add_provider_title">Afegeix un proveïdor</string>
+    <string name="add_provider_select_preset">Selecciona un proveïdor</string>
+    <string name="add_provider_display_name_label">Nom visible</string>
+    <string name="add_provider_base_url_label">URL base</string>
+    <string name="add_provider_api_key_label">Clau d\'API</string>
+    <string name="add_provider_fetch_models">Recupera els models</string>
+    <string name="add_provider_model_fetch_failed">ID del model (introduïu-lo manualment)</string>
+    <string name="add_provider_save">Desa</string>
+    <string name="add_provider_cancel">Cancel·la</string>
+    <string name="providers_mode_card_title">Mode de l\'assistent</string>
+    <string name="providers_mode_local">LLM local</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Afegeix un proveïdor</string>
+    <string name="providers_mode_restart_hint">Els canvis tenen efecte després de reiniciar l\'aplicació.</string>
 </resources>

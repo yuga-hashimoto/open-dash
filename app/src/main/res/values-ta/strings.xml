@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">வழங்குநர்களை நிர்வகி…</string>
+    <string name="settings_providers_button_hint">லோக்கல் LLM மற்றும் API பயன்முறைக்கு இடையே தேர்ந்தெடுக்கவும், கிளவுட் API வழங்குநர்களைச் சேர்க்கவும் (OpenAI, Anthropic மற்றும் பலவும்), மேலும் எந்த பதிவுசெய்யப்பட்ட வழங்குநர் செயலில் உள்ளது என்பதைத் தேர்ந்தெடுக்கவும்.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">OpenDash எப்படி செயல்படும் என்பதைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="provider_mode_subtitle">இதை பின்னர் அமைப்புகளில் மாற்றலாம்.</string>
+    <string name="provider_mode_local_title">லோக்கல் LLM</string>
+    <string name="provider_mode_local_description">இது முழுவதுமாக இந்த சாதனத்தில் இயங்குகிறது. இணையமில்லாமல் செயல்படும், ஆனால் கிளவுட் மாடல்களை விட திறன் குறைவு.</string>
+    <string name="provider_mode_api_title">API வழங்குநர்</string>
+    <string name="provider_mode_api_description">உங்கள் சொந்த API கீயைப் பயன்படுத்தி OpenAI, Anthropic அல்லது வேறு கிளவுட் வழங்குநருடன் இணையவும். இணைய இணைப்பு தேவை.</string>
+    <string name="add_provider_title">வழங்குநரைச் சேர்க்கவும்</string>
+    <string name="add_provider_select_preset">வழங்குநரைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="add_provider_display_name_label">காட்சிப் பெயர்</string>
+    <string name="add_provider_base_url_label">அடிப்படை URL</string>
+    <string name="add_provider_api_key_label">API கீ</string>
+    <string name="add_provider_fetch_models">மாடல்களைப் பெறவும்</string>
+    <string name="add_provider_model_fetch_failed">மாடல் ஐடி (கைமுறையாக உள்ளிடவும்)</string>
+    <string name="add_provider_save">சேமி</string>
+    <string name="add_provider_cancel">ரத்துசெய்</string>
+    <string name="providers_mode_card_title">உதவியாளர் பயன்முறை</string>
+    <string name="providers_mode_local">லோக்கல் LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">வழங்குநரைச் சேர்க்கவும்</string>
+    <string name="providers_mode_restart_hint">மாற்றங்கள் பயன்பாட்டை மறுதொடக்கம் செய்த பிறகு நடைமுறைக்கு வரும்.</string>
 </resources>

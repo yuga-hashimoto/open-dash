@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Urus pembekal…</string>
+    <string name="settings_providers_button_hint">Pilih antara mod LLM Tempatan dan API, tambah pembekal API awan (OpenAI, Anthropic dan lain-lain), serta pilih pembekal berdaftar yang aktif.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
@@ -391,4 +393,26 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Pilih cara OpenDash berfikir</string>
+    <string name="provider_mode_subtitle">Anda boleh menukar ini kemudian dalam Tetapan.</string>
+    <string name="provider_mode_local_title">LLM setempat</string>
+    <string name="provider_mode_local_description">Berjalan sepenuhnya pada peranti ini. Berfungsi luar talian, tetapi kurang berupaya berbanding model awan.</string>
+    <string name="provider_mode_api_title">Pembekal API</string>
+    <string name="provider_mode_api_description">Sambung ke OpenAI, Anthropic, atau pembekal awan lain menggunakan kunci API anda sendiri. Memerlukan internet.</string>
+    <string name="add_provider_title">Tambah pembekal</string>
+    <string name="add_provider_select_preset">Pilih pembekal</string>
+    <string name="add_provider_display_name_label">Nama paparan</string>
+    <string name="add_provider_base_url_label">URL asas</string>
+    <string name="add_provider_api_key_label">Kunci API</string>
+    <string name="add_provider_fetch_models">Dapatkan model</string>
+    <string name="add_provider_model_fetch_failed">ID model (masukkan secara manual)</string>
+    <string name="add_provider_save">Simpan</string>
+    <string name="add_provider_cancel">Batal</string>
+    <string name="providers_mode_card_title">Mod pembantu</string>
+    <string name="providers_mode_local">LLM setempat</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Tambah pembekal</string>
+    <string name="providers_mode_restart_hint">Perubahan berkuat kuasa selepas aplikasi dimulakan semula.</string>
 </resources>
