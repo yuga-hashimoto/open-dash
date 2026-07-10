@@ -1,7 +1,7 @@
 package com.opendash.app.assistant.provider
 
 import android.content.Context
-import com.google.common.truth.Truth.assertThat
+import com.opendash.app.assistant.provider.anthropic.AnthropicProvider
 import com.opendash.app.assistant.provider.api.ApiProviderConfig
 import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
 import com.opendash.app.assistant.router.ConversationRouter
@@ -100,6 +100,56 @@ class ProviderManagerTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { router.registerProvider(match { it.id == "openai_compatible" }) }
+    }
+
+    @Test
+    fun `api mode with anthropic authStyle registers AnthropicProvider`() = runTest {
+        val config = ApiProviderConfig(
+            id = "cfg-anthropic",
+            presetId = "anthropic",
+            displayName = "Anthropic",
+            baseUrl = "https://api.anthropic.com",
+            modelId = "claude-sonnet-5",
+            authStyle = "anthropic",
+            createdAt = 1L
+        )
+        coEvery { apiProviderConfigStore.list() } returns listOf(config)
+        every { apiProviderConfigStore.apiKeyFor("cfg-anthropic") } returns "sk-ant-test"
+
+        manager().initialize()
+        advanceUntilIdle()
+
+        coVerify(timeout = 2_000) {
+            router.registerProvider(
+                match { it is AnthropicProvider && it.id == "api_cfg-anthropic" }
+            )
+        }
+    }
+
+    @Test
+    fun `migrates legacy local llm setting into api provider config and switches mode`() = runTest {
+        coEvery { apiProviderConfigStore.list() } returns emptyList()
+        every { preferences.observe(PreferenceKeys.LOCAL_LLM_BASE_URL) } returns flowOf("http://localhost:8080")
+        every { preferences.observe(PreferenceKeys.LOCAL_LLM_MODEL) } returns flowOf("gemma-4-e2b")
+        every { securePreferences.getString(SecurePreferences.KEY_LOCAL_LLM_API_KEY) } returns "legacy-key"
+        coEvery { apiProviderConfigStore.add(any(), any()) } returns Unit
+        coEvery { preferences.set(PreferenceKeys.ASSISTANT_MODE, PreferenceKeys.MODE_API) } returns Unit
+
+        manager().initialize()
+        advanceUntilIdle()
+
+        coVerify(timeout = 2_000) {
+            apiProviderConfigStore.add(
+                match {
+                    it.presetId == "custom" &&
+                        it.baseUrl == "http://localhost:8080" &&
+                        it.modelId == "gemma-4-e2b" &&
+                        it.authStyle == "bearer"
+                },
+                "legacy-key"
+            )
+        }
+        coVerify(timeout = 2_000) { preferences.set(PreferenceKeys.ASSISTANT_MODE, PreferenceKeys.MODE_API) }
     }
 
     @Test
