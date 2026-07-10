@@ -110,6 +110,14 @@
     <string name="providers_badge_tools">Tools</string>
     <string name="providers_badge_vision">Vision</string>
 
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Choose how OpenDash thinks</string>
+    <string name="provider_mode_subtitle">You can change this later in Settings.</string>
+    <string name="provider_mode_local_title">Local LLM</string>
+    <string name="provider_mode_local_description">Runs fully on this device. Works offline, but less capable than cloud models.</string>
+    <string name="provider_mode_api_title">API provider</string>
+    <string name="provider_mode_api_description">Connect OpenAI, Anthropic, or another cloud provider using your own API key. Requires internet.</string>
+
     <!-- Multi-room card + mesh health -->
     <string name="multiroom_title">Multi-room</string>
     <string name="multiroom_broadcast">Broadcast: %1$s</string>
