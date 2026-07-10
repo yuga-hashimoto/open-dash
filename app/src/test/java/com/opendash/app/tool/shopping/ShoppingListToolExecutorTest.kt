@@ -180,4 +180,13 @@ class ShoppingListToolExecutorTest {
 
         assertThat(result.success).isFalse()
     }
+
+    @Test
+    fun `blank list_name returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall("13", "add_list_item", mapOf("list_name" to "   ", "item" to "milk"))
+        )
+
+        assertThat(result.success).isFalse()
+    }
 }

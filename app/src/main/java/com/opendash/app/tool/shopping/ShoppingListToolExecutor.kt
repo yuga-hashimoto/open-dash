@@ -78,7 +78,7 @@ class ShoppingListToolExecutor(
     }
 
     private suspend fun executeAdd(call: ToolCall): ToolResult {
-        val listName = call.arguments["list_name"] as? String
+        val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val item = call.arguments["item"] as? String
             ?: return ToolResult(call.id, false, "", "Missing item")
@@ -97,7 +97,7 @@ class ShoppingListToolExecutor(
     }
 
     private suspend fun executeRemove(call: ToolCall): ToolResult {
-        val listName = call.arguments["list_name"] as? String
+        val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val item = call.arguments["item"] as? String
             ?: return ToolResult(call.id, false, "", "Missing item")
@@ -109,7 +109,7 @@ class ShoppingListToolExecutor(
     }
 
     private suspend fun executeComplete(call: ToolCall): ToolResult {
-        val listName = call.arguments["list_name"] as? String
+        val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val item = call.arguments["item"] as? String
             ?: return ToolResult(call.id, false, "", "Missing item")
@@ -126,7 +126,7 @@ class ShoppingListToolExecutor(
     }
 
     private suspend fun executeList(call: ToolCall): ToolResult {
-        val listName = call.arguments["list_name"] as? String
+        val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val items = dao.listByName(listName)
         val data = items.joinToString(",") { i ->
@@ -136,7 +136,7 @@ class ShoppingListToolExecutor(
     }
 
     private suspend fun executeClear(call: ToolCall): ToolResult {
-        val listName = call.arguments["list_name"] as? String
+        val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val count = dao.clearList(listName)
         return ToolResult(call.id, true, """{"list":"${listName.escapeJson()}","cleared":$count}""")
