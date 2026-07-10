@@ -50,6 +50,7 @@ import com.opendash.app.ui.settings.whisper.WhisperModelsCard
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onOpenSpeakerGroups: (() -> Unit)? = null,
+    onOpenProviders: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -465,6 +466,16 @@ fun SettingsScreen(
         }
         SettingsTextField(stringResource(R.string.settings_local_llm_model), localLlmModel) { model ->
             viewModel.saveLocalLlmSettings(localLlmUrl, model)
+        }
+
+        if (onOpenProviders != null) {
+            OutlinedButton(
+                onClick = onOpenProviders,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text(stringResource(R.string.settings_providers_button), color = MaterialTheme.colorScheme.onSurface)
+            }
+            SettingsHint(stringResource(R.string.settings_providers_button_hint))
         }
 
         SettingsDivider()
