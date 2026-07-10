@@ -27,18 +27,19 @@ class ModelListFetcher @Inject constructor(
                         requestBuilder.addHeader("Authorization", "Bearer $apiKey")
                     }
                 }
-                val response = client.newCall(requestBuilder.build()).execute()
-                if (!response.isSuccessful) {
-                    return@withContext Result.failure(IOException("HTTP ${response.code}"))
+                client.newCall(requestBuilder.build()).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return@withContext Result.failure(IOException("HTTP ${response.code}"))
+                    }
+                    val body = response.body?.string().orEmpty()
+                    @Suppress("UNCHECKED_CAST")
+                    val map = moshi.adapter(Map::class.java).fromJson(body) as? Map<String, Any?>
+                        ?: return@withContext Result.failure(IOException("Unparseable /v1/models response"))
+                    val data = map["data"] as? List<*>
+                        ?: return@withContext Result.failure(IOException("Missing 'data' field"))
+                    val ids = data.mapNotNull { (it as? Map<*, *>)?.get("id") as? String }
+                    Result.success(ids)
                 }
-                val body = response.body?.string().orEmpty()
-                @Suppress("UNCHECKED_CAST")
-                val map = moshi.adapter(Map::class.java).fromJson(body) as? Map<String, Any?>
-                    ?: return@withContext Result.failure(IOException("Unparseable /v1/models response"))
-                val data = map["data"] as? List<*>
-                    ?: return@withContext Result.failure(IOException("Missing 'data' field"))
-                val ids = data.mapNotNull { (it as? Map<*, *>)?.get("id") as? String }
-                Result.success(ids)
             } catch (e: Exception) {
                 Result.failure(e)
             }
