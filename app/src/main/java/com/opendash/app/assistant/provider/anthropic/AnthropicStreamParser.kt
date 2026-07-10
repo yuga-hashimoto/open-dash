@@ -27,6 +27,7 @@ class AnthropicStreamParser(private val moshi: Moshi) {
                 "content_block_delta" -> parseContentBlockDelta(map)
                 "content_block_start" -> parseContentBlockStart(map)
                 "message_delta" -> parseMessageDelta(map)
+                "error" -> AssistantMessage.Delta(finishReason = "error")
                 else -> null
             }
         } catch (e: Exception) {

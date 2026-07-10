@@ -69,4 +69,31 @@ class AnthropicStreamParserTest {
         assertThat(msg.toolCalls.first().name).isEqualTo("get_weather")
         assertThat(msg.toolCalls.first().arguments).contains("Tokyo")
     }
+
+    @Test
+    fun `parseLine returns null for malformed JSON`() {
+        val line = """data: {not valid json"""
+        assertThat(parser.parseLine(line)).isNull()
+    }
+
+    @Test
+    fun `parseLine returns null for recognized but unhandled event types`() {
+        assertThat(parser.parseLine("""data: {"type":"ping"}""")).isNull()
+        assertThat(parser.parseLine("""data: {"type":"message_start","message":{"id":"msg_1"}}""")).isNull()
+    }
+
+    @Test
+    fun `parseLine maps error event to finish reason error`() {
+        val line = """data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""
+        val delta = parser.parseLine(line)
+        assertThat(delta).isNotNull()
+        assertThat(delta!!.finishReason).isEqualTo("error")
+    }
+
+    @Test
+    fun `parseFullResponse returns empty content assistant message for malformed JSON`() {
+        val msg = parser.parseFullResponse("{not valid json") as AssistantMessage.Assistant
+        assertThat(msg.content).isEmpty()
+        assertThat(msg.toolCalls).isEmpty()
+    }
 }
