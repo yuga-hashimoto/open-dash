@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Default: HTTPS only, matching the rest of the app's providers
+        (OpenAI, Anthropic, Groq, etc. are all HTTPS).
+    -->
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!--
+        Local-network exceptions for the Ollama / LM Studio presets and any
+        "custom" provider the user points at their own LAN server. 10.0.2.2
+        is the Android emulator's host-loopback alias.
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
