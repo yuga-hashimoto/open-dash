@@ -235,9 +235,10 @@ explicit decision in the implementation plan, not silently left broken.
 
 New user-facing strings (estimated 30–40 keys: mode screen, add-provider
 dialog, preset names, model-picker states, OAuth screens) must be added to
-`values/strings.xml` and all 45 shipped locales per `docs/i18n.md`. This is
-sized explicitly as its own task in the implementation plan, not an
-afterthought.
+`values/strings.xml` and all 44 shipped locales (`docs/i18n.md`'s own table
+lists 28 but the repo has grown since; the actual count is
+`ls app/src/main/res | grep '^values-[a-z]' | wc -l`). This is sized
+explicitly as its own task in the implementation plan, not an afterthought.
 
 ## Testing
 
