@@ -4,7 +4,10 @@ import com.opendash.app.assistant.model.AssistantMessage
 import com.opendash.app.assistant.model.AssistantSession
 import com.opendash.app.assistant.provider.AssistantProvider
 import com.opendash.app.assistant.provider.ProviderCapabilities
+import com.opendash.app.data.preferences.AppPreferences
+import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.tool.ToolSchema
+import io.mockk.coVerify
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
@@ -18,12 +21,24 @@ import org.junit.jupiter.api.assertThrows
 class ConversationRouterImplTest {
 
     private lateinit var router: ConversationRouterImpl
+    private lateinit var appPreferences: AppPreferences
 
     @BeforeEach
     fun setup() {
         val nm = io.mockk.mockk<com.opendash.app.util.NetworkMonitor>()
         io.mockk.every { nm.isOnline } returns kotlinx.coroutines.flow.MutableStateFlow(true)
-        router = ConversationRouterImpl(nm)
+        appPreferences = io.mockk.mockk(relaxed = true)
+        router = ConversationRouterImpl(nm, appPreferences)
+    }
+
+    @Test
+    fun `selectProvider persists active id to preferences`() = runTest {
+        val provider = createFakeProvider("chosen", available = true)
+        router.registerProvider(provider)
+
+        router.selectProvider("chosen")
+
+        coVerify { appPreferences.set(PreferenceKeys.ACTIVE_PROVIDER_ID, "chosen") }
     }
 
     @Test
