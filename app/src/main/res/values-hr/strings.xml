@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Upravljanje pružateljima usluga…</string>
+    <string name="settings_providers_button_hint">Odaberite između načina rada Lokalni LLM i API, dodajte pružatelje API-ja u oblaku (OpenAI, Anthropic i druge) te odaberite koji je registrirani pružatelj aktivan.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

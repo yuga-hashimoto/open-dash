@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Providers beheren…</string>
+    <string name="settings_providers_button_hint">Kies tussen Lokale LLM- en API-modus, voeg cloud-API-providers toe (OpenAI, Anthropic en meer) en selecteer welke geregistreerde provider actief is.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

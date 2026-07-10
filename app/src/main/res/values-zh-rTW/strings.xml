@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">管理提供者…</string>
+    <string name="settings_providers_button_hint">在本機 LLM 與 API 模式之間選擇，新增雲端 API 提供者（OpenAI、Anthropic 等），並選擇哪個已註冊的提供者為使用中。</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

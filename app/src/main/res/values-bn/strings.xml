@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">প্রদানকারী পরিচালনা করুন…</string>
+    <string name="settings_providers_button_hint">লোকাল LLM বনাম API মোড বেছে নিন, ক্লাউড API প্রদানকারী যোগ করুন (OpenAI, Anthropic এবং আরও অনেক), এবং কোন নিবন্ধিত প্রদানকারী সক্রিয় থাকবে তা নির্বাচন করুন।</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

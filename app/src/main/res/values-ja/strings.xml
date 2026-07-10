@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">ローカル LLM (OpenAI 互換)</string>
     <string name="settings_local_llm_url">エンドポイント URL</string>
     <string name="settings_local_llm_model">モデル名</string>
+    <string name="settings_providers_button">プロバイダーを管理…</string>
+    <string name="settings_providers_button_hint">ローカルLLMとAPIモードを切り替え、クラウドAPIプロバイダー（OpenAI、Anthropicなど）を追加し、どの登録済みプロバイダーを有効にするか選択します。</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">トークン</string>
     <string name="settings_switchbot_secret">シークレットキー</string>

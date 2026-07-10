@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">வழங்குநர்களை நிர்வகி…</string>
+    <string name="settings_providers_button_hint">லோக்கல் LLM மற்றும் API பயன்முறைக்கு இடையே தேர்ந்தெடுக்கவும், கிளவுட் API வழங்குநர்களைச் சேர்க்கவும் (OpenAI, Anthropic மற்றும் பலவும்), மேலும் எந்த பதிவுசெய்யப்பட்ட வழங்குநர் செயலில் உள்ளது என்பதைத் தேர்ந்தெடுக்கவும்.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

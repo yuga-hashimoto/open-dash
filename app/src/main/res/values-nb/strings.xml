@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Administrer leverandører…</string>
+    <string name="settings_providers_button_hint">Velg mellom Lokal LLM- og API-modus, legg til sky-API-leverandører (OpenAI, Anthropic og flere), og velg hvilken registrert leverandør som er aktiv.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

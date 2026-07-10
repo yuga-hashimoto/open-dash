@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Pārvaldīt nodrošinātājus…</string>
+    <string name="settings_providers_button_hint">Izvēlieties starp lokālā LLM un API režīmu, pievienojiet mākoņa API nodrošinātājus (OpenAI, Anthropic un citus) un norādiet, kurš reģistrētais nodrošinātājs ir aktīvs.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">Quản lý nhà cung cấp…</string>
+    <string name="settings_providers_button_hint">Chọn giữa chế độ LLM cục bộ và API, thêm nhà cung cấp API đám mây (OpenAI, Anthropic và nhiều hơn nữa), và chọn nhà cung cấp đã đăng ký nào đang hoạt động.</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>

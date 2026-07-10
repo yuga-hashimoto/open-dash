@@ -280,6 +280,8 @@
     <string name="settings_local_llm_section">Local LLM (OpenAI Compatible)</string>
     <string name="settings_local_llm_url">Endpoint URL</string>
     <string name="settings_local_llm_model">Model Name</string>
+    <string name="settings_providers_button">प्रदाता प्रबंधित करें…</string>
+    <string name="settings_providers_button_hint">लोकल LLM बनाम API मोड चुनें, क्लाउड API प्रदाता जोड़ें (OpenAI, Anthropic और अन्य), और तय करें कि कौन-सा पंजीकृत प्रदाता सक्रिय है।</string>
     <string name="settings_switchbot_section">SwitchBot</string>
     <string name="settings_switchbot_token">Token</string>
     <string name="settings_switchbot_secret">Secret Key</string>
