@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">OpenDash কীভাবে কাজ করবে তা বেছে নিন</string>
+    <string name="provider_mode_subtitle">আপনি পরে সেটিংসে গিয়ে এটি পরিবর্তন করতে পারবেন।</string>
+    <string name="provider_mode_local_title">লোকাল LLM</string>
+    <string name="provider_mode_local_description">সম্পূর্ণভাবে এই ডিভাইসে চলে। অফলাইনে কাজ করে, তবে ক্লাউড মডেলের চেয়ে কম সক্ষম।</string>
+    <string name="provider_mode_api_title">API প্রদানকারী</string>
+    <string name="provider_mode_api_description">আপনার নিজের API কী ব্যবহার করে OpenAI, Anthropic বা অন্য কোনো ক্লাউড প্রদানকারীর সাথে সংযুক্ত করুন। ইন্টারনেট প্রয়োজন।</string>
+    <string name="add_provider_title">প্রদানকারী যোগ করুন</string>
+    <string name="add_provider_select_preset">প্রদানকারী নির্বাচন করুন</string>
+    <string name="add_provider_display_name_label">প্রদর্শনের নাম</string>
+    <string name="add_provider_base_url_label">বেস URL</string>
+    <string name="add_provider_api_key_label">API কী</string>
+    <string name="add_provider_fetch_models">মডেল আনুন</string>
+    <string name="add_provider_model_fetch_failed">মডেল আইডি (নিজে হাতে লিখুন)</string>
+    <string name="add_provider_save">সংরক্ষণ করুন</string>
+    <string name="add_provider_cancel">বাতিল করুন</string>
+    <string name="providers_mode_card_title">সহায়ক মোড</string>
+    <string name="providers_mode_local">লোকাল LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">প্রদানকারী যোগ করুন</string>
 </resources>

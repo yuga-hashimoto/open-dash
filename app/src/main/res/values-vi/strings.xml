@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Chọn cách OpenDash suy nghĩ</string>
+    <string name="provider_mode_subtitle">Bạn có thể thay đổi điều này sau trong Cài đặt.</string>
+    <string name="provider_mode_local_title">LLM cục bộ</string>
+    <string name="provider_mode_local_description">Chạy hoàn toàn trên thiết bị này. Hoạt động ngoại tuyến, nhưng kém mạnh hơn các mô hình đám mây.</string>
+    <string name="provider_mode_api_title">Nhà cung cấp API</string>
+    <string name="provider_mode_api_description">Kết nối với OpenAI, Anthropic hoặc nhà cung cấp đám mây khác bằng khóa API của riêng bạn. Yêu cầu kết nối internet.</string>
+    <string name="add_provider_title">Thêm nhà cung cấp</string>
+    <string name="add_provider_select_preset">Chọn nhà cung cấp</string>
+    <string name="add_provider_display_name_label">Tên hiển thị</string>
+    <string name="add_provider_base_url_label">URL cơ sở</string>
+    <string name="add_provider_api_key_label">Khóa API</string>
+    <string name="add_provider_fetch_models">Lấy danh sách mô hình</string>
+    <string name="add_provider_model_fetch_failed">ID mô hình (nhập thủ công)</string>
+    <string name="add_provider_save">Lưu</string>
+    <string name="add_provider_cancel">Hủy</string>
+    <string name="providers_mode_card_title">Chế độ trợ lý</string>
+    <string name="providers_mode_local">LLM cục bộ</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Thêm nhà cung cấp</string>
 </resources>

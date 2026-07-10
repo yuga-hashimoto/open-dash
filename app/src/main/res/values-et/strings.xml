@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Vali, kuidas OpenDash mõtleb</string>
+    <string name="provider_mode_subtitle">Saad seda hiljem seadetes muuta.</string>
+    <string name="provider_mode_local_title">Kohalik LLM</string>
+    <string name="provider_mode_local_description">Töötab täielikult selles seadmes. Töötab võrguühenduseta, kuid on pilvemudelitest vähem võimekas.</string>
+    <string name="provider_mode_api_title">API pakkuja</string>
+    <string name="provider_mode_api_description">Ühenda OpenAI, Anthropicu või mõne muu pilvepakkujaga, kasutades enda API-võtit. Vajalik on internetiühendus.</string>
+    <string name="add_provider_title">Lisa pakkuja</string>
+    <string name="add_provider_select_preset">Vali pakkuja</string>
+    <string name="add_provider_display_name_label">Kuvatav nimi</string>
+    <string name="add_provider_base_url_label">Baas-URL</string>
+    <string name="add_provider_api_key_label">API-võti</string>
+    <string name="add_provider_fetch_models">Too mudelid</string>
+    <string name="add_provider_model_fetch_failed">Mudeli ID (sisesta käsitsi)</string>
+    <string name="add_provider_save">Salvesta</string>
+    <string name="add_provider_cancel">Tühista</string>
+    <string name="providers_mode_card_title">Assistendi režiim</string>
+    <string name="providers_mode_local">Kohalik LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Lisa pakkuja</string>
 </resources>

@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Изберете как да работи OpenDash</string>
+    <string name="provider_mode_subtitle">Можете да промените това по-късно в Настройки.</string>
+    <string name="provider_mode_local_title">Локален LLM</string>
+    <string name="provider_mode_local_description">Работи изцяло на това устройство. Работи офлайн, но е по-слабо способен от облачните модели.</string>
+    <string name="provider_mode_api_title">API доставчик</string>
+    <string name="provider_mode_api_description">Свържете се с OpenAI, Anthropic или друг облачен доставчик, използвайки собствения си API ключ. Изисква интернет връзка.</string>
+    <string name="add_provider_title">Добавяне на доставчик</string>
+    <string name="add_provider_select_preset">Изберете доставчик</string>
+    <string name="add_provider_display_name_label">Показвано име</string>
+    <string name="add_provider_base_url_label">Базов URL адрес</string>
+    <string name="add_provider_api_key_label">API ключ</string>
+    <string name="add_provider_fetch_models">Извличане на модели</string>
+    <string name="add_provider_model_fetch_failed">ID на модел (въведете ръчно)</string>
+    <string name="add_provider_save">Запазване</string>
+    <string name="add_provider_cancel">Отказ</string>
+    <string name="providers_mode_card_title">Режим на асистента</string>
+    <string name="providers_mode_local">Локален LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Добавяне на доставчик</string>
 </resources>

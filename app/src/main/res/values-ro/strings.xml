@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Alege cum gândește OpenDash</string>
+    <string name="provider_mode_subtitle">Poți schimba asta mai târziu din Setări.</string>
+    <string name="provider_mode_local_title">LLM local</string>
+    <string name="provider_mode_local_description">Rulează complet pe acest dispozitiv. Funcționează offline, dar este mai puțin performant decât modelele cloud.</string>
+    <string name="provider_mode_api_title">Furnizor API</string>
+    <string name="provider_mode_api_description">Conectează-te la OpenAI, Anthropic sau alt furnizor cloud folosind propria cheie API. Necesită internet.</string>
+    <string name="add_provider_title">Adaugă furnizor</string>
+    <string name="add_provider_select_preset">Selectează furnizor</string>
+    <string name="add_provider_display_name_label">Nume afișat</string>
+    <string name="add_provider_base_url_label">URL de bază</string>
+    <string name="add_provider_api_key_label">Cheie API</string>
+    <string name="add_provider_fetch_models">Preia modelele</string>
+    <string name="add_provider_model_fetch_failed">ID model (introdu manual)</string>
+    <string name="add_provider_save">Salvează</string>
+    <string name="add_provider_cancel">Anulează</string>
+    <string name="providers_mode_card_title">Mod asistent</string>
+    <string name="providers_mode_local">LLM local</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Adaugă furnizor</string>
 </resources>

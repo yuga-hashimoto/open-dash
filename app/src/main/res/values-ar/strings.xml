@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">اختر كيف يفكر OpenDash</string>
+    <string name="provider_mode_subtitle">يمكنك تغيير هذا لاحقًا من الإعدادات.</string>
+    <string name="provider_mode_local_title">نموذج لغوي محلي (LLM)</string>
+    <string name="provider_mode_local_description">يعمل بالكامل على هذا الجهاز. يعمل دون اتصال بالإنترنت، لكنه أقل قدرة من النماذج السحابية.</string>
+    <string name="provider_mode_api_title">مزوّد API</string>
+    <string name="provider_mode_api_description">اتصل بـ OpenAI أو Anthropic أو مزوّد سحابي آخر باستخدام مفتاح API الخاص بك. يتطلب اتصالاً بالإنترنت.</string>
+    <string name="add_provider_title">إضافة مزوّد</string>
+    <string name="add_provider_select_preset">اختر المزوّد</string>
+    <string name="add_provider_display_name_label">اسم العرض</string>
+    <string name="add_provider_base_url_label">عنوان URL الأساسي</string>
+    <string name="add_provider_api_key_label">مفتاح API</string>
+    <string name="add_provider_fetch_models">جلب النماذج</string>
+    <string name="add_provider_model_fetch_failed">معرّف النموذج (أدخله يدويًا)</string>
+    <string name="add_provider_save">حفظ</string>
+    <string name="add_provider_cancel">إلغاء</string>
+    <string name="providers_mode_card_title">وضع المساعد</string>
+    <string name="providers_mode_local">نموذج لغوي محلي (LLM)</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">إضافة مزوّد</string>
 </resources>

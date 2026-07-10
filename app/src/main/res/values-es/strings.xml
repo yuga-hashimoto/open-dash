@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Elige cómo piensa OpenDash</string>
+    <string name="provider_mode_subtitle">Puedes cambiar esto más tarde en Configuración.</string>
+    <string name="provider_mode_local_title">LLM local</string>
+    <string name="provider_mode_local_description">Se ejecuta completamente en este dispositivo. Funciona sin conexión, pero es menos capaz que los modelos en la nube.</string>
+    <string name="provider_mode_api_title">Proveedor de API</string>
+    <string name="provider_mode_api_description">Conéctate a OpenAI, Anthropic u otro proveedor en la nube usando tu propia clave de API. Requiere internet.</string>
+    <string name="add_provider_title">Agregar proveedor</string>
+    <string name="add_provider_select_preset">Selecciona un proveedor</string>
+    <string name="add_provider_display_name_label">Nombre visible</string>
+    <string name="add_provider_base_url_label">URL base</string>
+    <string name="add_provider_api_key_label">Clave de API</string>
+    <string name="add_provider_fetch_models">Obtener modelos</string>
+    <string name="add_provider_model_fetch_failed">ID del modelo (introducir manualmente)</string>
+    <string name="add_provider_save">Guardar</string>
+    <string name="add_provider_cancel">Cancelar</string>
+    <string name="providers_mode_card_title">Modo del asistente</string>
+    <string name="providers_mode_local">LLM local</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Agregar proveedor</string>
 </resources>

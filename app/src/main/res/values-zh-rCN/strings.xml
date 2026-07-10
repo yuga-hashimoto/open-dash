@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">选择 OpenDash 的运行方式</string>
+    <string name="provider_mode_subtitle">您以后可以在设置中更改此项。</string>
+    <string name="provider_mode_local_title">本地 LLM</string>
+    <string name="provider_mode_local_description">完全在此设备上运行。可离线工作，但能力不如云端模型。</string>
+    <string name="provider_mode_api_title">API 提供商</string>
+    <string name="provider_mode_api_description">使用您自己的 API 密钥连接 OpenAI、Anthropic 或其他云服务提供商。需要联网。</string>
+    <string name="add_provider_title">添加提供商</string>
+    <string name="add_provider_select_preset">选择提供商</string>
+    <string name="add_provider_display_name_label">显示名称</string>
+    <string name="add_provider_base_url_label">基础 URL</string>
+    <string name="add_provider_api_key_label">API 密钥</string>
+    <string name="add_provider_fetch_models">获取模型</string>
+    <string name="add_provider_model_fetch_failed">模型 ID（手动输入）</string>
+    <string name="add_provider_save">保存</string>
+    <string name="add_provider_cancel">取消</string>
+    <string name="providers_mode_card_title">助手模式</string>
+    <string name="providers_mode_local">本地 LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">添加提供商</string>
 </resources>

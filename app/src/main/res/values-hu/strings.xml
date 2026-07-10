@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Válaszd ki, hogyan gondolkodjon az OpenDash</string>
+    <string name="provider_mode_subtitle">Ezt később a Beállításokban módosíthatod.</string>
+    <string name="provider_mode_local_title">Helyi LLM</string>
+    <string name="provider_mode_local_description">Teljesen ezen az eszközön fut. Offline is működik, de kevésbé tudásos, mint a felhőalapú modellek.</string>
+    <string name="provider_mode_api_title">API-szolgáltató</string>
+    <string name="provider_mode_api_description">Csatlakozz az OpenAI-hoz, az Anthropichoz vagy más felhőszolgáltatóhoz a saját API-kulcsoddal. Internetkapcsolat szükséges.</string>
+    <string name="add_provider_title">Szolgáltató hozzáadása</string>
+    <string name="add_provider_select_preset">Válassz szolgáltatót</string>
+    <string name="add_provider_display_name_label">Megjelenített név</string>
+    <string name="add_provider_base_url_label">Alap URL</string>
+    <string name="add_provider_api_key_label">API-kulcs</string>
+    <string name="add_provider_fetch_models">Modellek lekérése</string>
+    <string name="add_provider_model_fetch_failed">Modellazonosító (kézi megadás)</string>
+    <string name="add_provider_save">Mentés</string>
+    <string name="add_provider_cancel">Mégse</string>
+    <string name="providers_mode_card_title">Asszisztens mód</string>
+    <string name="providers_mode_local">Helyi LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Szolgáltató hozzáadása</string>
 </resources>

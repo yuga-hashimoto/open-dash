@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Wybierz, jak ma działać OpenDash</string>
+    <string name="provider_mode_subtitle">Możesz to później zmienić w Ustawieniach.</string>
+    <string name="provider_mode_local_title">Lokalny LLM</string>
+    <string name="provider_mode_local_description">Działa całkowicie na tym urządzeniu. Działa offline, ale jest mniej wydajny niż modele w chmurze.</string>
+    <string name="provider_mode_api_title">Dostawca API</string>
+    <string name="provider_mode_api_description">Połącz się z OpenAI, Anthropic lub innym dostawcą chmury za pomocą własnego klucza API. Wymaga internetu.</string>
+    <string name="add_provider_title">Dodaj dostawcę</string>
+    <string name="add_provider_select_preset">Wybierz dostawcę</string>
+    <string name="add_provider_display_name_label">Nazwa wyświetlana</string>
+    <string name="add_provider_base_url_label">Podstawowy URL</string>
+    <string name="add_provider_api_key_label">Klucz API</string>
+    <string name="add_provider_fetch_models">Pobierz modele</string>
+    <string name="add_provider_model_fetch_failed">Identyfikator modelu (wpisz ręcznie)</string>
+    <string name="add_provider_save">Zapisz</string>
+    <string name="add_provider_cancel">Anuluj</string>
+    <string name="providers_mode_card_title">Tryb asystenta</string>
+    <string name="providers_mode_local">Lokalny LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Dodaj dostawcę</string>
 </resources>

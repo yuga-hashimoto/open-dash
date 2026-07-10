@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Piliin kung paano mag-iisip ang OpenDash</string>
+    <string name="provider_mode_subtitle">Maaari mo itong baguhin sa Settings sa ibang pagkakataon.</string>
+    <string name="provider_mode_local_title">Lokal na LLM</string>
+    <string name="provider_mode_local_description">Tumatakbo nang buo sa device na ito. Gumagana offline, pero hindi kasing-kaya ng mga cloud model.</string>
+    <string name="provider_mode_api_title">Provider ng API</string>
+    <string name="provider_mode_api_description">Kumonekta sa OpenAI, Anthropic, o ibang cloud provider gamit ang sarili mong API key. Kailangan ng internet.</string>
+    <string name="add_provider_title">Magdagdag ng provider</string>
+    <string name="add_provider_select_preset">Pumili ng provider</string>
+    <string name="add_provider_display_name_label">Ipinapakitang pangalan</string>
+    <string name="add_provider_base_url_label">Base URL</string>
+    <string name="add_provider_api_key_label">API key</string>
+    <string name="add_provider_fetch_models">Kunin ang mga model</string>
+    <string name="add_provider_model_fetch_failed">Model ID (manu-manong ilagay)</string>
+    <string name="add_provider_save">I-save</string>
+    <string name="add_provider_cancel">Kanselahin</string>
+    <string name="providers_mode_card_title">Mode ng assistant</string>
+    <string name="providers_mode_local">Lokal na LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Magdagdag ng provider</string>
 </resources>

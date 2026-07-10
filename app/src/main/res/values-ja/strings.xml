@@ -389,4 +389,25 @@
     <string name="settings_offline_stack_lib">ネイティブライブラリ読み込み済み</string>
     <string name="settings_offline_stack_model">使用モデルをダウンロード済み</string>
     <string name="settings_offline_stack_voice">使用ボイスをダウンロード済み</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">OpenDashの動作方法を選択</string>
+    <string name="provider_mode_subtitle">この設定は後で設定画面から変更できます。</string>
+    <string name="provider_mode_local_title">ローカルLLM</string>
+    <string name="provider_mode_local_description">この端末上で完結します。オフラインで動作しますが、クラウドモデルより性能は劣ります。</string>
+    <string name="provider_mode_api_title">APIプロバイダー</string>
+    <string name="provider_mode_api_description">自分のAPIキーでOpenAI、Anthropicなどのクラウドプロバイダーに接続します。インターネット接続が必要です。</string>
+    <string name="add_provider_title">プロバイダーを追加</string>
+    <string name="add_provider_select_preset">プロバイダーを選択</string>
+    <string name="add_provider_display_name_label">表示名</string>
+    <string name="add_provider_base_url_label">ベースURL</string>
+    <string name="add_provider_api_key_label">APIキー</string>
+    <string name="add_provider_fetch_models">モデル一覧を取得</string>
+    <string name="add_provider_model_fetch_failed">モデルIDを直接入力</string>
+    <string name="add_provider_save">保存</string>
+    <string name="add_provider_cancel">キャンセル</string>
+    <string name="providers_mode_card_title">アシスタントモード</string>
+    <string name="providers_mode_local">ローカルLLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">プロバイダーを追加</string>
 </resources>

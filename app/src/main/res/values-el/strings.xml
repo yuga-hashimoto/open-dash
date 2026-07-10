@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Επιλέξτε πώς σκέφτεται το OpenDash</string>
+    <string name="provider_mode_subtitle">Μπορείτε να το αλλάξετε αργότερα από τις Ρυθμίσεις.</string>
+    <string name="provider_mode_local_title">Τοπικό LLM</string>
+    <string name="provider_mode_local_description">Εκτελείται εξ ολοκλήρου σε αυτή τη συσκευή. Λειτουργεί εκτός σύνδεσης, αλλά είναι λιγότερο ικανό από τα μοντέλα cloud.</string>
+    <string name="provider_mode_api_title">Πάροχος API</string>
+    <string name="provider_mode_api_description">Συνδεθείτε με το OpenAI, το Anthropic ή άλλον πάροχο cloud χρησιμοποιώντας το δικό σας κλειδί API. Απαιτείται σύνδεση στο διαδίκτυο.</string>
+    <string name="add_provider_title">Προσθήκη παρόχου</string>
+    <string name="add_provider_select_preset">Επιλέξτε πάροχο</string>
+    <string name="add_provider_display_name_label">Εμφανιζόμενο όνομα</string>
+    <string name="add_provider_base_url_label">Βασικό URL</string>
+    <string name="add_provider_api_key_label">Κλειδί API</string>
+    <string name="add_provider_fetch_models">Λήψη μοντέλων</string>
+    <string name="add_provider_model_fetch_failed">Αναγνωριστικό μοντέλου (εισαγωγή με το χέρι)</string>
+    <string name="add_provider_save">Αποθήκευση</string>
+    <string name="add_provider_cancel">Ακύρωση</string>
+    <string name="providers_mode_card_title">Λειτουργία βοηθού</string>
+    <string name="providers_mode_local">Τοπικό LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Προσθήκη παρόχου</string>
 </resources>

@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Pasirinkite, kaip veiks OpenDash</string>
+    <string name="provider_mode_subtitle">Vėliau tai galėsite pakeisti Nustatymuose.</string>
+    <string name="provider_mode_local_title">Vietinis LLM</string>
+    <string name="provider_mode_local_description">Veikia visiškai šiame įrenginyje. Veikia neprisijungus prie interneto, tačiau yra mažiau pajėgus nei debesijos modeliai.</string>
+    <string name="provider_mode_api_title">API teikėjas</string>
+    <string name="provider_mode_api_description">Prisijunkite prie OpenAI, Anthropic ar kito debesijos teikėjo naudodami savo API raktą. Reikalingas interneto ryšys.</string>
+    <string name="add_provider_title">Pridėti teikėją</string>
+    <string name="add_provider_select_preset">Pasirinkite teikėją</string>
+    <string name="add_provider_display_name_label">Rodomas pavadinimas</string>
+    <string name="add_provider_base_url_label">Bazinis URL</string>
+    <string name="add_provider_api_key_label">API raktas</string>
+    <string name="add_provider_fetch_models">Gauti modelius</string>
+    <string name="add_provider_model_fetch_failed">Modelio ID (įveskite rankiniu būdu)</string>
+    <string name="add_provider_save">Išsaugoti</string>
+    <string name="add_provider_cancel">Atšaukti</string>
+    <string name="providers_mode_card_title">Asistento režimas</string>
+    <string name="providers_mode_local">Vietinis LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Pridėti teikėją</string>
 </resources>

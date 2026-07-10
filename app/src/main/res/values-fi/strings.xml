@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Valitse, miten OpenDash ajattelee</string>
+    <string name="provider_mode_subtitle">Voit muuttaa tätä myöhemmin asetuksista.</string>
+    <string name="provider_mode_local_title">Paikallinen LLM</string>
+    <string name="provider_mode_local_description">Toimii kokonaan tällä laitteella. Toimii ilman verkkoyhteyttä, mutta on vähemmän suorituskykyinen kuin pilvimallit.</string>
+    <string name="provider_mode_api_title">API-palveluntarjoaja</string>
+    <string name="provider_mode_api_description">Yhdistä OpenAI:hin, Anthropiciin tai muuhun pilvipalveluntarjoajaan omalla API-avaimellasi. Vaatii internetyhteyden.</string>
+    <string name="add_provider_title">Lisää palveluntarjoaja</string>
+    <string name="add_provider_select_preset">Valitse palveluntarjoaja</string>
+    <string name="add_provider_display_name_label">Näyttönimi</string>
+    <string name="add_provider_base_url_label">Perus-URL</string>
+    <string name="add_provider_api_key_label">API-avain</string>
+    <string name="add_provider_fetch_models">Hae mallit</string>
+    <string name="add_provider_model_fetch_failed">Mallin tunnus (syötä manuaalisesti)</string>
+    <string name="add_provider_save">Tallenna</string>
+    <string name="add_provider_cancel">Peruuta</string>
+    <string name="providers_mode_card_title">Avustajan tila</string>
+    <string name="providers_mode_local">Paikallinen LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Lisää palveluntarjoaja</string>
 </resources>

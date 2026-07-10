@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">OpenDash\'in nasıl düşüneceğini seçin</string>
+    <string name="provider_mode_subtitle">Bunu daha sonra Ayarlar\'dan değiştirebilirsiniz.</string>
+    <string name="provider_mode_local_title">Yerel LLM</string>
+    <string name="provider_mode_local_description">Tamamen bu cihazda çalışır. Çevrimdışı çalışır, ancak bulut modellerinden daha az yeteneklidir.</string>
+    <string name="provider_mode_api_title">API sağlayıcısı</string>
+    <string name="provider_mode_api_description">Kendi API anahtarınızı kullanarak OpenAI, Anthropic veya başka bir bulut sağlayıcısına bağlanın. İnternet gerektirir.</string>
+    <string name="add_provider_title">Sağlayıcı ekle</string>
+    <string name="add_provider_select_preset">Sağlayıcı seçin</string>
+    <string name="add_provider_display_name_label">Görünen ad</string>
+    <string name="add_provider_base_url_label">Temel URL</string>
+    <string name="add_provider_api_key_label">API anahtarı</string>
+    <string name="add_provider_fetch_models">Modelleri getir</string>
+    <string name="add_provider_model_fetch_failed">Model kimliği (elle girin)</string>
+    <string name="add_provider_save">Kaydet</string>
+    <string name="add_provider_cancel">İptal</string>
+    <string name="providers_mode_card_title">Asistan modu</string>
+    <string name="providers_mode_local">Yerel LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Sağlayıcı ekle</string>
 </resources>

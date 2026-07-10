@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Velg hvordan OpenDash tenker</string>
+    <string name="provider_mode_subtitle">Du kan endre dette senere i Innstillinger.</string>
+    <string name="provider_mode_local_title">Lokal LLM</string>
+    <string name="provider_mode_local_description">Kjører fullstendig på denne enheten. Fungerer uten nett, men er mindre dyktig enn skymodeller.</string>
+    <string name="provider_mode_api_title">API-leverandør</string>
+    <string name="provider_mode_api_description">Koble til OpenAI, Anthropic eller en annen skyleverandør med din egen API-nøkkel. Krever internett.</string>
+    <string name="add_provider_title">Legg til leverandør</string>
+    <string name="add_provider_select_preset">Velg leverandør</string>
+    <string name="add_provider_display_name_label">Visningsnavn</string>
+    <string name="add_provider_base_url_label">Grunnleggende URL</string>
+    <string name="add_provider_api_key_label">API-nøkkel</string>
+    <string name="add_provider_fetch_models">Hent modeller</string>
+    <string name="add_provider_model_fetch_failed">Modell-ID (angi manuelt)</string>
+    <string name="add_provider_save">Lagre</string>
+    <string name="add_provider_cancel">Avbryt</string>
+    <string name="providers_mode_card_title">Assistentmodus</string>
+    <string name="providers_mode_local">Lokal LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Legg til leverandør</string>
 </resources>

@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">בחר כיצד OpenDash חושב</string>
+    <string name="provider_mode_subtitle">תוכל לשנות זאת מאוחר יותר בהגדרות.</string>
+    <string name="provider_mode_local_title">LLM מקומי</string>
+    <string name="provider_mode_local_description">פועל לחלוטין במכשיר זה. עובד ללא חיבור לאינטרנט, אך פחות יכולתי ממודלים בענן.</string>
+    <string name="provider_mode_api_title">ספק API</string>
+    <string name="provider_mode_api_description">התחבר ל-OpenAI, Anthropic או ספק ענן אחר באמצעות מפתח ה-API שלך. נדרש חיבור לאינטרנט.</string>
+    <string name="add_provider_title">הוספת ספק</string>
+    <string name="add_provider_select_preset">בחר ספק</string>
+    <string name="add_provider_display_name_label">שם לתצוגה</string>
+    <string name="add_provider_base_url_label">כתובת URL בסיסית</string>
+    <string name="add_provider_api_key_label">מפתח API</string>
+    <string name="add_provider_fetch_models">אחזר מודלים</string>
+    <string name="add_provider_model_fetch_failed">מזהה מודל (הזן ידנית)</string>
+    <string name="add_provider_save">שמור</string>
+    <string name="add_provider_cancel">ביטול</string>
+    <string name="providers_mode_card_title">מצב עוזר</string>
+    <string name="providers_mode_local">LLM מקומי</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">הוספת ספק</string>
 </resources>

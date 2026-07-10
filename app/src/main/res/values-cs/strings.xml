@@ -391,4 +391,25 @@
     <string name="settings_offline_stack_lib">Native library loaded</string>
     <string name="settings_offline_stack_model">Active model downloaded</string>
     <string name="settings_offline_stack_voice">Active voice downloaded</string>
+
+    <!-- Provider mode (first-run + settings) -->
+    <string name="provider_mode_title">Vyberte, jak bude OpenDash přemýšlet</string>
+    <string name="provider_mode_subtitle">Toto můžete později změnit v Nastavení.</string>
+    <string name="provider_mode_local_title">Místní LLM</string>
+    <string name="provider_mode_local_description">Běží zcela na tomto zařízení. Funguje offline, ale je méně schopný než cloudové modely.</string>
+    <string name="provider_mode_api_title">Poskytovatel API</string>
+    <string name="provider_mode_api_description">Připojte se k OpenAI, Anthropic nebo jinému cloudovému poskytovateli pomocí vlastního API klíče. Vyžaduje internet.</string>
+    <string name="add_provider_title">Přidat poskytovatele</string>
+    <string name="add_provider_select_preset">Vyberte poskytovatele</string>
+    <string name="add_provider_display_name_label">Zobrazovaný název</string>
+    <string name="add_provider_base_url_label">Základní URL</string>
+    <string name="add_provider_api_key_label">API klíč</string>
+    <string name="add_provider_fetch_models">Načíst modely</string>
+    <string name="add_provider_model_fetch_failed">ID modelu (zadejte ručně)</string>
+    <string name="add_provider_save">Uložit</string>
+    <string name="add_provider_cancel">Zrušit</string>
+    <string name="providers_mode_card_title">Režim asistenta</string>
+    <string name="providers_mode_local">Místní LLM</string>
+    <string name="providers_mode_api">API</string>
+    <string name="providers_add_provider">Přidat poskytovatele</string>
 </resources>
