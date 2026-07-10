@@ -611,7 +611,12 @@ object DeviceModule {
             TypeTextToolExecutor(a11yServiceHolder),
             MemoryToolExecutor(memoryDao),
             RagToolExecutor(RagService(documentChunkDao)),
-            RoutineToolExecutor(routineStore, delegatingExecutor),
+            RoutineToolExecutor(
+                routineStore,
+                delegatingExecutor,
+                moshi,
+                com.opendash.app.voice.routine.AndroidRoutineScheduler(context)
+            ),
             ShoppingListToolExecutor(shoppingListDao),
             com.opendash.app.tool.reminder.ReminderToolExecutor(
                 reminderDao,

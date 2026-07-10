@@ -42,6 +42,7 @@ class VoiceService : Service() {
     @Inject lateinit var multicastDiscovery: com.opendash.app.util.MulticastDiscovery
     @Inject lateinit var announcementServer: com.opendash.app.multiroom.AnnouncementServer
     @Inject lateinit var peerLivenessTracker: com.opendash.app.multiroom.PeerLivenessTracker
+    @Inject lateinit var toolExecutor: com.opendash.app.tool.ToolExecutor
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val multiroomController = com.opendash.app.multiroom.MultiroomLifecycleController(
@@ -193,6 +194,13 @@ class VoiceService : Service() {
             ACTION_STOP_LISTENING -> {
                 voicePipeline.stopSpeaking()
             }
+            ACTION_RUN_ROUTINE -> {
+                val routineName = intent.getStringExtra(EXTRA_ROUTINE_NAME)
+                scope.launch {
+                    initializeWakeWord()
+                    if (routineName != null) runScheduledRoutine(routineName)
+                }
+            }
             else -> {
                 scope.launch { initializeWakeWord() }
             }
@@ -200,6 +208,28 @@ class VoiceService : Service() {
 
         Timber.d("VoiceService started in foreground")
         return START_STICKY
+    }
+
+    /**
+     * Invoked when [RoutineFireReceiver][com.opendash.app.voice.routine.RoutineFireReceiver]
+     * wakes the service to run a scheduled routine. Dispatches through
+     * the same `run_routine` tool the LLM/voice path uses, so a
+     * scheduled routine and a spoken "run my morning routine" behave
+     * identically.
+     */
+    private suspend fun runScheduledRoutine(routineName: String) {
+        try {
+            val result = toolExecutor.execute(
+                com.opendash.app.tool.ToolCall(
+                    id = "scheduled_routine_${System.currentTimeMillis()}",
+                    name = "run_routine",
+                    arguments = mapOf("name" to routineName)
+                )
+            )
+            Timber.d("Scheduled routine '$routineName' ran: success=${result.success}")
+        } catch (e: Exception) {
+            Timber.e(e, "Scheduled routine '$routineName' failed to run")
+        }
     }
 
     private suspend fun initializeWakeWord() {
@@ -308,9 +338,24 @@ class VoiceService : Service() {
         const val ACTION_STOP_LISTENING = "com.opendash.app.STOP_LISTENING"
         const val ACTION_PAUSE_HOTWORD = "com.opendash.app.PAUSE_HOTWORD"
         const val ACTION_RESUME_HOTWORD = "com.opendash.app.RESUME_HOTWORD"
+        const val ACTION_RUN_ROUTINE = "com.opendash.app.RUN_ROUTINE"
+        const val EXTRA_ROUTINE_NAME = "routine_name"
 
         fun start(context: Context) {
             val intent = Intent(context, VoiceService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        /** Wakes (or reuses) the service and runs [routineName] via the run_routine tool. */
+        fun startWithRoutine(context: Context, routineName: String) {
+            val intent = Intent(context, VoiceService::class.java).apply {
+                action = ACTION_RUN_ROUTINE
+                putExtra(EXTRA_ROUTINE_NAME, routineName)
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {

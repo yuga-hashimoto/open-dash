@@ -30,6 +30,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opendash.app.R
 import com.opendash.app.assistant.routine.Routine
+import com.opendash.app.assistant.routine.RoutineSchedule
+import com.opendash.app.voice.alarm.AlarmOccurrenceCalculator
+import java.time.format.TextStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,6 +113,13 @@ private fun RoutineRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            routine.schedule?.let { schedule ->
+                Text(
+                    text = stringResource(R.string.routines_schedule_label, formatSchedule(schedule)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             routine.actions.take(3).forEach { action ->
                 Text(
                     text = "• ${action.toolName}",
@@ -133,4 +144,14 @@ private fun RoutineRow(
             }
         }
     }
+}
+
+@Composable
+private fun formatSchedule(schedule: RoutineSchedule): String {
+    val time = "%02d:%02d".format(schedule.hour, schedule.minute)
+    val days = AlarmOccurrenceCalculator.maskToDays(schedule.repeatDaysMask)
+    if (days.isEmpty()) return "$time (${stringResource(R.string.routines_schedule_once)})"
+    val dayNames = days.sortedBy { it.value }
+        .joinToString(", ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+    return "$time ($dayNames)"
 }

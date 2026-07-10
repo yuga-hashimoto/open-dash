@@ -241,6 +241,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Routine fire receiver: fired by AlarmManager when a scheduled routine's trigger time arrives -->
+        <receiver
+            android:name=".voice.routine.RoutineFireReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.opendash.app.action.ROUTINE_FIRE" />
+            </intent-filter>
+        </receiver>
+
         <!-- VoiceInteractionService: appears in Default digital assistant app list -->
         <!-- Reference: OpenClaw Assistant OpenClawAssistantService -->
         <service

@@ -4,25 +4,33 @@ import com.google.common.truth.Truth.assertThat
 import com.opendash.app.tool.ToolCall
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolResult
+import com.opendash.app.voice.routine.RoutineScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDateTime
 
 class RoutineToolExecutorTest {
 
     private lateinit var store: InMemoryRoutineStore
     private lateinit var toolExecutor: ToolExecutor
+    private lateinit var scheduler: RoutineScheduler
     private lateinit var executor: RoutineToolExecutor
+    private val fixedNow = LocalDateTime.of(2024, 1, 1, 8, 0) // Monday 08:00
 
     @BeforeEach
     fun setup() {
         store = InMemoryRoutineStore()
         toolExecutor = mockk()
-        executor = RoutineToolExecutor(store, toolExecutor)
+        scheduler = mockk(relaxed = true)
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        executor = RoutineToolExecutor(store, toolExecutor, moshi, scheduler, nowProvider = { fixedNow })
         coEvery { toolExecutor.execute(any()) } answers {
             val call = firstArg<ToolCall>()
             ToolResult(call.id, true, "ok")
@@ -30,9 +38,106 @@ class RoutineToolExecutorTest {
     }
 
     @Test
-    fun `availableTools has three routine tools`() = runTest {
+    fun `availableTools has four routine tools`() = runTest {
         val names = executor.availableTools().map { it.name }
-        assertThat(names).containsExactly("run_routine", "list_routines", "delete_routine")
+        assertThat(names).containsExactly("create_routine", "run_routine", "list_routines", "delete_routine")
+    }
+
+    @Test
+    fun `create_routine without schedule persists manual-invoke routine`() = runTest {
+        val result = executor.execute(
+            ToolCall(
+                "c1", "create_routine",
+                mapOf(
+                    "name" to "good night",
+                    "actions_json" to """[{"tool_name":"execute_command","arguments":{"device_id":"l1"}}]"""
+                )
+            )
+        )
+
+        assertThat(result.success).isTrue()
+        val saved = store.getByName("good night")
+        assertThat(saved).isNotNull()
+        assertThat(saved?.actions).hasSize(1)
+        assertThat(saved?.actions?.first()?.toolName).isEqualTo("execute_command")
+        assertThat(saved?.schedule).isNull()
+        verify(exactly = 0) { scheduler.schedule(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `create_routine with schedule persists and schedules`() = runTest {
+        val result = executor.execute(
+            ToolCall(
+                "c2", "create_routine",
+                mapOf(
+                    "name" to "morning routine",
+                    "actions_json" to "[]",
+                    "schedule_hour" to 7.0,
+                    "schedule_minute" to 0.0,
+                    "schedule_repeat_days" to "mon,wed,fri"
+                )
+            )
+        )
+
+        assertThat(result.success).isTrue()
+        val saved = store.getByName("morning routine")
+        assertThat(saved?.schedule).isEqualTo(RoutineSchedule(7, 0, 21)) // mon=1,wed=4,fri=16 -> 21
+        verify { scheduler.schedule(any(), "morning routine", 7, 0, 21, any()) }
+    }
+
+    @Test
+    fun `create_routine missing name returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall("c3", "create_routine", mapOf("actions_json" to "[]"))
+        )
+
+        assertThat(result.success).isFalse()
+    }
+
+    @Test
+    fun `create_routine missing actions_json returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall("c4", "create_routine", mapOf("name" to "x"))
+        )
+
+        assertThat(result.success).isFalse()
+    }
+
+    @Test
+    fun `create_routine invalid actions_json returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall("c5", "create_routine", mapOf("name" to "x", "actions_json" to "not json"))
+        )
+
+        assertThat(result.success).isFalse()
+    }
+
+    @Test
+    fun `create_routine invalid schedule_repeat_days returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall(
+                "c6", "create_routine",
+                mapOf(
+                    "name" to "x", "actions_json" to "[]",
+                    "schedule_hour" to 7.0, "schedule_minute" to 0.0,
+                    "schedule_repeat_days" to "someday"
+                )
+            )
+        )
+
+        assertThat(result.success).isFalse()
+    }
+
+    @Test
+    fun `create_routine out of range schedule_hour returns error`() = runTest {
+        val result = executor.execute(
+            ToolCall(
+                "c7", "create_routine",
+                mapOf("name" to "x", "actions_json" to "[]", "schedule_hour" to 24.0, "schedule_minute" to 0.0)
+            )
+        )
+
+        assertThat(result.success).isFalse()
     }
 
     @Test
@@ -159,5 +264,23 @@ class RoutineToolExecutorTest {
 
         assertThat(result.success).isTrue()
         assertThat(store.listAll()).isEmpty()
+    }
+
+    @Test
+    fun `delete_routine cancels scheduler when routine was scheduled`() = runTest {
+        store.save(Routine("r", "x", "", listOf(), schedule = RoutineSchedule(7, 0, 0)))
+
+        executor.execute(ToolCall("7", "delete_routine", mapOf("id" to "r")))
+
+        verify { scheduler.cancel("r") }
+    }
+
+    @Test
+    fun `delete_routine does not touch scheduler for manual-invoke routine`() = runTest {
+        store.save(Routine("r", "x", "", listOf()))
+
+        executor.execute(ToolCall("8", "delete_routine", mapOf("id" to "r")))
+
+        verify(exactly = 0) { scheduler.cancel(any()) }
     }
 }

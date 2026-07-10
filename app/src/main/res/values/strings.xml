@@ -77,6 +77,8 @@
     <string name="routines_more">  \u2026 and %1$d more</string>
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">Scheduled: %1$s</string>
+    <string name="routines_schedule_once">once</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
