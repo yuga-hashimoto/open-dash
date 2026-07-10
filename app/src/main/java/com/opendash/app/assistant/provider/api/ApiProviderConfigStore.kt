@@ -6,6 +6,7 @@ import com.opendash.app.data.preferences.SecurePreferences
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import kotlinx.coroutines.flow.first
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,7 +22,12 @@ class ApiProviderConfigStore @Inject constructor(
     suspend fun list(): List<ApiProviderConfig> {
         val json = appPreferences.observe(PreferenceKeys.API_PROVIDER_CONFIGS).first()
         if (json.isNullOrBlank()) return emptyList()
-        return adapter.fromJson(json).orEmpty()
+        return try {
+            adapter.fromJson(json).orEmpty()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse stored ApiProviderConfig list")
+            emptyList()
+        }
     }
 
     suspend fun add(config: ApiProviderConfig, apiKey: String) {

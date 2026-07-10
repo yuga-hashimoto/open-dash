@@ -7,10 +7,8 @@ import com.opendash.app.data.preferences.SecurePreferences
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -103,5 +101,14 @@ class ApiProviderConfigStoreTest {
         every { securePreferences.getString("api_provider_key_cfg-1", "") } returns "sk-stored"
 
         assertThat(store.apiKeyFor("cfg-1")).isEqualTo("sk-stored")
+    }
+
+    @Test
+    fun `list returns empty list when stored value is malformed json`() = runTest {
+        storedJson = "not valid json"
+
+        val result = store.list()
+
+        assertThat(result).isEmpty()
     }
 }
