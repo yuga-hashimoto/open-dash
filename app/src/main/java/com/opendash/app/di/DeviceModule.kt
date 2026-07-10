@@ -611,6 +611,7 @@ object DeviceModule {
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
             ShoppingListToolExecutor(shoppingListDao),
+            com.opendash.app.tool.entertainment.FunToolExecutor(),
             SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via
