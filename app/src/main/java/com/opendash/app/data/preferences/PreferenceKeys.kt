@@ -67,6 +67,14 @@ object PreferenceKeys {
     val ROUTING_POLICY = stringPreferencesKey("routing_policy")
     val ACTIVE_PROVIDER_ID = stringPreferencesKey("active_provider_id")
 
+    // Assistant mode: "local" (embedded model) | "api" (cloud provider). Unset = first run.
+    val ASSISTANT_MODE = stringPreferencesKey("assistant_mode")
+    const val MODE_LOCAL = "local"
+    const val MODE_API = "api"
+
+    // JSON array of ApiProviderConfig entries (see assistant.provider.api package).
+    val API_PROVIDER_CONFIGS = stringPreferencesKey("api_provider_configs")
+
     // SwitchBot (token + secret live in SecurePreferences — both are credentials)
 
     // MQTT (password lives in SecurePreferences; URL + username are plaintext)
