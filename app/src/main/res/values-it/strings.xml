@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Aggiungi provider</string>
     <string name="providers_mode_restart_hint">Le modifiche hanno effetto dopo il riavvio dell\'app.</string>
+    <string name="reminder_notification_title">Promemoria</string>
 </resources>

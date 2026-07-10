@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">เพิ่มผู้ให้บริการ</string>
     <string name="providers_mode_restart_hint">การเปลี่ยนแปลงจะมีผลหลังจากรีสตาร์ทแอป</string>
+    <string name="reminder_notification_title">การแจ้งเตือน</string>
 </resources>

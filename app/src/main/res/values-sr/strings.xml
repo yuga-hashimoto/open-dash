@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Додај добављача</string>
     <string name="providers_mode_restart_hint">Промене ступају на снагу након поновног покретања апликације.</string>
+    <string name="reminder_notification_title">Подсетник</string>
 </resources>

@@ -486,6 +486,7 @@ object DeviceModule {
         memoryDao: MemoryDao,
         routineDao: RoutineDao,
         shoppingListDao: ShoppingListDao,
+        reminderDao: com.opendash.app.data.db.ReminderDao,
         documentChunkDao: DocumentChunkDao,
         cameraProviderHolder: CameraProviderHolder,
         screenRecorderHolder: ScreenRecorderHolder,
@@ -611,6 +612,10 @@ object DeviceModule {
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(routineStore, delegatingExecutor),
             ShoppingListToolExecutor(shoppingListDao),
+            com.opendash.app.tool.reminder.ReminderToolExecutor(
+                reminderDao,
+                com.opendash.app.voice.reminder.AndroidReminderScheduler(context)
+            ),
             com.opendash.app.tool.entertainment.FunToolExecutor(),
             SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),

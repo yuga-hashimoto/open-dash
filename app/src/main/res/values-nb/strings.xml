@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Legg til leverandør</string>
     <string name="providers_mode_restart_hint">Endringer trer i kraft etter at appen startes på nytt.</string>
+    <string name="reminder_notification_title">Påminnelse</string>
 </resources>

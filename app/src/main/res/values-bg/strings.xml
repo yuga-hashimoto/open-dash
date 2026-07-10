@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Добавяне на доставчик</string>
     <string name="providers_mode_restart_hint">Промените влизат в сила след рестартиране на приложението.</string>
+    <string name="reminder_notification_title">Напомняне</string>
 </resources>

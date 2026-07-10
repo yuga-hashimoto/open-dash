@@ -14,9 +14,10 @@ import androidx.room.RoomDatabase
         SpeakerGroupEntity::class,
         MultiroomTrafficEntity::class,
         MultiroomRejectionEntity::class,
-        ShoppingListItemEntity::class
+        ShoppingListItemEntity::class,
+        ReminderEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun multiroomTrafficDao(): MultiroomTrafficDao
     abstract fun multiroomRejectionDao(): MultiroomRejectionDao
     abstract fun shoppingListDao(): ShoppingListDao
+    abstract fun reminderDao(): ReminderDao
 }

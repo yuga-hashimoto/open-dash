@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Додати провайдера</string>
     <string name="providers_mode_restart_hint">Зміни набудуть чинності після перезапуску застосунку.</string>
+    <string name="reminder_notification_title">Нагадування</string>
 </resources>

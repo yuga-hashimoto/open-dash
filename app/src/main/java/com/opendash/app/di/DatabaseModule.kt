@@ -8,6 +8,7 @@ import com.opendash.app.data.db.MemoryDao
 import com.opendash.app.data.db.MessageDao
 import com.opendash.app.data.db.MultiroomRejectionDao
 import com.opendash.app.data.db.MultiroomTrafficDao
+import com.opendash.app.data.db.ReminderDao
 import com.opendash.app.data.db.RoutineDao
 import com.opendash.app.data.db.SessionDao
 import com.opendash.app.data.db.ShoppingListDao
@@ -64,4 +65,7 @@ object DatabaseModule {
 
     @Provides
     fun provideShoppingListDao(db: AppDatabase): ShoppingListDao = db.shoppingListDao()
+
+    @Provides
+    fun provideReminderDao(db: AppDatabase): ReminderDao = db.reminderDao()
 }

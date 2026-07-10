@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Pridať poskytovateľa</string>
     <string name="providers_mode_restart_hint">Zmeny sa prejavia po reštartovaní aplikácie.</string>
+    <string name="reminder_notification_title">Pripomienka</string>
 </resources>

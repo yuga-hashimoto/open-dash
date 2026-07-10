@@ -415,4 +415,5 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">प्रदाता जोड़ें</string>
     <string name="providers_mode_restart_hint">परिवर्तन ऐप को पुनः आरंभ करने के बाद प्रभावी होंगे।</string>
+    <string name="reminder_notification_title">अनुस्मारक</string>
 </resources>
