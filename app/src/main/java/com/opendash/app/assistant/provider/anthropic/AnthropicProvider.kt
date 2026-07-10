@@ -130,28 +130,7 @@ class AnthropicProvider(
         tools: List<ToolSchema>,
         stream: Boolean
     ): String {
-        val msgList = messages.mapNotNull { msg ->
-            when (msg) {
-                is AssistantMessage.User -> mapOf("role" to "user", "content" to msg.content)
-                is AssistantMessage.Assistant -> mapOf(
-                    "role" to "assistant",
-                    "content" to assistantContent(msg)
-                )
-                is AssistantMessage.ToolCallResult -> mapOf(
-                    "role" to "user",
-                    "content" to listOf(
-                        mapOf(
-                            "type" to "tool_result",
-                            "tool_use_id" to msg.callId,
-                            "content" to msg.result,
-                            "is_error" to msg.isError
-                        )
-                    )
-                )
-                is AssistantMessage.System -> null
-                is AssistantMessage.Delta -> null
-            }
-        }
+        val msgList = buildMessageList(messages)
 
         val systemText = messages.filterIsInstance<AssistantMessage.System>()
             .joinToString("\n") { it.content }
@@ -188,6 +167,47 @@ class AnthropicProvider(
 
         return moshi.adapter(Map::class.java).toJson(payload as Map<Any?, Any?>) ?: "{}"
     }
+
+    private fun buildMessageList(messages: List<AssistantMessage>): List<Map<String, Any>> {
+        val result = mutableListOf<Map<String, Any>>()
+        var toolResultRun = mutableListOf<AssistantMessage.ToolCallResult>()
+
+        fun flushToolResultRun() {
+            if (toolResultRun.isEmpty()) return
+            result.add(
+                mapOf(
+                    "role" to "user",
+                    "content" to toolResultRun.map { toolResultBlock(it) }
+                )
+            )
+            toolResultRun = mutableListOf()
+        }
+
+        messages.forEach { msg ->
+            when (msg) {
+                is AssistantMessage.ToolCallResult -> toolResultRun.add(msg)
+                is AssistantMessage.User -> {
+                    flushToolResultRun()
+                    result.add(mapOf("role" to "user", "content" to msg.content))
+                }
+                is AssistantMessage.Assistant -> {
+                    flushToolResultRun()
+                    result.add(mapOf("role" to "assistant", "content" to assistantContent(msg)))
+                }
+                is AssistantMessage.System, is AssistantMessage.Delta -> Unit
+            }
+        }
+        flushToolResultRun()
+
+        return result
+    }
+
+    private fun toolResultBlock(msg: AssistantMessage.ToolCallResult): Map<String, Any> = mapOf(
+        "type" to "tool_result",
+        "tool_use_id" to msg.callId,
+        "content" to msg.result,
+        "is_error" to msg.isError
+    )
 
     private fun assistantContent(msg: AssistantMessage.Assistant): Any {
         if (msg.toolCalls.isEmpty()) return msg.content

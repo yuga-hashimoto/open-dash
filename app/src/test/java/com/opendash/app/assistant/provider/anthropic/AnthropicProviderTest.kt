@@ -182,6 +182,43 @@ class AnthropicProviderTest {
         assertThat(toolResultBlock["tool_use_id"]).isEqualTo("toolu_1")
     }
 
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `send merges consecutive parallel tool results into a single user message`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"content":[{"type":"text","text":"ok"}]}"""))
+        val p = provider()
+        p.send(
+            p.startSession(),
+            listOf(
+                AssistantMessage.User(content = "what's the weather in Tokyo, Osaka, and Kyoto?"),
+                AssistantMessage.Assistant(
+                    content = "",
+                    toolCalls = listOf(
+                        ToolCallRequest(id = "toolu_1", name = "get_weather", arguments = """{"location":"Tokyo"}"""),
+                        ToolCallRequest(id = "toolu_2", name = "get_weather", arguments = """{"location":"Osaka"}"""),
+                        ToolCallRequest(id = "toolu_3", name = "get_weather", arguments = """{"location":"Kyoto"}""")
+                    )
+                ),
+                AssistantMessage.ToolCallResult(callId = "toolu_1", result = "72F and sunny"),
+                AssistantMessage.ToolCallResult(callId = "toolu_2", result = "68F and cloudy"),
+                AssistantMessage.ToolCallResult(callId = "toolu_3", result = "70F and rainy")
+            ),
+            emptyList()
+        )
+
+        val requestBody = requestBodyAsMap()
+        val messages = requestBody["messages"] as List<Map<String, Any?>>
+
+        val userMessages = messages.filter { it["role"] == "user" }
+        assertThat(userMessages).hasSize(2)
+
+        val toolResultUserMessage = userMessages.last()
+        val userContent = toolResultUserMessage["content"] as List<Map<String, Any?>>
+        assertThat(userContent).hasSize(3)
+        assertThat(userContent.map { it["tool_use_id"] }).containsExactly("toolu_1", "toolu_2", "toolu_3").inOrder()
+        assertThat(userContent.all { it["type"] == "tool_result" }).isTrue()
+    }
+
     @Test
     fun `sendStreaming emits text deltas followed by a terminal delta with finishReason`() = runTest {
         val sse = """
