@@ -24,6 +24,8 @@ import com.opendash.app.voice.fastpath.DefaultFastPathRouter
 import com.opendash.app.voice.fastpath.FastPathRouter
 import com.opendash.app.tool.info.DuckDuckGoHtmlSearchProvider
 import com.opendash.app.tool.info.DuckDuckGoSearchProvider
+import com.opendash.app.tool.info.EspnSportsScoreProvider
+import com.opendash.app.tool.info.SportsToolExecutor
 import com.opendash.app.tool.info.HtmlWebFetcher
 import com.opendash.app.tool.info.SearchProviderChain
 import com.opendash.app.tool.info.InMemoryKnowledgeStore
@@ -525,6 +527,7 @@ object DeviceModule {
                 OpenMeteoWeatherProvider(client, moshi),
                 appPreferences
             ),
+            SportsToolExecutor(EspnSportsScoreProvider(client, moshi)),
             SearchToolExecutor(
                 // HTML scrape first (real SERP results); Instant-Answer API
                 // as a secondary for the few queries it handles well
