@@ -1,5 +1,6 @@
 package com.opendash.app.tool.spotify
 
+import com.opendash.app.tool.escapeJson
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,7 +41,7 @@ class DefaultSpotifyApiClient(
     }
 
     override suspend fun play(trackUri: String?, deviceId: String?): Boolean {
-        val bodyJson = if (trackUri != null) """{"uris":["${trackUri}"]}""" else "{}"
+        val bodyJson = if (trackUri != null) """{"uris":["${trackUri.escapeJson()}"]}""" else "{}"
         return sendPlayerCommand("play", "PUT", deviceId, bodyJson)
     }
 
