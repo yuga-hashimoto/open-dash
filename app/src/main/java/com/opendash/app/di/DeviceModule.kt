@@ -627,6 +627,9 @@ object DeviceModule {
                 com.opendash.app.voice.alarm.AndroidAlarmScheduler(context)
             ),
             com.opendash.app.tool.entertainment.FunToolExecutor(),
+            com.opendash.app.tool.translate.TranslateToolExecutor(
+                com.opendash.app.tool.translate.MlKitTranslateEngine()
+            ),
             SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via

@@ -217,6 +217,9 @@ dependencies {
     implementation(libs.mediapipe.genai)
     implementation(libs.litertlm.android)
 
+    // On-device translation (standalone ML Kit, no Firebase project needed)
+    implementation(libs.mlkit.translate)
+
     // Wake word (Vosk offline speech recognition)
     implementation(libs.vosk)
 

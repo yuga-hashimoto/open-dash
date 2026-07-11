@@ -21,6 +21,7 @@ security-crypto = "1.1.0-alpha06"
 paho-mqtt = "1.2.5"
 mediapipe-genai = "0.10.29"
 litertlm = "latest.release"
+mlkit-translate = "17.0.3"
 
 junit5 = "5.11.3"
 mockk = "1.13.13"
@@ -86,6 +87,9 @@ paho-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.client.mqttv3
 # On-device LLM
 mediapipe-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipe-genai" }
 litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
+
+# On-device translation
+mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkit-translate" }
 
 # Coroutines
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
