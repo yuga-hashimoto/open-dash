@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">Планирано: %1$s</string>
+    <string name="routines_schedule_once">еднократно</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
@@ -415,4 +417,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">Добавяне на доставчик</string>
     <string name="providers_mode_restart_hint">Промените влизат в сила след рестартиране на приложението.</string>
+    <string name="reminder_notification_title">Напомняне</string>
+    <string name="alarm_notification_title">Аларма</string>
 </resources>

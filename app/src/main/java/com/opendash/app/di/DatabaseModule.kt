@@ -2,14 +2,17 @@ package com.opendash.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.opendash.app.data.db.AlarmDao
 import com.opendash.app.data.db.AppDatabase
 import com.opendash.app.data.db.DocumentChunkDao
 import com.opendash.app.data.db.MemoryDao
 import com.opendash.app.data.db.MessageDao
 import com.opendash.app.data.db.MultiroomRejectionDao
 import com.opendash.app.data.db.MultiroomTrafficDao
+import com.opendash.app.data.db.ReminderDao
 import com.opendash.app.data.db.RoutineDao
 import com.opendash.app.data.db.SessionDao
+import com.opendash.app.data.db.ShoppingListDao
 import com.opendash.app.data.db.SpeakerGroupDao
 import com.opendash.app.data.db.ToolUsageDao
 import dagger.Module
@@ -60,4 +63,13 @@ object DatabaseModule {
 
     @Provides
     fun provideMultiroomRejectionDao(db: AppDatabase): MultiroomRejectionDao = db.multiroomRejectionDao()
+
+    @Provides
+    fun provideShoppingListDao(db: AppDatabase): ShoppingListDao = db.shoppingListDao()
+
+    @Provides
+    fun provideReminderDao(db: AppDatabase): ReminderDao = db.reminderDao()
+
+    @Provides
+    fun provideAlarmDao(db: AppDatabase): AlarmDao = db.alarmDao()
 }

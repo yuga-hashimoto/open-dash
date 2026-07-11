@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">已排程：%1$s</string>
+    <string name="routines_schedule_once">一次</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
@@ -415,4 +417,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">新增提供者</string>
     <string name="providers_mode_restart_hint">變更將在重新啟動應用程式後生效。</string>
+    <string name="reminder_notification_title">提醒</string>
+    <string name="alarm_notification_title">鬧鐘</string>
 </resources>

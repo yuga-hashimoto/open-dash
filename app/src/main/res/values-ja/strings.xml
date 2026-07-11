@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d 件のルーティン</string>
     <string name="routines_action_count">%1$d 件のアクション</string>
+    <string name="routines_schedule_label">スケジュール: %1$s</string>
+    <string name="routines_schedule_once">1回のみ</string>
     <string name="permissions_locked_count">%1$d 件の機能がロックされています。</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">ペアリングフレーズ</string>
@@ -413,4 +415,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">プロバイダーを追加</string>
     <string name="providers_mode_restart_hint">変更はアプリを再起動すると反映されます。</string>
+    <string name="reminder_notification_title">リマインダー</string>
+    <string name="alarm_notification_title">アラーム</string>
 </resources>

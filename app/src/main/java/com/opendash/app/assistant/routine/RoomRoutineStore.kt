@@ -31,7 +31,10 @@ class RoomRoutineStore(
                 name = routine.name,
                 description = routine.description,
                 actionsJson = actionListAdapter.toJson(routine.actions),
-                updatedAtMs = System.currentTimeMillis()
+                updatedAtMs = System.currentTimeMillis(),
+                scheduleHour = routine.schedule?.hour,
+                scheduleMinute = routine.schedule?.minute,
+                scheduleRepeatDaysMask = routine.schedule?.repeatDaysMask
             )
         )
     }
@@ -51,11 +54,17 @@ class RoomRoutineStore(
             Timber.w(e, "Failed to parse routine actions for $id")
             emptyList()
         }
+        val schedule = if (scheduleHour != null && scheduleMinute != null) {
+            RoutineSchedule(scheduleHour, scheduleMinute, scheduleRepeatDaysMask ?: 0)
+        } else {
+            null
+        }
         return Routine(
             id = id,
             name = name,
             description = description,
-            actions = actions
+            actions = actions,
+            schedule = schedule
         )
     }
 }

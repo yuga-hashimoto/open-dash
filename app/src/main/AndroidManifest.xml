@@ -223,6 +223,33 @@
             </intent-filter>
         </receiver>
 
+        <!-- Reminder alarm receiver: fired by AlarmManager when a set_reminder trigger time arrives -->
+        <receiver
+            android:name=".voice.reminder.ReminderAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.opendash.app.action.REMINDER_FIRE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Alarm fire receiver: fired by AlarmManager when a set_recurring_alarm trigger time arrives -->
+        <receiver
+            android:name=".voice.alarm.AlarmFireReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.opendash.app.action.ALARM_FIRE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Routine fire receiver: fired by AlarmManager when a scheduled routine's trigger time arrives -->
+        <receiver
+            android:name=".voice.routine.RoutineFireReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.opendash.app.action.ROUTINE_FIRE" />
+            </intent-filter>
+        </receiver>
+
         <!-- VoiceInteractionService: appears in Default digital assistant app list -->
         <!-- Reference: OpenClaw Assistant OpenClawAssistantService -->
         <service

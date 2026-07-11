@@ -88,4 +88,49 @@ class RoomRoutineStoreTest {
         assertThat(routine).isNotNull()
         assertThat(routine?.actions).isEmpty()
     }
+
+    @Test
+    fun `save persists schedule fields`() = runTest {
+        var saved: RoutineEntity? = null
+        coEvery { dao.upsert(any()) } answers { saved = firstArg() }
+
+        store.save(Routine("r1", "morning", "desc", emptyList(), schedule = RoutineSchedule(7, 30, 21)))
+
+        assertThat(saved?.scheduleHour).isEqualTo(7)
+        assertThat(saved?.scheduleMinute).isEqualTo(30)
+        assertThat(saved?.scheduleRepeatDaysMask).isEqualTo(21)
+    }
+
+    @Test
+    fun `save with no schedule persists null schedule fields`() = runTest {
+        var saved: RoutineEntity? = null
+        coEvery { dao.upsert(any()) } answers { saved = firstArg() }
+
+        store.save(Routine("r1", "manual", "desc", emptyList()))
+
+        assertThat(saved?.scheduleHour).isNull()
+        assertThat(saved?.scheduleMinute).isNull()
+        assertThat(saved?.scheduleRepeatDaysMask).isNull()
+    }
+
+    @Test
+    fun `get reconstructs schedule from entity`() = runTest {
+        coEvery { dao.get("r1") } returns RoutineEntity(
+            "r1", "morning", "d", "[]", 0L,
+            scheduleHour = 7, scheduleMinute = 30, scheduleRepeatDaysMask = 21
+        )
+
+        val routine = store.get("r1")
+
+        assertThat(routine?.schedule).isEqualTo(RoutineSchedule(7, 30, 21))
+    }
+
+    @Test
+    fun `get with no schedule columns returns null schedule`() = runTest {
+        coEvery { dao.get("r1") } returns RoutineEntity("r1", "manual", "d", "[]", 0L)
+
+        val routine = store.get("r1")
+
+        assertThat(routine?.schedule).isNull()
+    }
 }

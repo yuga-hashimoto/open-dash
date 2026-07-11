@@ -14,7 +14,9 @@ data class Routine(
     val id: String,
     val name: String,
     val description: String,
-    val actions: List<RoutineAction>
+    val actions: List<RoutineAction>,
+    /** Null means manual-invoke only (the original, still-default behavior). */
+    val schedule: RoutineSchedule? = null
 )
 
 data class RoutineAction(
@@ -22,4 +24,17 @@ data class RoutineAction(
     val arguments: Map<String, Any?>,
     /** Optional delay (ms) before this action runs (after the previous). */
     val delayMs: Long = 0L
+)
+
+/**
+ * A time-of-day (+ optional day-of-week repeat) trigger that runs a
+ * routine automatically. [repeatDaysMask] uses the same 7-bit
+ * Monday..Sunday convention as
+ * [com.opendash.app.voice.alarm.AlarmOccurrenceCalculator] (0 = one-shot
+ * next occurrence); the routine scheduler reuses that same calculator.
+ */
+data class RoutineSchedule(
+    val hour: Int,
+    val minute: Int,
+    val repeatDaysMask: Int
 )

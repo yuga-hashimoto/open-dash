@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">กำหนดเวลาไว้: %1$s</string>
+    <string name="routines_schedule_once">ครั้งเดียว</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
@@ -415,4 +417,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">เพิ่มผู้ให้บริการ</string>
     <string name="providers_mode_restart_hint">การเปลี่ยนแปลงจะมีผลหลังจากรีสตาร์ทแอป</string>
+    <string name="reminder_notification_title">การแจ้งเตือน</string>
+    <string name="alarm_notification_title">การปลุก</string>
 </resources>

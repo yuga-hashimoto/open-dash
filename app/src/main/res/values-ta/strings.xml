@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">திட்டமிடப்பட்டது: %1$s</string>
+    <string name="routines_schedule_once">ஒரு முறை</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
@@ -415,4 +417,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">வழங்குநரைச் சேர்க்கவும்</string>
     <string name="providers_mode_restart_hint">மாற்றங்கள் பயன்பாட்டை மறுதொடக்கம் செய்த பிறகு நடைமுறைக்கு வரும்.</string>
+    <string name="reminder_notification_title">நினைவூட்டல்</string>
+    <string name="alarm_notification_title">அலாரம்</string>
 </resources>

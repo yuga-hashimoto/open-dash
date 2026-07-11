@@ -13,5 +13,9 @@ data class RoutineEntity(
     val name: String,
     val description: String,
     val actionsJson: String,
-    val updatedAtMs: Long
+    val updatedAtMs: Long,
+    /** All three null means manual-invoke only (no schedule). */
+    val scheduleHour: Int? = null,
+    val scheduleMinute: Int? = null,
+    val scheduleRepeatDaysMask: Int? = null
 )

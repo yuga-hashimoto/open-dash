@@ -187,6 +187,18 @@ class DefaultFastPathRouter(
             // Placed before HelpMatcher because "help" is a containsMatchIn
             // pattern on "what can you do" and doesn't overlap dice.
             RollDiceMatcher,
+            // CalculateMatcher / UnitConversionMatcher use strict matchEntire
+            // two-operand shapes — safe this low, same reasoning as
+            // RollDiceMatcher above.
+            CalculateMatcher,
+            UnitConversionMatcher,
+            // TellJokeMatcher before HelpMatcher so "tell me a joke" doesn't
+            // fall through to the generic capability summary.
+            TellJokeMatcher,
+            // AddShoppingListItemMatcher is scoped to the literal "add X to
+            // my/the shopping/todo list" shape, disjoint from every earlier
+            // matcher's verbs.
+            AddShoppingListItemMatcher,
             HelpMatcher
         )
     }

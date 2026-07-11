@@ -78,6 +78,8 @@
 
     <string name="routines_count">%1$d routines</string>
     <string name="routines_action_count">%1$d actions</string>
+    <string name="routines_schedule_label">शेड्यूल किया गया: %1$s</string>
+    <string name="routines_schedule_once">एक बार</string>
     <string name="permissions_locked_count">%1$d capabilities locked.</string>
     <!-- Pairing card (multi-room) -->
     <string name="pairing_phrase_title">Pairing phrase</string>
@@ -415,4 +417,6 @@
     <string name="providers_mode_api">API</string>
     <string name="providers_add_provider">प्रदाता जोड़ें</string>
     <string name="providers_mode_restart_hint">परिवर्तन ऐप को पुनः आरंभ करने के बाद प्रभावी होंगे।</string>
+    <string name="reminder_notification_title">अनुस्मारक</string>
+    <string name="alarm_notification_title">अलार्म</string>
 </resources>
