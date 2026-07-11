@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">التغييرات تسري بعد إعادة تشغيل التطبيق.</string>
     <string name="reminder_notification_title">تذكير</string>
     <string name="alarm_notification_title">المنبه</string>
+    <string name="spotify_connect_success">تم الاتصال بـ Spotify.</string>
+    <string name="spotify_connect_failed">تعذّر الاتصال بـ Spotify. حاول مرة أخرى.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">معرّف العميل</string>
+    <string name="spotify_client_id_hint">من تطبيقك الخاص على developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">عنوان إعادة التوجيه</string>
+    <string name="spotify_redirect_uri_hint">أضف هذا العنوان بالضبط كعنوان إعادة توجيه في تطبيق Spotify الخاص بك قبل الاتصال.</string>
+    <string name="spotify_connect_button">الاتصال بـ Spotify</string>
+    <string name="spotify_disconnect_button">قطع الاتصال</string>
+    <string name="spotify_status_connected">متصل</string>
+    <string name="spotify_status_not_connected">غير متصل</string>
+    <string name="settings_spotify_button">إدارة Spotify…</string>
+    <string name="settings_spotify_button_hint">اربط حساب Spotify الخاص بك للبحث والتحكم في التشغيل بالصوت.</string>
 </resources>

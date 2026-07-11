@@ -51,6 +51,7 @@ fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onOpenSpeakerGroups: (() -> Unit)? = null,
     onOpenProviders: (() -> Unit)? = null,
+    onOpenSpotify: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -476,6 +477,16 @@ fun SettingsScreen(
                 Text(stringResource(R.string.settings_providers_button), color = MaterialTheme.colorScheme.onSurface)
             }
             SettingsHint(stringResource(R.string.settings_providers_button_hint))
+        }
+
+        if (onOpenSpotify != null) {
+            OutlinedButton(
+                onClick = onOpenSpotify,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text(stringResource(R.string.settings_spotify_button), color = MaterialTheme.colorScheme.onSurface)
+            }
+            SettingsHint(stringResource(R.string.settings_spotify_button_hint))
         }
 
         SettingsDivider()

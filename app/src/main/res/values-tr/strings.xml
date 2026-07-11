@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Değişiklikler uygulama yeniden başlatıldıktan sonra geçerli olur.</string>
     <string name="reminder_notification_title">Hatırlatıcı</string>
     <string name="alarm_notification_title">Alarm</string>
+    <string name="spotify_connect_success">Spotify\'a bağlanıldı.</string>
+    <string name="spotify_connect_failed">Spotify\'a bağlanılamadı. Tekrar deneyin.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">İstemci Kimliği</string>
+    <string name="spotify_client_id_hint">developer.spotify.com/dashboard adresindeki kendi uygulamanızdan.</string>
+    <string name="spotify_redirect_uri_label">Yönlendirme URI\'si</string>
+    <string name="spotify_redirect_uri_hint">Bağlanmadan önce Spotify uygulamanıza tam olarak bu URI\'yi Yönlendirme URI\'si olarak ekleyin.</string>
+    <string name="spotify_connect_button">Spotify\'a Bağlan</string>
+    <string name="spotify_disconnect_button">Bağlantıyı Kes</string>
+    <string name="spotify_status_connected">Bağlandı</string>
+    <string name="spotify_status_not_connected">Bağlı değil</string>
+    <string name="settings_spotify_button">Spotify\'ı Yönet…</string>
+    <string name="settings_spotify_button_hint">Sesle arama yapmak ve oynatmayı kontrol etmek için kendi Spotify hesabınızı bağlayın.</string>
 </resources>

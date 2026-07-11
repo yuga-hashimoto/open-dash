@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">تغییرات پس از راه‌اندازی مجدد برنامه اعمال می‌شوند.</string>
     <string name="reminder_notification_title">یادآوری</string>
     <string name="alarm_notification_title">زنگ هشدار</string>
+    <string name="spotify_connect_success">به Spotify متصل شد.</string>
+    <string name="spotify_connect_failed">اتصال به Spotify ناموفق بود. دوباره امتحان کنید.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">شناسه کلاینت</string>
+    <string name="spotify_client_id_hint">از برنامه خودتان در developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">آدرس تغییرمسیر</string>
+    <string name="spotify_redirect_uri_hint">پیش از اتصال، دقیقاً همین آدرس را به‌عنوان Redirect URI در برنامه Spotify خود اضافه کنید.</string>
+    <string name="spotify_connect_button">اتصال به Spotify</string>
+    <string name="spotify_disconnect_button">قطع اتصال</string>
+    <string name="spotify_status_connected">متصل</string>
+    <string name="spotify_status_not_connected">متصل نیست</string>
+    <string name="settings_spotify_button">مدیریت Spotify…</string>
+    <string name="settings_spotify_button_hint">حساب Spotify خودتان را برای جستجو و کنترل پخش با صدا متصل کنید.</string>
 </resources>

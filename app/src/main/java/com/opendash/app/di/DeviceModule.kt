@@ -502,7 +502,9 @@ object DeviceModule {
         localeManager: com.opendash.app.util.LocaleManager,
         appPreferences: AppPreferences,
         termuxAvailability: com.opendash.app.tool.termux.TermuxAvailability,
-        termuxBridge: com.opendash.app.tool.termux.TermuxBridge
+        termuxBridge: com.opendash.app.tool.termux.TermuxBridge,
+        spotifyAuthManager: com.opendash.app.tool.spotify.SpotifyAuthManager,
+        spotifyApiClient: com.opendash.app.tool.spotify.SpotifyApiClient
     ): ToolExecutor {
         val routineStore = RoomRoutineStore(routineDao, moshi)
         val compositeHolder = arrayOfNulls<CompositeToolExecutor>(1)
@@ -633,6 +635,7 @@ object DeviceModule {
             com.opendash.app.tool.translate.TranslateToolExecutor(
                 com.opendash.app.tool.translate.MlKitTranslateEngine()
             ),
+            com.opendash.app.tool.spotify.SpotifyToolExecutor(spotifyAuthManager, spotifyApiClient),
             SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via

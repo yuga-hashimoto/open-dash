@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Spremembe začnejo veljati po ponovnem zagonu aplikacije.</string>
     <string name="reminder_notification_title">Opomnik</string>
     <string name="alarm_notification_title">Alarm</string>
+    <string name="spotify_connect_success">Povezano s storitvijo Spotify.</string>
+    <string name="spotify_connect_failed">Povezava s storitvijo Spotify ni uspela. Poskusite znova.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">ID odjemalca</string>
+    <string name="spotify_client_id_hint">Iz lastne aplikacije na developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">URI za preusmeritev</string>
+    <string name="spotify_redirect_uri_hint">Pred povezavo dodajte natanko ta URI kot URI za preusmeritev v svoji aplikaciji Spotify.</string>
+    <string name="spotify_connect_button">Poveži se s storitvijo Spotify</string>
+    <string name="spotify_disconnect_button">Prekini povezavo</string>
+    <string name="spotify_status_connected">Povezano</string>
+    <string name="spotify_status_not_connected">Ni povezano</string>
+    <string name="settings_spotify_button">Upravljanje Spotify…</string>
+    <string name="settings_spotify_button_hint">Povežite svoj Spotify račun za iskanje in glasovno upravljanje predvajanja.</string>
 </resources>

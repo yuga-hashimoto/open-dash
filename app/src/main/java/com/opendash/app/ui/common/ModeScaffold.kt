@@ -81,6 +81,7 @@ fun ModeScaffold(
     val pagerState = rememberPagerState(initialPage = 0) { 3 }
     var showSettings by remember { mutableStateOf(false) }
     var showProviders by remember { mutableStateOf(false) }
+    var showSpotify by remember { mutableStateOf(false) }
     var showNightClock by remember { mutableStateOf(false) }
     var showControlDrawer by remember { mutableStateOf(false) }
     // Keep the ambient Home visible while the mic is still listening:
@@ -197,7 +198,8 @@ fun ModeScaffold(
         ) {
             SettingsScreen(
                 onBack = { showSettings = false },
-                onOpenProviders = { showProviders = true }
+                onOpenProviders = { showProviders = true },
+                onOpenSpotify = { showSpotify = true }
             )
         }
 
@@ -208,6 +210,15 @@ fun ModeScaffold(
             exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it }
         ) {
             com.opendash.app.ui.settings.providers.ProvidersScreen(onBack = { showProviders = false })
+        }
+
+        // Spotify connect overlay, reached from Settings
+        AnimatedVisibility(
+            visible = showSpotify,
+            enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it },
+            exit = fadeOut(tween(300)) + slideOutVertically(tween(300)) { it }
+        ) {
+            com.opendash.app.ui.settings.spotify.SpotifySettingsScreen(onBack = { showSpotify = false })
         }
 
         // Night clock overlay

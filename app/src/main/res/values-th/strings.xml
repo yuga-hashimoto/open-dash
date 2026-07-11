@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">การเปลี่ยนแปลงจะมีผลหลังจากรีสตาร์ทแอป</string>
     <string name="reminder_notification_title">การแจ้งเตือน</string>
     <string name="alarm_notification_title">การปลุก</string>
+    <string name="spotify_connect_success">เชื่อมต่อกับ Spotify แล้ว</string>
+    <string name="spotify_connect_failed">เชื่อมต่อกับ Spotify ไม่สำเร็จ ลองอีกครั้ง</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">รหัสไคลเอนต์</string>
+    <string name="spotify_client_id_hint">จากแอปของคุณเองที่ developer.spotify.com/dashboard</string>
+    <string name="spotify_redirect_uri_label">Redirect URI</string>
+    <string name="spotify_redirect_uri_hint">เพิ่ม URI นี้ให้ตรงกันเป๊ะเป็น Redirect URI ในแอป Spotify ของคุณก่อนเชื่อมต่อ</string>
+    <string name="spotify_connect_button">เชื่อมต่อกับ Spotify</string>
+    <string name="spotify_disconnect_button">ยกเลิกการเชื่อมต่อ</string>
+    <string name="spotify_status_connected">เชื่อมต่อแล้ว</string>
+    <string name="spotify_status_not_connected">ยังไม่เชื่อมต่อ</string>
+    <string name="settings_spotify_button">จัดการ Spotify…</string>
+    <string name="settings_spotify_button_hint">เชื่อมต่อบัญชี Spotify ของคุณเองเพื่อค้นหาและควบคุมการเล่นด้วยเสียง</string>
 </resources>

@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Perubahan berkuat kuasa selepas aplikasi dimulakan semula.</string>
     <string name="reminder_notification_title">Peringatan</string>
     <string name="alarm_notification_title">Penggera</string>
+    <string name="spotify_connect_success">Disambungkan ke Spotify.</string>
+    <string name="spotify_connect_failed">Gagal menyambung ke Spotify. Cuba lagi.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">ID Klien</string>
+    <string name="spotify_client_id_hint">Daripada apl anda sendiri di developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">URI Pengalihan</string>
+    <string name="spotify_redirect_uri_hint">Tambah URI ini dengan tepat sebagai URI Pengalihan dalam apl Spotify anda sebelum menyambung.</string>
+    <string name="spotify_connect_button">Sambung ke Spotify</string>
+    <string name="spotify_disconnect_button">Putuskan Sambungan</string>
+    <string name="spotify_status_connected">Disambungkan</string>
+    <string name="spotify_status_not_connected">Tidak disambungkan</string>
+    <string name="settings_spotify_button">Urus Spotify…</string>
+    <string name="settings_spotify_button_hint">Sambungkan akaun Spotify anda sendiri untuk mencari dan mengawal main balik dengan suara.</string>
 </resources>

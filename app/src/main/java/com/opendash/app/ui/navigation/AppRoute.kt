@@ -6,4 +6,5 @@ sealed class AppRoute(val route: String) {
     data object Settings : AppRoute("settings")
     data object SpeakerGroups : AppRoute("settings/speaker-groups")
     data object Providers : AppRoute("settings/providers")
+    data object Spotify : AppRoute("settings/spotify")
 }

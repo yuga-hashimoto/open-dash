@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Өзгерістер қолданбаны қайта іске қосқаннан кейін күшіне енеді.</string>
     <string name="reminder_notification_title">Еске салғыш</string>
     <string name="alarm_notification_title">Дабыл</string>
+    <string name="spotify_connect_success">Spotify-ге қосылды.</string>
+    <string name="spotify_connect_failed">Spotify-ге қосылу мүмкін болмады. Қайта көріңіз.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">Клиент идентификаторы</string>
+    <string name="spotify_client_id_hint">developer.spotify.com/dashboard сайтындағы өз қолданбаңыздан.</string>
+    <string name="spotify_redirect_uri_label">Redirect URI</string>
+    <string name="spotify_redirect_uri_hint">Қосылмас бұрын Spotify қолданбаңызда дәл осы URI мекенжайын Redirect URI ретінде қосыңыз.</string>
+    <string name="spotify_connect_button">Spotify-ге қосылу</string>
+    <string name="spotify_disconnect_button">Ажырату</string>
+    <string name="spotify_status_connected">Қосылған</string>
+    <string name="spotify_status_not_connected">Қосылмаған</string>
+    <string name="settings_spotify_button">Spotify-ды басқару…</string>
+    <string name="settings_spotify_button_hint">Дауыспен іздеу және ойнатуды басқару үшін өз Spotify тіркелгіңізді қосыңыз.</string>
 </resources>

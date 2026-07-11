@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Los cambios surten efecto después de reiniciar la aplicación.</string>
     <string name="reminder_notification_title">Recordatorio</string>
     <string name="alarm_notification_title">Alarma</string>
+    <string name="spotify_connect_success">Conectado a Spotify.</string>
+    <string name="spotify_connect_failed">No se pudo conectar a Spotify. Inténtalo de nuevo.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">ID de cliente</string>
+    <string name="spotify_client_id_hint">De tu propia aplicación en developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">URI de redirección</string>
+    <string name="spotify_redirect_uri_hint">Añade este URI exacto como URI de redirección en tu aplicación de Spotify antes de conectar.</string>
+    <string name="spotify_connect_button">Conectar a Spotify</string>
+    <string name="spotify_disconnect_button">Desconectar</string>
+    <string name="spotify_status_connected">Conectado</string>
+    <string name="spotify_status_not_connected">No conectado</string>
+    <string name="settings_spotify_button">Gestionar Spotify…</string>
+    <string name="settings_spotify_button_hint">Conecta tu propia cuenta de Spotify para buscar y controlar la reproducción por voz.</string>
 </resources>

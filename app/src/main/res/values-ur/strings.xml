@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">تبدیلیاں ایپ کو دوبارہ شروع کرنے کے بعد نافذ ہوں گی۔</string>
     <string name="reminder_notification_title">یاد دہانی</string>
     <string name="alarm_notification_title">الارم</string>
+    <string name="spotify_connect_success">Spotify سے منسلک ہو گیا۔</string>
+    <string name="spotify_connect_failed">Spotify سے منسلک ہونے میں ناکامی۔ دوبارہ کوشش کریں۔</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">کلائنٹ آئی ڈی</string>
+    <string name="spotify_client_id_hint">developer.spotify.com/dashboard پر اپنی ایپ سے۔</string>
+    <string name="spotify_redirect_uri_label">ری ڈائریکٹ URI</string>
+    <string name="spotify_redirect_uri_hint">منسلک ہونے سے پہلے اپنے Spotify ایپ میں بالکل یہی URI بطور ری ڈائریکٹ URI شامل کریں۔</string>
+    <string name="spotify_connect_button">Spotify سے منسلک ہوں</string>
+    <string name="spotify_disconnect_button">منقطع کریں</string>
+    <string name="spotify_status_connected">منسلک ہے</string>
+    <string name="spotify_status_not_connected">منسلک نہیں ہے</string>
+    <string name="settings_spotify_button">Spotify کا نظم کریں…</string>
+    <string name="settings_spotify_button_hint">آواز سے تلاش کرنے اور پلے بیک کنٹرول کرنے کے لیے اپنا Spotify اکاؤنٹ منسلک کریں۔</string>
 </resources>

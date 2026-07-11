@@ -171,6 +171,22 @@
             </intent-filter>
         </activity>
 
+        <!-- Spotify OAuth PKCE redirect target. The scheme must exactly match
+             the Redirect URI the user registers on their own Spotify
+             Developer Dashboard app (SpotifyAuthManager.REDIRECT_URI). -->
+        <activity
+            android:name=".tool.spotify.SpotifyAuthCallbackActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="opendash-spotify" android:host="callback" />
+            </intent-filter>
+        </activity>
+
         <!-- Always-on voice foreground service -->
         <service
             android:name=".service.VoiceService"

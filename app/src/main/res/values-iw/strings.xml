@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">השינויים ייכנסו לתוקף לאחר הפעלה מחדש של האפליקציה.</string>
     <string name="reminder_notification_title">תזכורת</string>
     <string name="alarm_notification_title">התראה</string>
+    <string name="spotify_connect_success">מחובר ל-Spotify.</string>
+    <string name="spotify_connect_failed">החיבור ל-Spotify נכשל. נסה שוב.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">מזהה לקוח</string>
+    <string name="spotify_client_id_hint">מהאפליקציה שלך ב-developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">כתובת הפניה מחדש (Redirect URI)</string>
+    <string name="spotify_redirect_uri_hint">הוסף בדיוק את הכתובת הזו כ-Redirect URI באפליקציית Spotify שלך לפני החיבור.</string>
+    <string name="spotify_connect_button">התחבר ל-Spotify</string>
+    <string name="spotify_disconnect_button">התנתק</string>
+    <string name="spotify_status_connected">מחובר</string>
+    <string name="spotify_status_not_connected">לא מחובר</string>
+    <string name="settings_spotify_button">ניהול Spotify…</string>
+    <string name="settings_spotify_button_hint">חבר את חשבון ה-Spotify שלך כדי לחפש ולשלוט בהשמעה בקול.</string>
 </resources>

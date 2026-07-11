@@ -69,5 +69,9 @@ class SecurePreferences @Inject constructor(
 
         /** Brave Search API subscription token (https://brave.com/search/api). */
         const val KEY_BRAVE_SEARCH_API_KEY = "brave_search_api_key"
+
+        /** Spotify OAuth PKCE access/refresh tokens (P20.9). */
+        const val KEY_SPOTIFY_ACCESS_TOKEN = "spotify_access_token"
+        const val KEY_SPOTIFY_REFRESH_TOKEN = "spotify_refresh_token"
     }
 }

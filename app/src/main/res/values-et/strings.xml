@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Muudatused jõustuvad pärast rakenduse taaskäivitamist.</string>
     <string name="reminder_notification_title">Meeldetuletus</string>
     <string name="alarm_notification_title">Alarm</string>
+    <string name="spotify_connect_success">Ühendatud Spotifyga.</string>
+    <string name="spotify_connect_failed">Spotifyga ühendamine ebaõnnestus. Proovi uuesti.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">Kliendi ID</string>
+    <string name="spotify_client_id_hint">Sinu enda rakendusest aadressil developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">Ümbersuunamise URI</string>
+    <string name="spotify_redirect_uri_hint">Lisa täpselt see URI oma Spotify rakenduses ümbersuunamise URI-na enne ühendamist.</string>
+    <string name="spotify_connect_button">Ühenda Spotifyga</string>
+    <string name="spotify_disconnect_button">Katkesta ühendus</string>
+    <string name="spotify_status_connected">Ühendatud</string>
+    <string name="spotify_status_not_connected">Ühendamata</string>
+    <string name="settings_spotify_button">Halda Spotifyt…</string>
+    <string name="settings_spotify_button_hint">Ühenda oma Spotify konto, et otsida ja juhtida taasesitust häälega.</string>
 </resources>

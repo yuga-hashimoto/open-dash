@@ -419,4 +419,17 @@
     <string name="providers_mode_restart_hint">Wijzigingen worden van kracht nadat de app opnieuw is gestart.</string>
     <string name="reminder_notification_title">Herinnering</string>
     <string name="alarm_notification_title">Alarm</string>
+    <string name="spotify_connect_success">Verbonden met Spotify.</string>
+    <string name="spotify_connect_failed">Verbinden met Spotify mislukt. Probeer opnieuw.</string>
+    <string name="spotify_settings_title">Spotify</string>
+    <string name="spotify_client_id_label">Client-ID</string>
+    <string name="spotify_client_id_hint">Van je eigen app op developer.spotify.com/dashboard.</string>
+    <string name="spotify_redirect_uri_label">Omleidings-URI</string>
+    <string name="spotify_redirect_uri_hint">Voeg precies deze URI toe als omleidings-URI in je Spotify-app voordat je verbinding maakt.</string>
+    <string name="spotify_connect_button">Verbinden met Spotify</string>
+    <string name="spotify_disconnect_button">Verbinding verbreken</string>
+    <string name="spotify_status_connected">Verbonden</string>
+    <string name="spotify_status_not_connected">Niet verbonden</string>
+    <string name="settings_spotify_button">Spotify beheren…</string>
+    <string name="settings_spotify_button_hint">Verbind je eigen Spotify-account om te zoeken en afspelen met je stem te bedienen.</string>
 </resources>

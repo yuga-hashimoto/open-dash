@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.opendash.app.ui.settings.SettingsScreen
 import com.opendash.app.ui.settings.multiroom.SettingsSpeakerGroupsScreen
 import com.opendash.app.ui.settings.providers.ProvidersScreen
+import com.opendash.app.ui.settings.spotify.SpotifySettingsScreen
 
 @Composable
 fun AppNavigation(
@@ -23,7 +24,8 @@ fun AppNavigation(
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onOpenSpeakerGroups = { navController.navigate(AppRoute.SpeakerGroups.route) },
-                onOpenProviders = { navController.navigate(AppRoute.Providers.route) }
+                onOpenProviders = { navController.navigate(AppRoute.Providers.route) },
+                onOpenSpotify = { navController.navigate(AppRoute.Spotify.route) }
             )
         }
         composable(AppRoute.SpeakerGroups.route) {
@@ -31,6 +33,9 @@ fun AppNavigation(
         }
         composable(AppRoute.Providers.route) {
             ProvidersScreen(onBack = { navController.popBackStack() })
+        }
+        composable(AppRoute.Spotify.route) {
+            SpotifySettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
