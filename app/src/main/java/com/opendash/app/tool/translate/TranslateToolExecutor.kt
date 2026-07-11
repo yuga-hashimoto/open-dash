@@ -5,6 +5,7 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
+import com.opendash.app.tool.escapeJson
 import timber.log.Timber
 
 /**
@@ -57,21 +58,6 @@ class TranslateToolExecutor(
                 ToolResult(call.id, false, "", "Unsupported language: ${result.tag}")
             is TranslateResult.Failed ->
                 ToolResult(call.id, false, "", result.reason)
-        }
-    }
-
-    private fun String.escapeJson(): String = buildString(length) {
-        for (c in this@escapeJson) {
-            when (c) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\b' -> append("\\b")
-                '\u000C' -> append("\\f")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
-            }
         }
     }
 }

@@ -7,6 +7,7 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
+import com.opendash.app.tool.escapeJson
 import timber.log.Timber
 import java.util.UUID
 
@@ -140,20 +141,5 @@ class ShoppingListToolExecutor(
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val count = dao.clearList(listName)
         return ToolResult(call.id, true, """{"list":"${listName.escapeJson()}","cleared":$count}""")
-    }
-
-    private fun String.escapeJson(): String = buildString(length) {
-        for (c in this@escapeJson) {
-            when (c) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\b' -> append("\\b")
-                '\u000C' -> append("\\f")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
-            }
-        }
     }
 }
