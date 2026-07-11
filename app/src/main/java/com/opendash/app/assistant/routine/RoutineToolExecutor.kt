@@ -169,13 +169,30 @@ class RoutineToolExecutor(
         val name = call.arguments["name"] as? String
             ?: return ToolResult(call.id, false, "", "Missing name")
 
+        val depth = kotlin.coroutines.coroutineContext[RoutineDepth]?.value ?: 0
+        if (depth >= MAX_ROUTINE_DEPTH) {
+            return ToolResult(call.id, false, "", "Routine nesting too deep (possible cycle involving '$name')")
+        }
+
         val routine = store.getByName(name)
             ?: return ToolResult(call.id, false, "", "Routine not found: $name")
 
-        val results = runRoutine(routine)
+        val results = kotlinx.coroutines.withContext(RoutineDepth(depth + 1)) { runRoutine(routine) }
         val failures = results.count { !it.first }
         val data = """{"routine":"${routine.name}","ran":${results.size},"failures":$failures}"""
         return ToolResult(call.id, failures == 0, data, if (failures > 0) "$failures actions failed" else null)
+    }
+
+    /**
+     * Tracks how many `run_routine` calls are nested on the current
+     * coroutine so a routine that (directly or via a cycle of two or
+     * more routines) invokes itself fails fast instead of recursing
+     * until a StackOverflowError — `create_routine` lets the LLM author
+     * `actions_json` freely, including a `run_routine` action.
+     */
+    private data class RoutineDepth(val value: Int) : kotlin.coroutines.CoroutineContext.Element {
+        override val key: kotlin.coroutines.CoroutineContext.Key<*> get() = Key
+        companion object Key : kotlin.coroutines.CoroutineContext.Key<RoutineDepth>
     }
 
     private suspend fun runRoutine(routine: Routine): List<Pair<Boolean, String>> {
@@ -232,5 +249,9 @@ class RoutineToolExecutor(
                 else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
             }
         }
+    }
+
+    private companion object {
+        const val MAX_ROUTINE_DEPTH = 5
     }
 }

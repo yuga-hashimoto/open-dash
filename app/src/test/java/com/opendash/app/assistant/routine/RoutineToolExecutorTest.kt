@@ -267,6 +267,26 @@ class RoutineToolExecutorTest {
     }
 
     @Test
+    fun `run_routine guards against self-referencing cycles`() = runTest {
+        // Simulate the real composite-dispatch path: a run_routine action
+        // routes back through the same executor instance, exactly as
+        // CompositeToolExecutor would in production.
+        coEvery { toolExecutor.execute(match { it.name == "run_routine" }) } coAnswers {
+            executor.execute(firstArg())
+        }
+        store.save(
+            Routine(
+                id = "loop", name = "loopy", description = "",
+                actions = listOf(RoutineAction("run_routine", mapOf("name" to "loopy")))
+            )
+        )
+
+        val result = executor.execute(ToolCall("cycle", "run_routine", mapOf("name" to "loopy")))
+
+        assertThat(result.success).isFalse()
+    }
+
+    @Test
     fun `delete_routine cancels scheduler when routine was scheduled`() = runTest {
         store.save(Routine("r", "x", "", listOf(), schedule = RoutineSchedule(7, 0, 0)))
 
