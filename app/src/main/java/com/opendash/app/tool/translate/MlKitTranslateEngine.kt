@@ -5,6 +5,7 @@ import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.TranslatorOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
 import kotlin.coroutines.resume
@@ -35,6 +36,8 @@ class MlKitTranslateEngine : TranslateEngine {
             awaitTask(translator.downloadModelIfNeeded(DownloadConditions.Builder().build()))
             val translated = awaitTask(translator.translate(text))
             TranslateResult.Translated(translated)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "ML Kit translation failed")
             TranslateResult.Failed(e.message ?: "Translation failed")

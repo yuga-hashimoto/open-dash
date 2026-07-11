@@ -56,15 +56,20 @@ class DefaultSpotifyAuthManager(
     }
 
     override suspend fun handleAuthorizationCode(code: String, state: String): Boolean {
+        // Check state BEFORE clearing the pending verifier/state — the
+        // exported SpotifyAuthCallbackActivity means any app on the device
+        // can send an intent with an arbitrary code/state. Clearing on a
+        // mismatched (attacker-supplied) state would grief a real,
+        // concurrently in-flight authorization by wiping the verifier the
+        // legitimate browser redirect still needs.
         val expectedState = appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE).first()
-        val verifier = appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER).first()
-        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_STATE)
-        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER)
-
         if (expectedState == null || expectedState != state) {
             Timber.w("Spotify auth state mismatch (possible CSRF or stale redirect)")
             return false
         }
+        val verifier = appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER).first()
+        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_STATE)
+        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER)
         if (verifier == null) {
             Timber.w("Spotify auth: no pending PKCE verifier found")
             return false

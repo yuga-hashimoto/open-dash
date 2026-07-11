@@ -107,6 +107,21 @@ class DefaultSpotifyAuthManagerTest {
     }
 
     @Test
+    fun `handleAuthorizationCode does not clear pending verifier on state mismatch`() = runTest {
+        // SpotifyAuthCallbackActivity is exported, so any app on the device
+        // can send an intent with an arbitrary code/state. Clearing the
+        // pending verifier on a mismatched state would let that grief a
+        // real, concurrently in-flight authorization.
+        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
+        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf("real-verifier")
+
+        manager.handleAuthorizationCode("attacker-code", "attacker-state")
+
+        coVerify(exactly = 0) { appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_STATE) }
+        coVerify(exactly = 0) { appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) }
+    }
+
+    @Test
     fun `handleAuthorizationCode rejects missing pending verifier`() = runTest {
         every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
         every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf(null)
