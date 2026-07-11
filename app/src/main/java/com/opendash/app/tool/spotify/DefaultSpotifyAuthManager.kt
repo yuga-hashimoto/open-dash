@@ -1,5 +1,6 @@
 package com.opendash.app.tool.spotify
 
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
@@ -43,6 +44,7 @@ class DefaultSpotifyAuthManager(
 
         securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER, verifier)
         securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE, state)
+        clearLegacyPlaintextPendingKeys()
 
         return authorizeEndpoint.toHttpUrl().newBuilder().apply {
             addQueryParameter("client_id", clientId)
@@ -167,6 +169,20 @@ class DefaultSpotifyAuthManager(
 
     private suspend fun currentClientId(): String? =
         appPreferences.observe(PreferenceKeys.SPOTIFY_CLIENT_ID).first()?.takeIf { it.isNotBlank() }
+
+    /**
+     * Wipes the old plaintext PKCE verifier/state DataStore keys these
+     * used to live under before the SecurePreferences migration. A
+     * device that ran an earlier build and started (even partially) an
+     * authorization has a real verifier orphaned in plaintext on disk
+     * under these names; the migration itself only changed where new
+     * writes go, it never erased the old ones. The constants are gone
+     * from [PreferenceKeys], so the keys are rebuilt here by name.
+     */
+    private suspend fun clearLegacyPlaintextPendingKeys() {
+        appPreferences.remove(stringPreferencesKey("spotify_pending_code_verifier"))
+        appPreferences.remove(stringPreferencesKey("spotify_pending_state"))
+    }
 
     companion object {
         const val DEFAULT_AUTHORIZE_ENDPOINT = "https://accounts.spotify.com/authorize"

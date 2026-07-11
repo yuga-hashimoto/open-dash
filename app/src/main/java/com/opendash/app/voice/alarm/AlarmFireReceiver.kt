@@ -3,18 +3,33 @@ package com.opendash.app.voice.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.opendash.app.data.db.AlarmDao
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
+import javax.inject.Inject
 
 /**
  * Fired by [AlarmManager] (via [AndroidAlarmScheduler]) when an alarm's
- * trigger time arrives. Deliberately thin and DB-free: hour/minute/
- * repeat-days-mask are carried directly in the [Intent] extras (set at
- * schedule time), so this receiver can both post the notification and
- * reschedule a recurring alarm's next occurrence with no database
- * access and no dependency on the app process being alive.
+ * trigger time arrives. Notification + recurring-alarm rescheduling are
+ * hour/minute/repeat-days-mask are carried directly in the [Intent]
+ * extras (set at schedule time), so those don't need database access.
+ *
+ * A fired one-shot alarm's [AlarmEntity][com.opendash.app.data.db.AlarmEntity]
+ * row *does* need to be deleted here, though: without it, the row is
+ * indistinguishable from a still-pending one-shot alarm (both are just
+ * an hour/minute with an empty repeat mask), so
+ * [com.opendash.app.service.BootRescheduler] would re-arm it as if it
+ * were newly set on every subsequent reboot.
  */
+@AndroidEntryPoint
 class AlarmFireReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var alarmDao: AlarmDao
+
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra(AndroidAlarmScheduler.EXTRA_ID)
         val label = intent.getStringExtra(AndroidAlarmScheduler.EXTRA_LABEL)
@@ -32,6 +47,18 @@ class AlarmFireReceiver : BroadcastReceiver() {
             val days = AlarmOccurrenceCalculator.maskToDays(repeatDaysMask)
             val nextTriggerMs = AlarmOccurrenceCalculator.nextTriggerMillis(LocalDateTime.now(), hour, minute, days)
             AndroidAlarmScheduler(context).schedule(id, label, hour, minute, repeatDaysMask, nextTriggerMs)
+            return
+        }
+
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                alarmDao.delete(id)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to delete fired one-shot alarm $id")
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 }

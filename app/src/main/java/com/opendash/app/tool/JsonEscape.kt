@@ -14,7 +14,7 @@ fun String.escapeJson(): String = buildString(length) {
             '\\' -> append("\\\\")
             '"' -> append("\\\"")
             '\b' -> append("\\b")
-            '' -> append("\\f")
+            '\u000C' -> append("\\f")
             '\n' -> append("\\n")
             '\r' -> append("\\r")
             '\t' -> append("\\t")

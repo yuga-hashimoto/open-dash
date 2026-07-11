@@ -18,7 +18,7 @@ import androidx.room.RoomDatabase
         ReminderEntity::class,
         AlarmEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
