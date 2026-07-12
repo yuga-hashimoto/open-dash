@@ -99,7 +99,7 @@ class ProviderManager @Inject constructor(
                 Timber.d("EmbeddedLlm tuned for ${profile.tier}: ctx=${config.contextSize} threads=${config.threads}")
                 val provider = EmbeddedLlmProvider(
                     context = context,
-                    config = config,
+                    initialConfig = config,
                     skillRegistry = skillRegistry,
                     deviceManager = deviceManager
                 )
@@ -171,4 +171,25 @@ class ProviderManager @Inject constructor(
     }
 
     fun getModelManager(): ModelManager = modelManager
+
+    /**
+     * Hot-swaps the registered [EmbeddedLlmProvider]'s active model (P16.6) —
+     * no app relaunch, no new provider/session object; [router.availableProviders]
+     * keeps pointing at the same instance the rest of the app already holds a
+     * reference to (VoicePipeline via `resolveProvider()`), it just now serves
+     * a different model underneath. [modelPath] should come from
+     * [ModelManager.listAvailableModels] (already supports multiple models
+     * coexisting on disk — nothing to change there).
+     *
+     * Returns false if no embedded provider is currently registered (e.g. API
+     * mode is active) or if the underlying [EmbeddedLlmProvider.switchModel]
+     * failed to load [modelPath] (it reverts to the previous model in that case,
+     * so the app keeps working — this call just reports the swap didn't happen).
+     */
+    suspend fun switchEmbeddedModel(modelPath: String): Boolean {
+        val provider = router.availableProviders.value
+            .filterIsInstance<EmbeddedLlmProvider>()
+            .firstOrNull() ?: return false
+        return provider.switchModel(modelPath)
+    }
 }

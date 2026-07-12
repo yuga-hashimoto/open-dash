@@ -28,7 +28,7 @@ import java.io.File
 
 class EmbeddedLlmProvider(
     private val context: Context,
-    private val config: EmbeddedLlmConfig,
+    initialConfig: EmbeddedLlmConfig,
     private val skillRegistry: SkillRegistry? = null,
     private val deviceManager: DeviceManager? = null
 ) : AssistantProvider {
@@ -39,19 +39,32 @@ class EmbeddedLlmProvider(
     private val systemPromptBuilder = SystemPromptBuilder()
     private val toolResultSummarizer = ToolResultSummarizer()
 
+    /**
+     * Mutable so [switchModel] (P16.6) can hot-swap the on-disk model file
+     * without recreating this provider. Everything else (system prompt,
+     * context size, thread/GPU tuning) is carried over unchanged across a
+     * swap — only `modelPath` is replaced. Read this instead of the
+     * constructor parameter everywhere in this class.
+     */
+    private var activeConfig: EmbeddedLlmConfig = initialConfig
+
     override val id: String = "embedded_llm"
     override val displayName: String = "On-Device LLM"
-    override val capabilities = ProviderCapabilities(
-        supportsStreaming = true,
-        // The agent loop parses tool calls from model output (ToolCallParser),
-        // so we declare tool support. Not every model is good at it, but
-        // VoicePipeline's tool loop works regardless.
-        supportsTools = true,
-        maxContextTokens = config.contextSize,
-        modelName = File(config.modelPath).nameWithoutExtension,
-        supportsVision = detectVisionSupport(File(config.modelPath).nameWithoutExtension),
-        isLocal = true
-    )
+
+    // Computed rather than a fixed `val` — must reflect activeConfig after
+    // a model switch, not just the model this provider was constructed with.
+    override val capabilities: ProviderCapabilities
+        get() = ProviderCapabilities(
+            supportsStreaming = true,
+            // The agent loop parses tool calls from model output (ToolCallParser),
+            // so we declare tool support. Not every model is good at it, but
+            // VoicePipeline's tool loop works regardless.
+            supportsTools = true,
+            maxContextTokens = activeConfig.contextSize,
+            modelName = File(activeConfig.modelPath).nameWithoutExtension,
+            supportsVision = detectVisionSupport(File(activeConfig.modelPath).nameWithoutExtension),
+            isLocal = true
+        )
 
     private fun detectVisionSupport(modelName: String): Boolean {
         val lower = modelName.lowercase()
@@ -106,7 +119,7 @@ class EmbeddedLlmProvider(
     }
 
     private suspend fun initializeEngine() {
-        val modelPath = this.config.modelPath
+        val modelPath = activeConfig.modelPath
 
         val initializer = EngineInitializer()
         val result = initializer.initialize(
@@ -165,7 +178,7 @@ class EmbeddedLlmProvider(
      * verbatim in the prompt.
      */
     private fun buildSystemInstruction(): String {
-        val base = this.config.systemPrompt
+        val base = activeConfig.systemPrompt
         val skillsXml = skillRegistry?.toPromptXml().orEmpty()
         return buildString {
             append(base)
@@ -251,7 +264,7 @@ class EmbeddedLlmProvider(
     }.flowOn(Dispatchers.IO)
 
     override suspend fun isAvailable(): Boolean {
-        return engine != null || File(config.modelPath).exists()
+        return engine != null || File(activeConfig.modelPath).exists()
     }
 
     override suspend fun latencyMs(): Long = 0L
@@ -265,12 +278,58 @@ class EmbeddedLlmProvider(
      * backgrounded mid-response.
      */
     suspend fun unload() = engineMutex.withLock {
+        closeEngineLocked()
+    }
+
+    /** Must only be called while holding [engineMutex]. */
+    private fun closeEngineLocked() {
         conversation?.close()
         conversation = null
         engine?.let {
             if (it.isInitialized()) it.close()
         }
         engine = null
+    }
+
+    /**
+     * Swaps the active model to [newModelPath] without restarting the app
+     * (P16.6). `com.google.ai.edge.litertlm.Engine implements AutoCloseable`
+     * and already has a real `close()` (confirmed via `javap` against the
+     * resolved AAR, not assumed) — [unload] already used it, this just
+     * pairs it with a fresh [initializeEngine] under the same
+     * [engineMutex] critical section so no other caller ever observes a
+     * torn-down-but-not-yet-rebuilt engine. `systemPrompt` /
+     * `contextSize` / `threads` / `gpuLayers` carry over unchanged from
+     * the previous config — only `modelPath` changes, so a swap to a
+     * larger/smaller model keeps whatever hardware-tier tuning the
+     * provider was originally constructed with rather than
+     * re-benchmarking. On init failure, reverts to the previous model so
+     * a corrupt or incompatible file doesn't leave the provider dead;
+     * if even the revert fails the provider is left unavailable and
+     * [isAvailable] will correctly report that.
+     */
+    suspend fun switchModel(newModelPath: String): Boolean = engineMutex.withLock {
+        withContext(Dispatchers.IO) {
+            val previousConfig = activeConfig
+            closeEngineLocked()
+            activeConfig = activeConfig.copy(modelPath = newModelPath)
+            try {
+                initializeEngine()
+                createConversation()
+                Timber.d("Switched embedded model: ${previousConfig.modelPath} -> $newModelPath")
+                true
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to switch model to $newModelPath; reverting to ${previousConfig.modelPath}")
+                activeConfig = previousConfig
+                try {
+                    initializeEngine()
+                    createConversation()
+                } catch (revertError: Exception) {
+                    Timber.e(revertError, "Failed to revert after a failed model switch — provider is unavailable")
+                }
+                false
+            }
+        }
     }
 
     private fun extractLastUserMessage(messages: List<AssistantMessage>): String {

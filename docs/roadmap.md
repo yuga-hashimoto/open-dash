@@ -197,10 +197,51 @@ smoke testing).
   entries. Ref: google-ai-edge (MediaPipe) EmbeddingGemma; originally shubham0204/Sentence-Embeddings-Android
 - [ ] P16.5: Local knowledge base — bundled Wikipedia-lite (compressed) + SQLite FTS5 for
   `knowledge` tool offline fallback when no network
-- [ ] P16.6: Model hot-swap — switch between Gemma / Qwen / Phi without relaunch;
-  invalidate VoicePipeline engine reference, warm the new one on background thread
-- [ ] P16.7: OpenClaw-level agent loop — parallel tool calls (multiple tool_calls per turn),
-  tool result re-entry without reparsing the whole prompt, early stop on `answer:` marker.
+- [ ] P16.6: Model hot-swap — **core swap capability shipped this cycle; UI + real-device
+  validation still open**. A prior session note claimed this was blocked on
+  `EmbeddedLlmProvider` having "no teardown method" — that was wrong, found while
+  re-investigating: `com.google.ai.edge.litertlm.Engine implements java.lang.AutoCloseable`
+  with a real `close()` (confirmed via `javap` against the resolved AAR, not assumed), and
+  the provider already had a mutex-guarded `unload()` using it (predates this change). Added
+  `EmbeddedLlmProvider.switchModel(newModelPath)`: closes the current engine/conversation and
+  reinitializes against the new path, entirely inside the same `engineMutex` critical section
+  every other native call already uses — no new concurrency risk, reuses the exact lock that
+  fixed a real prior SIGSEGV (PR #444). Reverts to the previous model on init failure so a bad
+  file doesn't leave the provider dead. `capabilities` changed from a fixed `val` to a computed
+  property so `modelName`/`supportsVision`/`maxContextTokens` stay correct after a swap.
+  `ProviderManager.switchEmbeddedModel(modelPath)` finds the registered `EmbeddedLlmProvider`
+  via `router.availableProviders` and delegates — no new provider/session object, so
+  VoicePipeline (which holds its provider reference via `resolveProvider()`) needs no
+  "invalidate the engine reference" step as originally envisioned; the swap is invisible to it.
+  `ModelManager` (separate from the legacy `ModelDownloader` used by onboarding, which still
+  deletes other models on every download) already supports multiple model files coexisting on
+  disk via `importModel()`/`listAvailableModels()`, so `switchModel` has something real to
+  target today via manual import. Tests: `ProviderManagerTest` covers the dispatch/not-found
+  paths with mocks; `EmbeddedLlmProviderSwitchModelE2ETest` (androidTest, written but not run —
+  no device available) covers the invalid-path failure+revert case — a real success-path swap
+  needs an actual multi-GB model file, not something a test should provision. **Still open**:
+  (1) whether `ModelDownloader`'s delete-old-models-on-download behavior should change to make
+  swapping meaningful from the onboarding flow too — a real storage-quota UX trade-off (LLM
+  models are 1-4GB each) worth a user decision, not something to flip unilaterally; (2) a
+  Settings UI to trigger `switchEmbeddedModel`; (3) real-device validation that repeated
+  close+reinit is clean across GPU vendors (no native leak) — the API contract says it's
+  supported, but that's inherent to any native teardown+reinit and isn't verifiable without
+  hardware regardless of how careful the Kotlin-level code is.
+- [ ] P16.7: OpenClaw-level agent loop — **parallel tool calls done, verified pre-existing
+  (was a stale checkbox)**: `AgentToolDispatcher.dispatch()` already runs a turn's
+  `tool_calls` concurrently via `async`/`awaitAll` with ordering preserved and per-call
+  failure isolation (landed in PR #502, 8 unit tests). "Early stop on an `answer:` marker"
+  is effectively already covered by the existing control flow — `VoicePipeline`'s tool
+  round loop exits and speaks as soon as `response.toolCalls.isEmpty()`, so there's no
+  separate signal needed for "the model is done." **Still not done, and deliberately so**:
+  tool result re-entry without reparsing the whole prompt each round.
+  `EmbeddedLlmProvider.sendOnce()` rebuilds its native `Conversation` from scratch on every
+  turn on purpose — reusing one across turns caused a real SIGSEGV in `liblitertlm_jni.so`
+  on at least one Adreno GPU (fixed in PR #444 by serializing engine access with a Mutex;
+  the full-reparse-per-turn approach is the actual fix, not just a defensive comment).
+  Building incremental re-entry back in would mean re-touching that exact crash surface —
+  needs real-device validation across GPU vendors this environment can't provide, so it
+  stays deferred rather than risking a regression of an already-fixed native crash.
   Ref: openclaw-assistant
 
 ## Phase 17 — Priority 4: Multi-room RPC protocol

@@ -4,12 +4,14 @@ import android.content.Context
 import com.opendash.app.assistant.provider.anthropic.AnthropicProvider
 import com.opendash.app.assistant.provider.api.ApiProviderConfig
 import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
+import com.opendash.app.assistant.provider.embedded.EmbeddedLlmProvider
 import com.opendash.app.assistant.router.ConversationRouter
 import com.opendash.app.assistant.skills.SkillRegistry
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
 import com.opendash.app.device.DeviceManager
+import com.google.common.truth.Truth.assertThat
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.mockk.coEvery
@@ -178,5 +180,48 @@ class ProviderManagerTest {
         val fake = mockk<AssistantProvider>(relaxed = true)
         every { fake.id } returns providerId
         return fake
+    }
+
+    @Test
+    fun `switchEmbeddedModel returns false when no embedded provider is registered`() = runTest {
+        every { router.availableProviders } returns MutableStateFlow(
+            listOf(OpenAiCompatibleProviderFakeId("api_cfg-1"))
+        )
+
+        val result = manager().switchEmbeddedModel("/models/other.task")
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `switchEmbeddedModel returns false when no providers are registered at all`() = runTest {
+        every { router.availableProviders } returns MutableStateFlow(emptyList())
+
+        val result = manager().switchEmbeddedModel("/models/other.task")
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `switchEmbeddedModel delegates to the registered EmbeddedLlmProvider and returns its result`() = runTest {
+        val embedded = mockk<EmbeddedLlmProvider>(relaxed = true)
+        coEvery { embedded.switchModel("/models/other.task") } returns true
+        every { router.availableProviders } returns MutableStateFlow(listOf(embedded))
+
+        val result = manager().switchEmbeddedModel("/models/other.task")
+
+        assertThat(result).isTrue()
+        coVerify { embedded.switchModel("/models/other.task") }
+    }
+
+    @Test
+    fun `switchEmbeddedModel surfaces a failed swap`() = runTest {
+        val embedded = mockk<EmbeddedLlmProvider>(relaxed = true)
+        coEvery { embedded.switchModel(any()) } returns false
+        every { router.availableProviders } returns MutableStateFlow(listOf(embedded))
+
+        val result = manager().switchEmbeddedModel("/models/corrupt.task")
+
+        assertThat(result).isFalse()
     }
 }

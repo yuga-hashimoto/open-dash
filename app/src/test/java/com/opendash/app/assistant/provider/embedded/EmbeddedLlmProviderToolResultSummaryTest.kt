@@ -37,7 +37,7 @@ class EmbeddedLlmProviderToolResultSummaryTest {
 
     private fun provider() = EmbeddedLlmProvider(
         context = mockContext,
-        config = EmbeddedLlmConfig(modelPath = File.createTempFile("embedded-llm", ".bin").absolutePath)
+        initialConfig = EmbeddedLlmConfig(modelPath = File.createTempFile("embedded-llm", ".bin").absolutePath)
     )
 
     @Test
