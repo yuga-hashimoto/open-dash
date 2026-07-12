@@ -12,6 +12,30 @@ import org.junit.jupiter.api.Test
 
 class NativeMediaPlayerToolExecutorTest {
 
+    private class FakeLocalMusicProvider(
+        private val results: List<LocalTrack> = emptyList()
+    ) : LocalMusicProvider {
+        var lastQuery: String? = null
+        override suspend fun findTracks(query: String, limit: Int): List<LocalTrack> {
+            lastQuery = query
+            return results.take(limit)
+        }
+        override fun hasPermission(): Boolean = true
+    }
+
+    private class FakeLocalMusicPlayer : LocalMusicPlayer {
+        var playedUri: String? = null
+        var paused = 0
+        var resumed = 0
+        var stopped = 0
+        private var active = false
+        override fun play(uri: String) { playedUri = uri; active = true }
+        override fun pause() { paused += 1 }
+        override fun resume() { resumed += 1 }
+        override fun stop() { stopped += 1; active = false }
+        override fun isActive(): Boolean = active
+    }
+
     private data class Harness(
         val executor: NativeMediaPlayerToolExecutor,
         val context: Context,
@@ -19,16 +43,24 @@ class NativeMediaPlayerToolExecutorTest {
         val requestedQuery: () -> String?,
         val flagsSet: () -> List<Int>,
         val startedIntents: List<Intent>,
-        val dispatchedKeys: List<Int>
+        val dispatchedKeys: List<Int>,
+        val localProvider: FakeLocalMusicProvider,
+        val localPlayer: FakeLocalMusicPlayer
     )
 
-    private fun newHarness(keyDispatchOk: Boolean = true): Harness {
+    private fun newHarness(
+        keyDispatchOk: Boolean = true,
+        canResolveActivity: Boolean = true,
+        localTracks: List<LocalTrack> = emptyList()
+    ): Harness {
         val ctx = mockk<Context>(relaxed = true)
         val intent = mockk<Intent>(relaxed = true)
         var requestedQuery: String? = null
         val flagsSet = mutableListOf<Int>()
         val startedIntents = mutableListOf<Intent>()
         val dispatchedKeys = mutableListOf<Int>()
+        val localProvider = FakeLocalMusicProvider(localTracks)
+        val localPlayer = FakeLocalMusicPlayer()
 
         every { intent.addFlags(any()) } answers {
             flagsSet.add(firstArg())
@@ -48,12 +80,16 @@ class NativeMediaPlayerToolExecutorTest {
             keyEventDispatcher = { keyCode ->
                 dispatchedKeys.add(keyCode)
                 keyDispatchOk
-            }
+            },
+            canResolveActivity = { canResolveActivity },
+            localMusicProvider = localProvider,
+            localMusicPlayer = localPlayer
         )
         return Harness(
             exec, ctx, intent,
             { requestedQuery }, { flagsSet.toList() },
-            startedIntents, dispatchedKeys
+            startedIntents, dispatchedKeys,
+            localProvider, localPlayer
         )
     }
 
@@ -192,6 +228,85 @@ class NativeMediaPlayerToolExecutorTest {
         )
         assertThat(result.success).isFalse()
         assertThat(result.error).contains("Audio service unavailable")
+    }
+
+    @Test
+    fun `play with query falls back to local library when no app can resolve the search`() = runTest {
+        val h = newHarness(
+            canResolveActivity = false,
+            localTracks = listOf(LocalTrack("content://media/1", "Despacito", "Luis Fonsi"))
+        )
+        val result = h.executor.execute(
+            ToolCall(id = "1", name = "play_music", arguments = mapOf("action" to "play", "query" to "despacito"))
+        )
+        assertThat(result.success).isTrue()
+        assertThat(h.startedIntents).isEmpty()
+        assertThat(h.localProvider.lastQuery).isEqualTo("despacito")
+        assertThat(h.localPlayer.playedUri).isEqualTo("content://media/1")
+        assertThat(result.data).contains("\"source\":\"local\"")
+        assertThat(result.data).contains("Despacito")
+    }
+
+    @Test
+    fun `play with query and no app and no local match returns failure`() = runTest {
+        val h = newHarness(canResolveActivity = false, localTracks = emptyList())
+        val result = h.executor.execute(
+            ToolCall(id = "1", name = "play_music", arguments = mapOf("action" to "play", "query" to "nonexistent"))
+        )
+        assertThat(result.success).isFalse()
+        assertThat(h.localPlayer.playedUri).isNull()
+    }
+
+    @Test
+    fun `play with no query resumes local playback when local is active`() = runTest {
+        val h = newHarness(canResolveActivity = false, localTracks = listOf(LocalTrack("u", "t", "a")))
+        // First play activates the local player.
+        h.executor.execute(ToolCall(id = "1", name = "play_music", arguments = mapOf("action" to "play", "query" to "t")))
+
+        val result = h.executor.execute(
+            ToolCall(id = "2", name = "play_music", arguments = mapOf("action" to "play"))
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(h.localPlayer.resumed).isEqualTo(1)
+        assertThat(h.dispatchedKeys).isEmpty()
+    }
+
+    @Test
+    fun `pause routes to local player when local playback is active`() = runTest {
+        val h = newHarness(canResolveActivity = false, localTracks = listOf(LocalTrack("u", "t", "a")))
+        h.executor.execute(ToolCall(id = "1", name = "play_music", arguments = mapOf("action" to "play", "query" to "t")))
+
+        val result = h.executor.execute(
+            ToolCall(id = "2", name = "play_music", arguments = mapOf("action" to "pause"))
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(h.localPlayer.paused).isEqualTo(1)
+        assertThat(h.dispatchedKeys).isEmpty()
+    }
+
+    @Test
+    fun `next is unsupported while local playback is active`() = runTest {
+        val h = newHarness(canResolveActivity = false, localTracks = listOf(LocalTrack("u", "t", "a")))
+        h.executor.execute(ToolCall(id = "1", name = "play_music", arguments = mapOf("action" to "play", "query" to "t")))
+
+        val result = h.executor.execute(
+            ToolCall(id = "2", name = "play_music", arguments = mapOf("action" to "next"))
+        )
+
+        assertThat(result.success).isFalse()
+        assertThat(h.dispatchedKeys).isEmpty()
+    }
+
+    @Test
+    fun `pause still dispatches key event when local playback is not active`() = runTest {
+        val h = newHarness()
+        val result = h.executor.execute(
+            ToolCall(id = "2", name = "play_music", arguments = mapOf("action" to "pause"))
+        )
+        assertThat(result.success).isTrue()
+        assertThat(h.dispatchedKeys).containsExactly(KeyEvent.KEYCODE_MEDIA_PAUSE)
     }
 
     @Test
