@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import com.opendash.app.R
@@ -48,6 +50,28 @@ import com.opendash.app.util.SaverReason
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+/**
+ * Ambient is meant to be read from across a room (2-3m), not held at
+ * arm's length like every other screen — so it can't reuse the global
+ * [com.opendash.app.ui.theme.Typography] scale as-is (that scale's
+ * titleMedium/bodyMedium/bodySmall/labelSmall sizes, 11-16sp, are sized
+ * for handheld Settings/Chat screens). These overrides only apply
+ * within Ambient composables; the global theme is untouched so every
+ * other screen keeps its normal sizing.
+ */
+internal val AmbientIconSize = 28.dp
+internal val AmbientSmallIconSize = 22.dp
+
+internal val AmbientLabelStyle
+    @Composable get() = MaterialTheme.typography.titleMedium.copy(fontSize = 26.sp, lineHeight = 32.sp)
+internal val AmbientBodyStyle
+    @Composable get() = MaterialTheme.typography.bodyLarge.copy(fontSize = 22.sp, lineHeight = 28.sp)
+internal val AmbientCaptionStyle
+    @Composable get() = MaterialTheme.typography.bodySmall.copy(fontSize = 18.sp, lineHeight = 24.sp)
+/** Countdown digits are the single most glance-critical element on Ambient — sized closer to the clock than to body text. */
+internal val AmbientCountdownStyle
+    @Composable get() = MaterialTheme.typography.displayMedium.copy(fontSize = 40.sp, lineHeight = 46.sp)
 
 @Composable
 fun AmbientScreen(
@@ -229,7 +253,7 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
     Column(horizontalAlignment = alignment) {
         Text(
             text = snapshot.greeting(),
-            style = MaterialTheme.typography.titleLarge,
+            style = AmbientLabelStyle,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
@@ -252,11 +276,11 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                         imageVector = if (snapshot.batteryCharging) Icons.Filled.BatteryChargingFull
                         else Icons.Filled.BatteryFull,
                         contentDescription = if (snapshot.batteryCharging) "Charging" else "Battery",
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).size(AmbientSmallIconSize)
                     )
                     Text(
                         text = "$level%",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AmbientCaptionStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -267,11 +291,11 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                         imageVector = Icons.Filled.LocalFireDepartment,
                         contentDescription = "Thermal state",
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).size(AmbientSmallIconSize)
                     )
                     Text(
                         text = bucket.lowercase().replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AmbientCaptionStyle,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -282,7 +306,7 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                         imageVector = Icons.Filled.BatterySaver,
                         contentDescription = stringResource(R.string.saver_chip_icon_description),
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).size(AmbientSmallIconSize)
                     )
                     Text(
                         text = when (snapshot.saverReason) {
@@ -290,7 +314,7 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                             SaverReason.THERMAL_THROTTLE -> stringResource(R.string.saver_chip_thermal)
                             SaverReason.NONE -> ""
                         },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AmbientCaptionStyle,
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -301,11 +325,11 @@ private fun ClockBlock(snapshot: AmbientSnapshot, now: LocalDateTime, centered: 
                         imageVector = Icons.Filled.Speaker,
                         contentDescription = "Nearby speakers",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp).size(AmbientSmallIconSize)
                     )
                     Text(
                         text = "${snapshot.nearbySpeakerCount}",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AmbientCaptionStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -326,20 +350,20 @@ private fun WeatherStrip(snapshot: AmbientSnapshot) {
     ) {
         snapshot.weatherCondition?.takeIf { it.isNotBlank() }?.let { cond ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Cloud, null, modifier = Modifier.padding(end = 4.dp))
-                Text(cond.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Filled.Cloud, null, modifier = Modifier.padding(end = 4.dp).size(AmbientIconSize))
+                Text(cond.replaceFirstChar { it.uppercase() }, style = AmbientLabelStyle)
             }
         }
         snapshot.temperatureC?.let { t ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Thermostat, null, modifier = Modifier.padding(end = 4.dp))
-                Text("${"%.1f".format(t)}°", style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Filled.Thermostat, null, modifier = Modifier.padding(end = 4.dp).size(AmbientIconSize))
+                Text("${"%.1f".format(t)}°", style = AmbientLabelStyle)
             }
         }
         snapshot.humidityPercent?.let { h ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.WaterDrop, null, modifier = Modifier.padding(end = 4.dp))
-                Text("$h%", style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Filled.WaterDrop, null, modifier = Modifier.padding(end = 4.dp).size(AmbientIconSize))
+                Text("$h%", style = AmbientLabelStyle)
             }
         }
     }
@@ -356,10 +380,10 @@ private fun NextTimerLine(snapshot: AmbientSnapshot) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(Icons.Filled.Timer, null)
+        Icon(Icons.Filled.Timer, null, modifier = Modifier.size(AmbientIconSize))
         Text(
             text = if (label != null) "$label · $rendered" else rendered,
-            style = MaterialTheme.typography.titleMedium
+            style = AmbientLabelStyle
         )
     }
 }
@@ -373,19 +397,19 @@ private fun CountsStrip(snapshot: AmbientSnapshot) {
     ) {
         if (snapshot.activeTimerCount > 0) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Timer, null, modifier = Modifier.padding(end = 4.dp))
+                Icon(Icons.Filled.Timer, null, modifier = Modifier.padding(end = 4.dp).size(AmbientIconSize))
                 Text(
                     text = "${snapshot.activeTimerCount} timer${if (snapshot.activeTimerCount != 1) "s" else ""}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = AmbientBodyStyle
                 )
             }
         }
         if (snapshot.activeNotificationCount > 0) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.NotificationsActive, null, modifier = Modifier.padding(end = 4.dp))
+                Icon(Icons.Filled.NotificationsActive, null, modifier = Modifier.padding(end = 4.dp).size(AmbientIconSize))
                 Text(
                     text = "${snapshot.activeNotificationCount} notification${if (snapshot.activeNotificationCount != 1) "s" else ""}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = AmbientBodyStyle
                 )
             }
         }
@@ -419,24 +443,25 @@ private fun AnnouncementBanner(
         ) {
             Icon(
                 imageVector = Icons.Filled.Campaign,
-                contentDescription = "Announcement"
+                contentDescription = "Announcement",
+                modifier = Modifier.size(AmbientIconSize)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.titleMedium
+                    style = AmbientLabelStyle
                 )
                 if (!from.isNullOrBlank()) {
                     Text(
                         text = "from $from",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AmbientCaptionStyle,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
             }
             Text(
                 text = "Tap to dismiss",
-                style = MaterialTheme.typography.labelSmall,
+                style = AmbientCaptionStyle,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
         }
@@ -448,14 +473,14 @@ private fun DeviceActivityCard(snapshot: AmbientSnapshot) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Lightbulb, null, modifier = Modifier.padding(end = 8.dp))
-                Text("Active devices", style = MaterialTheme.typography.titleMedium)
+                Icon(Icons.Filled.Lightbulb, null, modifier = Modifier.padding(end = 8.dp).size(AmbientIconSize))
+                Text("Active devices", style = AmbientLabelStyle)
             }
             Spacer(Modifier.height(8.dp))
             snapshot.recentDeviceActivity.forEach { line ->
                 Text(
                     text = "${line.name} · ${line.state}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = AmbientBodyStyle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

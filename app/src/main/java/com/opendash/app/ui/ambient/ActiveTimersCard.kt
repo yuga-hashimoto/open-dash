@@ -57,11 +57,11 @@ fun ActiveTimersCard(
                 Icon(
                     imageVector = Icons.Filled.Timer,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 8.dp)
+                    modifier = Modifier.padding(end = 8.dp).size(AmbientIconSize)
                 )
                 Text(
                     text = "Active timers",
-                    style = MaterialTheme.typography.titleMedium
+                    style = AmbientLabelStyle
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -98,23 +98,24 @@ private fun TimerRow(
             if (label != null) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = AmbientBodyStyle,
                     maxLines = 1
                 )
             }
             Text(
                 text = formatRemaining(timer.remainingSeconds),
-                style = MaterialTheme.typography.titleLarge,
+                style = AmbientCountdownStyle,
                 color = MaterialTheme.colorScheme.primary
             )
         }
         IconButton(
             onClick = onCancel,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(56.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Cancel timer ${timer.label.ifBlank { timer.id }}"
+                contentDescription = "Cancel timer ${timer.label.ifBlank { timer.id }}",
+                modifier = Modifier.size(AmbientIconSize)
             )
         }
     }
@@ -147,17 +148,18 @@ private fun FiringTimerRow(
         ) {
             Icon(
                 imageVector = Icons.Filled.NotificationsActive,
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.size(AmbientIconSize)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = timer.label.ifBlank { "Timer" },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = AmbientLabelStyle,
                     maxLines = 1
                 )
                 Text(
                     text = "Time's up",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = AmbientBodyStyle
                 )
             }
             Button(
@@ -170,10 +172,10 @@ private fun FiringTimerRow(
                 Icon(
                     imageVector = Icons.Filled.Stop,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.size(4.dp))
-                Text("Stop")
+                Text("Stop", style = AmbientBodyStyle)
             }
         }
     }
