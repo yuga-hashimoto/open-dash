@@ -91,14 +91,14 @@ class DefaultSpotifyAuthManagerTest {
         assertThat(url).contains("response_type=code")
         assertThat(url).contains("code_challenge_method=S256")
         assertThat(url).contains("redirect_uri=")
-        coVerify { appPreferences.set(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER, any()) }
-        coVerify { appPreferences.set(PreferenceKeys.SPOTIFY_PENDING_STATE, any()) }
+        coVerify { securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER, any()) }
+        coVerify { securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE, any()) }
     }
 
     @Test
     fun `handleAuthorizationCode rejects state mismatch`() = runTest {
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf("verifier")
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) } returns "expected-state"
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) } returns "verifier"
 
         val result = manager.handleAuthorizationCode("some-code", "wrong-state")
 
@@ -112,19 +112,19 @@ class DefaultSpotifyAuthManagerTest {
         // can send an intent with an arbitrary code/state. Clearing the
         // pending verifier on a mismatched state would let that grief a
         // real, concurrently in-flight authorization.
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf("real-verifier")
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) } returns "expected-state"
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) } returns "real-verifier"
 
         manager.handleAuthorizationCode("attacker-code", "attacker-state")
 
-        coVerify(exactly = 0) { appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_STATE) }
-        coVerify(exactly = 0) { appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) }
+        coVerify(exactly = 0) { securePreferences.remove(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) }
+        coVerify(exactly = 0) { securePreferences.remove(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) }
     }
 
     @Test
     fun `handleAuthorizationCode rejects missing pending verifier`() = runTest {
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf(null)
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) } returns "expected-state"
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) } returns ""
 
         val result = manager.handleAuthorizationCode("some-code", "expected-state")
 
@@ -133,8 +133,8 @@ class DefaultSpotifyAuthManagerTest {
 
     @Test
     fun `handleAuthorizationCode exchanges code and stores tokens on success`() = runTest {
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf("verifier")
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) } returns "expected-state"
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) } returns "verifier"
         stubClientId("my-client-id")
         server.enqueue(
             MockResponse().setBody(
@@ -152,8 +152,8 @@ class DefaultSpotifyAuthManagerTest {
 
     @Test
     fun `handleAuthorizationCode returns false on non-2xx exchange response`() = runTest {
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE) } returns flowOf("expected-state")
-        every { appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER) } returns flowOf("verifier")
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE) } returns "expected-state"
+        every { securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER) } returns "verifier"
         stubClientId("my-client-id")
         server.enqueue(MockResponse().setResponseCode(400).setBody("""{"error":"invalid_grant"}"""))
 

@@ -7,6 +7,7 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
+import com.opendash.app.tool.escapeJson
 import com.opendash.app.voice.alarm.AlarmOccurrenceCalculator
 import com.opendash.app.voice.alarm.AlarmScheduler
 import timber.log.Timber
@@ -104,7 +105,7 @@ class AlarmToolExecutor(
 
         val id = "alarm_${UUID.randomUUID().toString().take(8)}"
         val mask = AlarmOccurrenceCalculator.daysToMask(repeatDays)
-        dao.upsert(AlarmEntity(id, hour, minute, mask, label, enabled = true))
+        dao.upsert(AlarmEntity(id, hour, minute, mask, label))
         val triggerAtMs = AlarmOccurrenceCalculator.nextTriggerMillis(nowProvider(), hour, minute, repeatDays)
         scheduler.schedule(id, label, hour, minute, mask, triggerAtMs)
 
@@ -120,7 +121,7 @@ class AlarmToolExecutor(
         val data = alarms.joinToString(",") { a ->
             val days = AlarmOccurrenceCalculator.maskToDays(a.repeatDaysMask)
             val nextTriggerMs = AlarmOccurrenceCalculator.nextTriggerMillis(now, a.hour, a.minute, days)
-            """{"id":"${a.id}","hour":${a.hour},"minute":${"%02d".format(a.minute)},"repeat_days":"${formatDays(days)}","label":"${a.label.escapeJson()}","enabled":${a.enabled},"next_trigger_ms":$nextTriggerMs}"""
+            """{"id":"${a.id}","hour":${a.hour},"minute":${"%02d".format(a.minute)},"repeat_days":"${formatDays(days)}","label":"${a.label.escapeJson()}","next_trigger_ms":$nextTriggerMs}"""
         }
         return ToolResult(call.id, true, "[$data]")
     }
@@ -161,21 +162,6 @@ class AlarmToolExecutor(
 
     private fun formatDays(days: Set<DayOfWeek>): String =
         days.sortedBy { it.value }.joinToString(",") { it.name.lowercase().take(3) }
-
-    private fun String.escapeJson(): String = buildString(length) {
-        for (c in this@escapeJson) {
-            when (c) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\b' -> append("\\b")
-                '\u000C' -> append("\\f")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
-            }
-        }
-    }
 
     private companion object {
         const val DEFAULT_SNOOZE_MINUTES = 9

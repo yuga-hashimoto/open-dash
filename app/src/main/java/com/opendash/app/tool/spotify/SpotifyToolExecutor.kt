@@ -5,6 +5,7 @@ import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
 import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
+import com.opendash.app.tool.escapeJson
 import timber.log.Timber
 
 /**
@@ -128,20 +129,5 @@ class SpotifyToolExecutor(
             """{"id":"${d.id.escapeJson()}","name":"${d.name.escapeJson()}","active":${d.isActive}}"""
         }
         return ToolResult(call.id, true, "[$data]")
-    }
-
-    private fun String.escapeJson(): String = buildString(length) {
-        for (c in this@escapeJson) {
-            when (c) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\b' -> append("\\b")
-                '' -> append("\\f")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> if (c.code < 0x20) append("\\u%04x".format(c.code)) else append(c)
-            }
-        }
     }
 }

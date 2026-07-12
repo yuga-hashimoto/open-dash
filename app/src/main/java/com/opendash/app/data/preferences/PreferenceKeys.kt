@@ -220,21 +220,11 @@ object PreferenceKeys {
     val WHISPER_TRANSLATE_TO_ENGLISH = booleanPreferencesKey("whisper_translate_to_english")
 
     // Spotify OAuth (P20.9) — Client ID is public (not a secret) per PKCE flow;
-    // access/refresh tokens live in SecurePreferences instead.
+    // access/refresh tokens and the in-flight PKCE verifier/state live in
+    // SecurePreferences instead (KEY_SPOTIFY_* constants).
     /** User-supplied Client ID from their own Spotify Developer Dashboard app. */
     val SPOTIFY_CLIENT_ID = stringPreferencesKey("spotify_client_id")
 
     /** Epoch millis the current access token expires at; 0/unset means not connected. */
     val SPOTIFY_TOKEN_EXPIRES_AT_MS = longPreferencesKey("spotify_token_expires_at_ms")
-
-    /**
-     * PKCE code_verifier for the authorization request currently in
-     * flight. Persisted (not just held in memory) because the redirect
-     * back from the browser can arrive after this process was killed.
-     * Cleared once the code exchange completes or fails.
-     */
-    val SPOTIFY_PENDING_CODE_VERIFIER = stringPreferencesKey("spotify_pending_code_verifier")
-
-    /** CSRF `state` value for the authorization request currently in flight. */
-    val SPOTIFY_PENDING_STATE = stringPreferencesKey("spotify_pending_state")
 }

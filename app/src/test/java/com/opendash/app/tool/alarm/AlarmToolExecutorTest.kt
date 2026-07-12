@@ -88,7 +88,7 @@ class AlarmToolExecutorTest {
     @Test
     fun `list_alarms returns all alarms`() = runTest {
         coEvery { dao.listAll() } returns listOf(
-            AlarmEntity("id-1", 7, 0, 0, "wake up", true)
+            AlarmEntity("id-1", 7, 0, 0, "wake up")
         )
 
         val result = executor.execute(ToolCall("6", "list_alarms", emptyMap()))
@@ -109,7 +109,7 @@ class AlarmToolExecutorTest {
 
     @Test
     fun `cancel_alarm deletes and unschedules`() = runTest {
-        coEvery { dao.get("id-1") } returns AlarmEntity("id-1", 7, 0, 0, "wake up", true)
+        coEvery { dao.get("id-1") } returns AlarmEntity("id-1", 7, 0, 0, "wake up")
 
         val result = executor.execute(ToolCall("8", "cancel_alarm", mapOf("id" to "id-1")))
 
@@ -129,7 +129,7 @@ class AlarmToolExecutorTest {
 
     @Test
     fun `snooze_alarm reschedules with default minutes`() = runTest {
-        coEvery { dao.get("id-1") } returns AlarmEntity("id-1", 7, 0, 0, "wake up", true)
+        coEvery { dao.get("id-1") } returns AlarmEntity("id-1", 7, 0, 0, "wake up")
 
         val result = executor.execute(ToolCall("10", "snooze_alarm", mapOf("id" to "id-1")))
 

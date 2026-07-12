@@ -73,5 +73,13 @@ class SecurePreferences @Inject constructor(
         /** Spotify OAuth PKCE access/refresh tokens (P20.9). */
         const val KEY_SPOTIFY_ACCESS_TOKEN = "spotify_access_token"
         const val KEY_SPOTIFY_REFRESH_TOKEN = "spotify_refresh_token"
+
+        /**
+         * PKCE code_verifier and CSRF state for the authorization request
+         * currently in flight. Encrypted like the tokens above since the
+         * verifier is a secret the token exchange trusts implicitly.
+         */
+        const val KEY_SPOTIFY_PENDING_CODE_VERIFIER = "spotify_pending_code_verifier"
+        const val KEY_SPOTIFY_PENDING_STATE = "spotify_pending_state"
     }
 }

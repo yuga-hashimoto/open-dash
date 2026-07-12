@@ -83,6 +83,17 @@ class DefaultSpotifyApiClientTest {
     }
 
     @Test
+    fun `play escapes double quotes in track uri to keep body valid JSON`() = runTest {
+        coEvery { authManager.getValidAccessToken() } returns "AT1"
+        server.enqueue(MockResponse().setResponseCode(204))
+
+        apiClient.play(trackUri = """spotify:track:"1""", deviceId = null)
+
+        val recorded = server.takeRequest()
+        assertThat(recorded.body.readUtf8()).isEqualTo("""{"uris":["spotify:track:\"1"]}""")
+    }
+
+    @Test
     fun `play with device id includes device_id query param`() = runTest {
         coEvery { authManager.getValidAccessToken() } returns "AT1"
         server.enqueue(MockResponse().setResponseCode(204))

@@ -18,6 +18,5 @@ data class AlarmEntity(
     val hour: Int,
     val minute: Int,
     val repeatDaysMask: Int,
-    val label: String,
-    val enabled: Boolean
+    val label: String
 )

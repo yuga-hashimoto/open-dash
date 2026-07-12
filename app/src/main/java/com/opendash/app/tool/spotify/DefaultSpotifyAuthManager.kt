@@ -1,5 +1,6 @@
 package com.opendash.app.tool.spotify
 
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
@@ -41,8 +42,9 @@ class DefaultSpotifyAuthManager(
         val challenge = PkceGenerator.generateCodeChallenge(verifier)
         val state = PkceGenerator.generateCodeVerifier().take(16)
 
-        appPreferences.set(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER, verifier)
-        appPreferences.set(PreferenceKeys.SPOTIFY_PENDING_STATE, state)
+        securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER, verifier)
+        securePreferences.putString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE, state)
+        clearLegacyPlaintextPendingKeys()
 
         return authorizeEndpoint.toHttpUrl().newBuilder().apply {
             addQueryParameter("client_id", clientId)
@@ -62,14 +64,16 @@ class DefaultSpotifyAuthManager(
         // mismatched (attacker-supplied) state would grief a real,
         // concurrently in-flight authorization by wiping the verifier the
         // legitimate browser redirect still needs.
-        val expectedState = appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_STATE).first()
+        val expectedState = securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_STATE)
+            .takeIf { it.isNotEmpty() }
         if (expectedState == null || expectedState != state) {
             Timber.w("Spotify auth state mismatch (possible CSRF or stale redirect)")
             return false
         }
-        val verifier = appPreferences.observe(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER).first()
-        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_STATE)
-        appPreferences.remove(PreferenceKeys.SPOTIFY_PENDING_CODE_VERIFIER)
+        val verifier = securePreferences.getString(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER)
+            .takeIf { it.isNotEmpty() }
+        securePreferences.remove(SecurePreferences.KEY_SPOTIFY_PENDING_STATE)
+        securePreferences.remove(SecurePreferences.KEY_SPOTIFY_PENDING_CODE_VERIFIER)
         if (verifier == null) {
             Timber.w("Spotify auth: no pending PKCE verifier found")
             return false
@@ -165,6 +169,20 @@ class DefaultSpotifyAuthManager(
 
     private suspend fun currentClientId(): String? =
         appPreferences.observe(PreferenceKeys.SPOTIFY_CLIENT_ID).first()?.takeIf { it.isNotBlank() }
+
+    /**
+     * Wipes the old plaintext PKCE verifier/state DataStore keys these
+     * used to live under before the SecurePreferences migration. A
+     * device that ran an earlier build and started (even partially) an
+     * authorization has a real verifier orphaned in plaintext on disk
+     * under these names; the migration itself only changed where new
+     * writes go, it never erased the old ones. The constants are gone
+     * from [PreferenceKeys], so the keys are rebuilt here by name.
+     */
+    private suspend fun clearLegacyPlaintextPendingKeys() {
+        appPreferences.remove(stringPreferencesKey("spotify_pending_code_verifier"))
+        appPreferences.remove(stringPreferencesKey("spotify_pending_state"))
+    }
 
     companion object {
         const val DEFAULT_AUTHORIZE_ENDPOINT = "https://accounts.spotify.com/authorize"
