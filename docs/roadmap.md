@@ -172,8 +172,29 @@ smoke testing).
 - [x] P16.2: Silero VAD (ONNX) — extracted `VadEngine` interface (`feed`/`reset`/`Decision`) from the existing `AmplitudeVad` so it and the new `SileroVadEngine` are interchangeable; `AudioRecordPcmSource.vadFactory` now takes the interface. `SileroVadModelCatalog`/`SileroVadModelDownloader` (single-file Range-resume, mirrors `WhisperModelDownloader`) fetch the real 16kHz-only ONNX model (verified URL/sha256/size by actually downloading it and inspecting tensor shapes with `onnxruntime` in Python — reuses the `onnxruntime-android` dependency added this session for P21.7, no new dependency needed). `SileroVadEngine` ports the upstream `OnnxWrapper.__call__` streaming contract (512-sample windows, 64-sample carried context, `(2,1,128)` recurrent state threaded between calls) — buffering/context-carry logic is unit-tested against a fake `SileroVadSession`, and **cross-validated by running the real downloaded model through `onnxruntime` in Python**: silence and random noise both correctly score near-zero speech probability (~0.005), confirming the model behaves as expected and is a real qualitative improvement over `AmplitudeVad`'s RMS-threshold approach (which can't distinguish loud noise from speech at all). Wired into `SttModule`: Silero is used automatically when its model has been downloaded (no Settings toggle needed, same auto-upgrade pattern as `WhisperCppBridge.isAvailable()`), falling back to `AmplitudeVad` otherwise or on any ONNX load failure. **Not yet done**: a Settings UI card to actually trigger the download (the downloader is fully wired and injectable, `SileroVadModelDownloader` is a Hilt singleton — just no button exists yet to call it; needs a ViewModel/Card plus strings across this project's 6 shipped locales, left as a small, well-scoped follow-up) and real-device validation of detection accuracy in a live capture loop. Ref: sherpa-onnx silero-vad binding; snakers4/silero-vad
 - [ ] P16.3: Piper TTS JNI — `piper-cpp` submodule + voice-model downloader; replace
   PiperTtsProvider fallback path with real inference. Ref: rhasspy/piper
-- [ ] P16.4: Semantic memory embeddings upgrade — replace TF-IDF with MiniLM (all-MiniLM-L6-v2
-  ONNX) for `semantic_memory_search`. Ref: shubham0204/Sentence-Embeddings-Android
+- [x] P16.4: Semantic memory embeddings upgrade — replaced TF-IDF with a real embedding model
+  for `semantic_memory_search`. Switched from the originally-referenced MiniLM/shubham0204
+  approach to **MediaPipe EmbeddingGemma** after investigating the tokenizer: MiniLM needs a
+  hand-rolled WordPiece/SentencePiece Unigram tokenizer ported to Kotlin, while EmbeddingGemma's
+  tokenization runs entirely inside the already-integrated MediaPipe native runtime — asked the
+  user (multilingual vs English-only vs skip, then MediaPipe-native vs hand-rolled tokenizer) and
+  they chose the multilingual EmbeddingGemma bundle (+118MB) both times. `EmbeddingGemmaModelCatalog`
+  points at the real Google-hosted `.task` bundle (183,816,181 bytes, sha256 verified);
+  `EmbeddingGemmaModelDownloader` mirrors the existing single-file Range-resume downloader used by
+  Whisper/Silero. `MediaPipeSemanticEmbedder` wraps `TextEmbedder`; discovered by an actual compile
+  failure (not assumption) that the pinned `mediapipe-genai`/`mediapipe-text` 0.10.29 lacks the newer
+  `TextFormatContext` query/document prompt-framing overload — deliberately did not bump the shared
+  MediaPipe version to get it, since that version also drives the LLM engine and risking it for a
+  memory-search quality improvement was out of scope; falls back to the plain single-arg `embed()`.
+  `SemanticMemorySearch` takes `embedderProvider: () -> SemanticEmbedder?` (a factory, not a fixed
+  value) so a model downloaded mid-session activates on the next search with no app restart — same
+  convention as Whisper's active-model resolution — and caches the loaded embedder since constructing
+  it is expensive. Falls back to the existing `TfIdfIndex` whenever the embedder is unavailable, the
+  model isn't downloaded yet, or embedding fails for any input. Unit-tested with a fake embedder
+  (ranks by cosine similarity, falls back on unavailable/failed embed). **Not yet done**: a Settings
+  UI card to trigger the download (same gap as Silero VAD/P16.2 — downloader is a wired Hilt
+  singleton, just no button yet) and real-device validation of retrieval quality on real memory
+  entries. Ref: google-ai-edge (MediaPipe) EmbeddingGemma; originally shubham0204/Sentence-Embeddings-Android
 - [ ] P16.5: Local knowledge base — bundled Wikipedia-lite (compressed) + SQLite FTS5 for
   `knowledge` tool offline fallback when no network
 - [ ] P16.6: Model hot-swap — switch between Gemma / Qwen / Phi without relaunch;

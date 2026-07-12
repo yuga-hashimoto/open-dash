@@ -225,6 +225,10 @@ dependencies {
     implementation(libs.mediapipe.genai)
     implementation(libs.litertlm.android)
 
+    // On-device text embeddings for semantic memory search (P16.4, user-approved:
+    // MediaPipe EmbeddingGemma over a hand-rolled SentencePiece tokenizer)
+    implementation(libs.mediapipe.text)
+
     // On-device translation (standalone ML Kit, no Firebase project needed)
     implementation(libs.mlkit.translate)
 

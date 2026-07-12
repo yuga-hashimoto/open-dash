@@ -90,6 +90,12 @@ paho-mqtt = { group = "org.eclipse.paho", name = "org.eclipse.paho.client.mqttv3
 mediapipe-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipe-genai" }
 litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 
+# On-device text embeddings (semantic memory search, P16.4) — same MediaPipe
+# family/version as mediapipe-genai above, just the Text Embedder task instead
+# of the LLM task, so it handles tokenization internally (no hand-rolled
+# SentencePiece needed for the multilingual EmbeddingGemma model).
+mediapipe-text = { group = "com.google.mediapipe", name = "tasks-text", version.ref = "mediapipe-genai" }
+
 # On-device translation
 mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkit-translate" }
 

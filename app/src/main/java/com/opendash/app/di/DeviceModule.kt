@@ -490,6 +490,39 @@ object DeviceModule {
     ): com.opendash.app.voice.alarm.AlarmRingtoneController =
         com.opendash.app.voice.alarm.AlarmRingtoneController(context)
 
+    /**
+     * P16.4 EmbeddingGemma model downloader, shared across a future
+     * Settings UI and [buildSemanticEmbedderIfDownloaded] below.
+     */
+    @Provides
+    @Singleton
+    fun provideEmbeddingGemmaModelDownloader(
+        @ApplicationContext context: Context
+    ): com.opendash.app.tool.memory.embedding.EmbeddingGemmaModelDownloader =
+        com.opendash.app.tool.memory.embedding.EmbeddingGemmaModelDownloader(context)
+
+    /**
+     * P16.4: uses the neural [com.opendash.app.tool.memory.embedding.MediaPipeSemanticEmbedder]
+     * once its model has been downloaded (no Settings toggle needed —
+     * same auto-upgrade pattern as [com.opendash.app.voice.wakeword.VoskWakeWordDetector]'s
+     * relationship to `SttModule`'s Silero VAD gate), otherwise returns
+     * `null` so [com.opendash.app.tool.memory.SemanticMemorySearch]
+     * falls back to TF-IDF. Loading a ~180MB model is expensive, so
+     * this is only called when `SemanticMemorySearch`'s own cache
+     * doesn't already have a usable embedder — see its `embedderProvider` contract.
+     */
+    private fun buildSemanticEmbedderIfDownloaded(
+        context: Context
+    ): com.opendash.app.tool.memory.embedding.SemanticEmbedder? {
+        val downloader = com.opendash.app.tool.memory.embedding.EmbeddingGemmaModelDownloader(context)
+        if (!downloader.isDownloaded()) return null
+        return runCatching {
+            com.opendash.app.tool.memory.embedding.MediaPipeSemanticEmbedder(context, downloader.modelFile())
+        }.onFailure {
+            timber.log.Timber.e(it, "Failed to load EmbeddingGemma despite model being downloaded")
+        }.getOrNull()?.takeIf { it.isAvailable() }
+    }
+
     @Provides
     @Singleton
     fun provideToolExecutor(
@@ -630,7 +663,13 @@ object DeviceModule {
             TapByTextToolExecutor(a11yServiceHolder),
             ScrollScreenToolExecutor(a11yServiceHolder),
             TypeTextToolExecutor(a11yServiceHolder),
-            MemoryToolExecutor(memoryDao),
+            MemoryToolExecutor(
+                memoryDao,
+                semanticSearch = com.opendash.app.tool.memory.SemanticMemorySearch(
+                    memoryDao,
+                    embedderProvider = { buildSemanticEmbedderIfDownloaded(context) }
+                )
+            ),
             RagToolExecutor(RagService(documentChunkDao)),
             RoutineToolExecutor(
                 routineStore,
