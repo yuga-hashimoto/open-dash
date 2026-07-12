@@ -23,7 +23,7 @@ Legend: ✅ shipped · 🟡 scaffolding / partial · ❌ not started · 🚫 won
 |---|---|---|
 | Wake word (Vosk) | ✅ | Default always-on path via foreground service. |
 | Android STT (`SpeechRecognizer`) | ✅ | Primary recogniser; fast on Pixel-class tablets. |
-| Offline STT (Whisper / Vosk) | 🟡 | `SttProvider` interface + adapters exist; JNI backend not wired. |
+| Offline STT (Whisper / Vosk) | 🟡 | `SttProvider` interface + adapters exist; JNI backend now compiles (`externalNativeBuild` re-enabled, P21.6) but unverified on a real device. |
 | VAD parameters exposed | ✅ | Silence timeout, min-speech tunables in Settings. |
 | Silero VAD backend | 🟡 | Scaffold only — falls back to energy-threshold VAD. |
 | Android TTS | ✅ | Default output; locale-aware. |
@@ -133,11 +133,14 @@ Start at `VoicePipeline`, follow the route into `ConversationRouter`, and let
 
 Honest list of places where the picture is messier than the matrix implies.
 
-- **Offline stack completion (Phase 16) is incomplete.** Whisper STT, Vosk STT
-  and Piper TTS all have provider-interface scaffolding but the native JNI
-  layer is not wired. Closing this needs native deps we have not yet asked
-  the user to green-light under the "External Service Review" rule (even for
-  bundled native code, we want explicit sign-off).
+- **Offline stack completion (Phase 16) is partially unblocked.** Whisper
+  STT's JNI layer now compiles (P21.6, `externalNativeBuild` re-enabled) and
+  is wired into `WhisperSttProvider`, but has never run on a real device —
+  a clean compile only proves the toolchain works, not that transcription
+  is correct or fast enough. Piper TTS's native side is still fully
+  unwired (P14.9's CMake wiring for piper-phonemize + espeak-ng + ONNX
+  Runtime remains unstarted). Vosk (wake word) has been production-shipped
+  since Phase 8 and isn't affected by this.
 - **Multi-room WebSocket upgrade is deferred.** NDJSON over TCP is the happy
   path today. WebSocket was scoped but not prioritised because NDJSON works
   and adds one dependency less.

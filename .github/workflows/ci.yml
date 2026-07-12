@@ -13,10 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # P14.1 groundwork: init llama.cpp + whisper.cpp submodules so
-          # CMake / NDK builds (when wired up) can find the sources. Today
-          # both submodules are dormant (no CMakeLists reference), so this
-          # just ensures the working tree matches release.yml's state.
+          # P14.1/P16.1: llama.cpp + whisper.cpp submodules feed
+          # app/src/main/cpp/CMakeLists.txt, which externalNativeBuild now
+          # compiles (see app/build.gradle.kts) — NDK 28.2.13676358 is
+          # pre-installed on this runner image, no extra provisioning step
+          # needed.
           submodules: recursive
 
       - name: Set up JDK 17

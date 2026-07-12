@@ -25,17 +25,22 @@ android {
             abiFilters += listOf("arm64-v8a")
         }
 
-        // externalNativeBuild (llama.cpp) disabled — using MediaPipe
-        // externalNativeBuild {
-        //     cmake {
-        //         arguments += listOf(
-        //             "-DANDROID_ARM_NEON=TRUE",
-        //             "-DCMAKE_BUILD_TYPE=Release",
-        //             "-DCMAKE_C_FLAGS=-O3 -march=armv8.2-a+fp16+dotprod -DNDEBUG",
-        //             "-DCMAKE_CXX_FLAGS=-O3 -march=armv8.2-a+fp16+dotprod -DNDEBUG"
-        //         )
-        //     }
-        // }
+        // P14.1/P16.1: re-enabled so WhisperSttProvider's native backend
+        // (libwhisper_jni.so) actually gets built instead of falling back to
+        // OfflineSttStub. llama_jni also builds as a side effect of sharing
+        // app/src/main/cpp/CMakeLists.txt with whisper.cpp, but is unused —
+        // the LLM path moved to MediaPipe (see the other externalNativeBuild
+        // block below for the CMakeLists.txt path / NDK version pinning).
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DANDROID_ARM_NEON=TRUE",
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DCMAKE_C_FLAGS=-O3 -march=armv8.2-a+fp16+dotprod -DNDEBUG",
+                    "-DCMAKE_CXX_FLAGS=-O3 -march=armv8.2-a+fp16+dotprod -DNDEBUG"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -77,18 +82,21 @@ android {
         abortOnError = true
     }
 
-    // llama.cpp JNI disabled — using MediaPipe LLM Inference (GPU accelerated)
-    // To re-enable llama.cpp, uncomment below and install NDK 27.0.12077973
-    // val ndkDir = file("${android.sdkDirectory}/ndk/27.0.12077973")
-    // if (ndkDir.exists()) {
-    //     externalNativeBuild {
-    //         cmake {
-    //             path = file("src/main/cpp/CMakeLists.txt")
-    //             version = "3.22.1"
-    //         }
-    //     }
-    //     ndkVersion = "27.0.12077973"
-    // }
+    // NDK 28.2.13676358 chosen deliberately: it's pre-installed on GitHub
+    // Actions' ubuntu-latest runner image (confirmed against
+    // actions/runner-images' published manifest), so CI needs no extra NDK
+    // provisioning step. Verified locally: both libllama_jni.so and
+    // libwhisper_jni.so compile cleanly and package into standard AND full
+    // flavor debug builds, `./gradlew assembleDebug` and `./gradlew test`
+    // (both flavors) stay green. NOT yet verified on a real device — see
+    // docs/roadmap.md's P21.6 entry.
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

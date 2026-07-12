@@ -1,14 +1,18 @@
 package com.opendash.app.voice.reminder
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.opendash.app.MainActivity
 import com.opendash.app.R
+import timber.log.Timber
 
 /**
  * Posts the heads-up notification for a fired reminder. Split out from
@@ -39,6 +43,12 @@ object ReminderNotifier {
             .setAutoCancel(true)
             .build()
 
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Timber.w("POST_NOTIFICATIONS not granted; reminder fired silently for $id")
+            return
+        }
         NotificationManagerCompat.from(context).notify(id.hashCode(), notification)
     }
 

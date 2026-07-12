@@ -24,12 +24,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleStandardDebug
 
       - name: Rename APK with tag
         run: |
           mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk \
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk \
              artifacts/OpenDash-${GITHUB_REF_NAME}.apk
 
       - name: Create GitHub release

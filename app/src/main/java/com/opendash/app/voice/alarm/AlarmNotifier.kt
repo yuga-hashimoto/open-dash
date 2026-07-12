@@ -1,14 +1,18 @@
 package com.opendash.app.voice.alarm
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.opendash.app.MainActivity
 import com.opendash.app.R
+import timber.log.Timber
 
 /**
  * Posts the heads-up / full-screen notification for a fired alarm.
@@ -25,6 +29,11 @@ import com.opendash.app.R
  * alarm clock, while "snooze"/"cancel my alarm" stays spoken —
  * voice-first — to [com.opendash.app.tool.alarm.AlarmToolExecutor]
  * rather than a notification action button.
+ *
+ * The notification is visual only — [AlarmRingtoneController]'s ringing
+ * sound is triggered separately by [AlarmFireReceiver] and does not
+ * depend on `POST_NOTIFICATIONS` being granted, so a denied permission
+ * silences the full-screen visual but not the actual alarm sound.
  */
 object AlarmNotifier {
 
@@ -57,6 +66,12 @@ object AlarmNotifier {
             .setAutoCancel(true)
             .build()
 
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Timber.w("POST_NOTIFICATIONS not granted; alarm $id will ring without a visual notification")
+            return
+        }
         NotificationManagerCompat.from(context).notify(id.hashCode(), notification)
     }
 
