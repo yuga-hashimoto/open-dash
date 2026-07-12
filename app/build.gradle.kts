@@ -232,6 +232,9 @@ dependencies {
     // On-device translation (standalone ML Kit, no Firebase project needed)
     implementation(libs.mlkit.translate)
 
+    // Sandboxed JS engine for SKILL.md ```js script blocks (P19.1, user-approved)
+    implementation(libs.zipline)
+
     // Wake word (Vosk offline speech recognition — flexible custom/Japanese keywords)
     implementation(libs.vosk)
 

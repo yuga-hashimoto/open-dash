@@ -1,9 +1,9 @@
 package com.opendash.app.assistant.skills.runtime
 
 /**
- * Default runtime on stock OpenDash builds — reports unavailable so callers
- * know to degrade gracefully. A real engine (QuickJS / Hermes JNI) replaces
- * this binding once the native dependency is approved.
+ * Reports unavailable so callers degrade gracefully — kept as an option for a
+ * build variant that wants `run_skill_script` disabled entirely. The default
+ * Hilt binding is [QuickJsSkillScriptRuntime] as of P19.1.
  */
 class StubSkillScriptRuntime : SkillScriptRuntime {
 

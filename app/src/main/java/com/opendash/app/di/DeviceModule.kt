@@ -331,14 +331,15 @@ object DeviceModule {
         return com.opendash.app.assistant.skills.SkillRepository(registry, userSkillsDir)
     }
 
-    // P19.1: skeleton only — stub runtime reports `isAvailable=false`, so
-    // SkillToolExecutor does not advertise `run_skill_script` to the LLM.
-    // A real JS runtime (QuickJS / Hermes JNI) replaces this binding in a
-    // later phase once the native dependency is approved.
+    // P19.1: real QuickJS-backed runtime (cashapp/zipline, user-approved
+    // native dependency) — SkillToolExecutor advertises `run_skill_script`
+    // to the LLM whenever a skill has an embedded ```js block. No download
+    // needed (the engine ships in the APK), no tool/memory bridge yet (see
+    // QuickJsSkillScriptRuntime's KDoc for why that's a separate follow-up).
     @Provides
     @Singleton
     fun provideSkillScriptRuntime(): com.opendash.app.assistant.skills.runtime.SkillScriptRuntime =
-        com.opendash.app.assistant.skills.runtime.StubSkillScriptRuntime()
+        com.opendash.app.assistant.skills.runtime.QuickJsSkillScriptRuntime()
 
     // P19.2: Termux Bridge (opt-in advanced tool). TermuxAvailability checks
     // package presence + runtime permission; the tool executor adds the

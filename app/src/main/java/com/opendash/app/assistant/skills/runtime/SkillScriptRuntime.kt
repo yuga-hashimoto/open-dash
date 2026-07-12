@@ -4,12 +4,15 @@ package com.opendash.app.assistant.skills.runtime
  * Executes JS-style script blocks embedded in SKILL.md.
  *
  * Implementations must sandbox the script — no fs, net, or process access.
- * Tool invocations must go through an explicit bridge (not in the P19.1
- * skeleton; added when a real engine lands).
+ * [QuickJsSkillScriptRuntime] is the real, always-available implementation
+ * (QuickJS via cashapp/zipline). Tool invocations (`call_tool`, `read_memory`)
+ * still have no bridge — scripts only see [SkillScriptContext.input] — since
+ * that's a separate, security-sensitive capability surface left for a
+ * dedicated follow-up rather than the engine swap itself.
  *
- * Callers MUST check `isAvailable()` before dispatching; the default provider
- * is the [StubSkillScriptRuntime] that always reports unavailable so the
- * `run_skill_script` tool is not advertised to the LLM on stock builds.
+ * Callers MUST check `isAvailable()` before dispatching; [StubSkillScriptRuntime]
+ * exists for builds that want to disable script execution entirely — it always
+ * reports unavailable so the `run_skill_script` tool is not advertised to the LLM.
  */
 interface SkillScriptRuntime {
 

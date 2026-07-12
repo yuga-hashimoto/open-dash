@@ -7,9 +7,7 @@ package com.opendash.app.assistant.skills.runtime
  * interprets these blocks in a sandbox when the LLM invokes the
  * `run_skill_script` tool.
  *
- * P19.1 ships extractor + interface + stub runtime only; real JS execution
- * (QuickJS / Hermes JNI) lands in a later phase gated by user approval of
- * the native dependency.
+ * Executed by [QuickJsSkillScriptRuntime] (QuickJS via cashapp/zipline, P19.1).
  */
 data class SkillScript(
     val skillName: String,

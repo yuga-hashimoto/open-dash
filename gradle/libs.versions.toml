@@ -23,6 +23,7 @@ paho-mqtt = "1.2.5"
 mediapipe-genai = "0.10.29"
 litertlm = "latest.release"
 mlkit-translate = "17.0.3"
+zipline = "1.21.0"
 
 junit5 = "5.11.3"
 mockk = "1.13.13"
@@ -98,6 +99,16 @@ mediapipe-text = { group = "com.google.mediapipe", name = "tasks-text", version.
 
 # On-device translation
 mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkit-translate" }
+
+# Sandboxed JS engine for SKILL.md script blocks (P19.1, user-approved).
+# Pinned to 1.21.0 (built against Kotlin 2.1.21) to stay within the same
+# Kotlin metadata feature line as this project's 2.1.0 compiler rather than
+# the current 2.3.x releases. We only use the low-level `QuickJs` class
+# (bare ECMAScript eval, no ambient host bindings, no networked module
+# loading) — not the full Zipline/ZiplineLoader stack, which is designed
+# for shipping precompiled Kotlin/JS bundles, a different use case from
+# sandboxing arbitrary raw JS text extracted from SKILL.md.
+zipline = { group = "app.cash.zipline", name = "zipline", version.ref = "zipline" }
 
 # Coroutines
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
