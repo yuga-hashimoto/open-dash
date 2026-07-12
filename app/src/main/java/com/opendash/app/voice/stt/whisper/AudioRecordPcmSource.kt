@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
+import com.opendash.app.voice.AudioEffects
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -73,6 +74,8 @@ class AudioRecordPcmSource(
         audioRecord = record
         running.set(true)
         record.startRecording()
+        val echoCanceler = AudioEffects.applyAcousticEchoCanceler(record.audioSessionId)
+        val noiseSuppressor = AudioEffects.applyNoiseSuppressor(record.audioSessionId)
         try {
             while (running.get() && offset < maxSamples) {
                 val remaining = (maxSamples - offset).coerceAtMost(chunk.size)
@@ -102,6 +105,7 @@ class AudioRecordPcmSource(
             Timber.w(e, "AudioRecord read failed")
         } finally {
             running.set(false)
+            AudioEffects.release(echoCanceler, noiseSuppressor)
             runCatching { record.stop() }
             runCatching { record.release() }
             audioRecord = null

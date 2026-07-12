@@ -3,6 +3,9 @@ package com.opendash.app.voice.wakeword
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.NoiseSuppressor
+import com.opendash.app.voice.AudioEffects
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,6 +38,8 @@ class VoskWakeWordDetector(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var listeningJob: Job? = null
     private var audioRecord: AudioRecord? = null
+    private var echoCanceler: AcousticEchoCanceler? = null
+    private var noiseSuppressor: NoiseSuppressor? = null
     private var onDetectedCallback: (() -> Unit)? = null
     @Volatile
     private var isPaused = false
@@ -163,6 +168,10 @@ class VoskWakeWordDetector(
         }
 
         audioRecord!!.startRecording()
+        // Always-on capture, so this is the path that most needs to hear
+        // "hey speaker" over the device's own TTS/music output.
+        echoCanceler = AudioEffects.applyAcousticEchoCanceler(audioRecord!!.audioSessionId)
+        noiseSuppressor = AudioEffects.applyNoiseSuppressor(audioRecord!!.audioSessionId)
         _isListening.value = true
         Timber.d("Vosk wake word listening for: '${config.keyword}'")
 
@@ -272,6 +281,9 @@ class VoskWakeWordDetector(
     }
 
     private fun releaseAudio() {
+        AudioEffects.release(echoCanceler, noiseSuppressor)
+        echoCanceler = null
+        noiseSuppressor = null
         try {
             audioRecord?.stop()
             audioRecord?.release()
