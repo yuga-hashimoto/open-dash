@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,6 +62,7 @@ fun ModelSetupScreen(
     onSelectModel: (AvailableModel) -> Unit,
     onStartDownload: () -> Unit,
     onRetry: () -> Unit,
+    onContinueWithoutModel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by downloadState.collectAsState()
@@ -190,6 +192,23 @@ fun ModelSetupScreen(
 
                 is ModelDownloadState.Ready -> {
                     Text("Ready!", style = MaterialTheme.typography.headlineSmall, color = SpeakerPrimary)
+                }
+            }
+
+            // Timers, weather, lights, jokes, and every other fast-path
+            // command work without the LLM at all — no reason to make a
+            // user wait through a multi-hundred-MB download just to set a
+            // timer. Download keeps running in the background regardless.
+            if (state !is ModelDownloadState.Ready) {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "the AI model keeps downloading in the background",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SpeakerTextSecondary
+                )
+                Spacer(Modifier.height(4.dp))
+                TextButton(onClick = onContinueWithoutModel) {
+                    Text("Continue with basic features")
                 }
             }
         }

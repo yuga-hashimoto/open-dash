@@ -109,12 +109,14 @@ class MainActivity : ComponentActivity() {
                     .collectAsState(initial = null)
                 var onboardingDismissed by remember { mutableStateOf(false) }
                 var modeDismissed by remember { mutableStateOf(false) }
+                var modelSetupSkipped by remember { mutableStateOf(false) }
 
                 when {
                     assistantMode == null && !modeDismissed -> {
                         ProviderModeScreen(onModeSelected = { modeDismissed = true })
                     }
-                    assistantMode == PreferenceKeys.MODE_LOCAL && downloadState !is ModelDownloadState.Ready -> {
+                    assistantMode == PreferenceKeys.MODE_LOCAL &&
+                        downloadState !is ModelDownloadState.Ready && !modelSetupSkipped -> {
                         val models by modelDownloader.availableModels.collectAsState()
                         val selected by modelDownloader.selectedModel.collectAsState()
 
@@ -124,7 +126,18 @@ class MainActivity : ComponentActivity() {
                             availableModels = models,
                             onSelectModel = { modelDownloader.selectModel(it) },
                             onStartDownload = { scope.launch { modelDownloader.downloadSelectedModel() } },
-                            onRetry = { scope.launch { modelDownloader.downloadSelectedModel() } }
+                            onRetry = { scope.launch { modelDownloader.downloadSelectedModel() } },
+                            onContinueWithoutModel = {
+                                // Fast-path commands (timers, weather, lights, jokes, ...)
+                                // don't need the LLM — no reason to block the whole app
+                                // behind a multi-hundred-MB download. Keep the download
+                                // going in the background so the LLM path becomes
+                                // available once it finishes.
+                                if (downloadState is ModelDownloadState.NotStarted) {
+                                    scope.launch { modelDownloader.downloadSelectedModel() }
+                                }
+                                modelSetupSkipped = true
+                            }
                         )
                     }
                     else -> {
