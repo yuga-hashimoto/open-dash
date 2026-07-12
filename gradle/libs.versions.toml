@@ -14,6 +14,7 @@ okhttp = "4.12.0"
 moshi = "1.15.1"
 coroutines = "1.9.0"
 vosk = "0.3.47"
+onnxruntime = "1.22.0"
 timber = "5.0.1"
 activity-compose = "1.9.3"
 core-ktx = "1.15.0"
@@ -77,6 +78,7 @@ moshi-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", v
 
 # Voice
 vosk = { group = "com.alphacephei", name = "vosk-android", version.ref = "vosk" }
+onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

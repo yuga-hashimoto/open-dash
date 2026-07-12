@@ -220,8 +220,14 @@ dependencies {
     // On-device translation (standalone ML Kit, no Firebase project needed)
     implementation(libs.mlkit.translate)
 
-    // Wake word (Vosk offline speech recognition)
+    // Wake word (Vosk offline speech recognition — flexible custom/Japanese keywords)
     implementation(libs.vosk)
+
+    // Wake word alternative (openWakeWord ONNX models — lower power for a
+    // handful of English preset keywords; see OpenWakeWordDetector).
+    // Standard Microsoft ORT, unrelated to voicevoxcore's bundled custom
+    // libvoicevox_onnxruntime.so below (different package, different .so name).
+    implementation(libs.onnxruntime.android)
 
     // VOICEVOX core (embedded, full flavor only).
     // The AAR ships with Java bindings for jp.hiroshiba.voicevoxcore; pair it with
