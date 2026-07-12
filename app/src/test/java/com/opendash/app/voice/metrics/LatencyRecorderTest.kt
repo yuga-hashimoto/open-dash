@@ -70,10 +70,40 @@ class LatencyRecorderTest {
         assertThat(summary.count).isEqualTo(3) // only last 3 kept
     }
 
+    /**
+     * Pins every budget documented in docs/latency-budgets.md. This is
+     * the enforcement mechanism CI actually has available: there's no
+     * device or emulator in the CI pipeline to measure real wake/STT/
+     * TTS/LLM timings against, so this test can't catch a runtime
+     * regression — but it does catch someone silently loosening a
+     * budget constant, which docs/latency-budgets.md explicitly says
+     * "requires a PR to justify". Update both this test and the doc
+     * table together if a budget genuinely needs to change.
+     */
     @Test
-    fun `spans carry budget targets matching priority 1 goals`() {
+    fun `spans carry the exact budgets documented in latency-budgets md`() {
         assertThat(LatencyRecorder.Span.WAKE_TO_LISTENING.budgetMs).isEqualTo(500L)
+        assertThat(LatencyRecorder.Span.STT_DURATION.budgetMs).isEqualTo(5_000L)
         assertThat(LatencyRecorder.Span.FAST_PATH_TO_RESPONSE.budgetMs).isEqualTo(200L)
+        assertThat(LatencyRecorder.Span.LLM_ROUND_TRIP.budgetMs).isEqualTo(8_000L)
+        assertThat(LatencyRecorder.Span.TTS_PREPARATION.budgetMs).isEqualTo(400L)
+        assertThat(LatencyRecorder.Span.TOOL_EXECUTION.budgetMs).isEqualTo(2_000L)
+    }
+
+    @Test
+    fun `no span budget can be added or removed without updating this guard`() {
+        // Forces a deliberate touch to this test file (and, by the KDoc
+        // above, docs/latency-budgets.md) whenever a Span is added or
+        // removed — the previous test only pins the six known values,
+        // it wouldn't fail if a seventh span appeared undocumented.
+        assertThat(LatencyRecorder.Span.entries.map { it.name }).containsExactly(
+            "WAKE_TO_LISTENING",
+            "STT_DURATION",
+            "FAST_PATH_TO_RESPONSE",
+            "LLM_ROUND_TRIP",
+            "TTS_PREPARATION",
+            "TOOL_EXECUTION"
+        )
     }
 
     @Test
