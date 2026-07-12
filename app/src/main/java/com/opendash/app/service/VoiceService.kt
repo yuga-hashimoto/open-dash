@@ -43,6 +43,7 @@ class VoiceService : Service() {
     @Inject lateinit var announcementServer: com.opendash.app.multiroom.AnnouncementServer
     @Inject lateinit var peerLivenessTracker: com.opendash.app.multiroom.PeerLivenessTracker
     @Inject lateinit var toolExecutor: com.opendash.app.tool.ToolExecutor
+    @Inject lateinit var alarmRingtoneController: com.opendash.app.voice.alarm.AlarmRingtoneController
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val multiroomController = com.opendash.app.multiroom.MultiroomLifecycleController(
@@ -201,6 +202,11 @@ class VoiceService : Service() {
                     if (routineName != null) runScheduledRoutine(routineName)
                 }
             }
+            ACTION_ALARM_RINGING -> {
+                val alarmId = intent.getStringExtra(EXTRA_ALARM_ID)
+                if (alarmId != null) alarmRingtoneController.startRinging(alarmId)
+                scope.launch { initializeWakeWord() }
+            }
             else -> {
                 scope.launch { initializeWakeWord() }
             }
@@ -325,6 +331,7 @@ class VoiceService : Service() {
         wakeWordDetector?.stop()
         voicePipeline.stopSpeaking()
         voicePipeline.destroy()
+        runCatching { alarmRingtoneController.stopAll() }
         // Safe to call even if we never registered — controller is idempotent
         // and each teardown step is already wrapped in runCatching.
         stopMultiroom()
@@ -339,7 +346,9 @@ class VoiceService : Service() {
         const val ACTION_PAUSE_HOTWORD = "com.opendash.app.PAUSE_HOTWORD"
         const val ACTION_RESUME_HOTWORD = "com.opendash.app.RESUME_HOTWORD"
         const val ACTION_RUN_ROUTINE = "com.opendash.app.RUN_ROUTINE"
+        const val ACTION_ALARM_RINGING = "com.opendash.app.ALARM_RINGING"
         const val EXTRA_ROUTINE_NAME = "routine_name"
+        const val EXTRA_ALARM_ID = "alarm_id"
 
         fun start(context: Context) {
             val intent = Intent(context, VoiceService::class.java)
@@ -355,6 +364,19 @@ class VoiceService : Service() {
             val intent = Intent(context, VoiceService::class.java).apply {
                 action = ACTION_RUN_ROUTINE
                 putExtra(EXTRA_ROUTINE_NAME, routineName)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
+        /** Wakes (or reuses) the service and starts the looping/fading alarm sound for [alarmId]. */
+        fun startWithAlarmRinging(context: Context, alarmId: String) {
+            val intent = Intent(context, VoiceService::class.java).apply {
+                action = ACTION_ALARM_RINGING
+                putExtra(EXTRA_ALARM_ID, alarmId)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)

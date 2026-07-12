@@ -18,7 +18,8 @@ interface SafetyScheduler {
     fun schedule(delayMs: Long, action: () -> Unit): () -> Unit
 }
 
-private class MainLooperSafetyScheduler : SafetyScheduler {
+/** Also reused by [com.opendash.app.voice.alarm.AlarmRingtoneController]'s production constructor. */
+internal class MainLooperSafetyScheduler : SafetyScheduler {
     private val handler = Handler(Looper.getMainLooper())
     override fun schedule(delayMs: Long, action: () -> Unit): () -> Unit {
         val runnable = Runnable { action() }

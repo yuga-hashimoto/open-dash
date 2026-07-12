@@ -21,6 +21,14 @@ interface AlarmPlayer {
 
     /** Stop playback and release any underlying resources. Idempotent. */
     fun stop()
+
+    /**
+     * Adjust playback volume to [volume] (0.0-1.0), e.g. for a gradual
+     * fade-in. Default no-op so implementations that don't support
+     * runtime volume control (or don't need it, like timers) aren't
+     * forced to implement it.
+     */
+    fun setVolume(volume: Float) {}
 }
 
 /** Factory so each firing timer gets its own [AlarmPlayer] instance. */
@@ -82,5 +90,10 @@ class AndroidMediaPlayerAlarmPlayer(
             Timber.w(e, "MediaPlayer.stop failed")
         }
         runCatching { mp.release() }
+    }
+
+    override fun setVolume(volume: Float) {
+        runCatching { player?.setVolume(volume, volume) }
+            .onFailure { Timber.w(it, "MediaPlayer.setVolume failed") }
     }
 }

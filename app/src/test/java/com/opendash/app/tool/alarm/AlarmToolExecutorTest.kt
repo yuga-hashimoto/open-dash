@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.opendash.app.data.db.AlarmDao
 import com.opendash.app.data.db.AlarmEntity
 import com.opendash.app.tool.ToolCall
+import com.opendash.app.voice.alarm.AlarmRingtoneController
 import com.opendash.app.voice.alarm.AlarmScheduler
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -19,13 +20,15 @@ class AlarmToolExecutorTest {
     private lateinit var executor: AlarmToolExecutor
     private lateinit var dao: AlarmDao
     private lateinit var scheduler: AlarmScheduler
+    private lateinit var alarmRingtoneController: AlarmRingtoneController
     private val fixedNow = LocalDateTime.of(2024, 1, 1, 8, 0) // Monday 08:00
 
     @BeforeEach
     fun setup() {
         dao = mockk(relaxed = true)
         scheduler = mockk(relaxed = true)
-        executor = AlarmToolExecutor(dao, scheduler, nowProvider = { fixedNow })
+        alarmRingtoneController = mockk(relaxed = true)
+        executor = AlarmToolExecutor(dao, scheduler, alarmRingtoneController, nowProvider = { fixedNow })
     }
 
     @Test
@@ -116,6 +119,7 @@ class AlarmToolExecutorTest {
         assertThat(result.success).isTrue()
         coVerify { dao.delete("id-1") }
         verify { scheduler.cancel("id-1") }
+        verify { alarmRingtoneController.stopRinging("id-1") }
     }
 
     @Test
@@ -135,6 +139,7 @@ class AlarmToolExecutorTest {
 
         assertThat(result.success).isTrue()
         verify { scheduler.schedule("id-1", "wake up", 7, 0, 0, any()) }
+        verify { alarmRingtoneController.stopRinging("id-1") }
     }
 
     @Test

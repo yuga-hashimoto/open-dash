@@ -475,6 +475,21 @@ object DeviceModule {
     ): com.opendash.app.ui.home.UpcomingEventSource =
         com.opendash.app.ui.home.DefaultUpcomingEventSource(calendarProvider)
 
+    /**
+     * Singleton so [com.opendash.app.service.VoiceService] (which starts
+     * the ringing when [com.opendash.app.voice.alarm.AlarmFireReceiver]
+     * wakes it) and [com.opendash.app.tool.alarm.AlarmToolExecutor]
+     * (which stops it on a spoken cancel/snooze) share one live
+     * instance — same reasoning as `TimerManager`/`NotificationProvider`
+     * being promoted to Hilt singletons (P8.4).
+     */
+    @Provides
+    @Singleton
+    fun provideAlarmRingtoneController(
+        @ApplicationContext context: Context
+    ): com.opendash.app.voice.alarm.AlarmRingtoneController =
+        com.opendash.app.voice.alarm.AlarmRingtoneController(context)
+
     @Provides
     @Singleton
     fun provideToolExecutor(
@@ -490,6 +505,7 @@ object DeviceModule {
         shoppingListDao: ShoppingListDao,
         reminderDao: com.opendash.app.data.db.ReminderDao,
         alarmDao: com.opendash.app.data.db.AlarmDao,
+        alarmRingtoneController: com.opendash.app.voice.alarm.AlarmRingtoneController,
         documentChunkDao: DocumentChunkDao,
         cameraProviderHolder: CameraProviderHolder,
         screenRecorderHolder: ScreenRecorderHolder,
@@ -629,7 +645,8 @@ object DeviceModule {
             ),
             com.opendash.app.tool.alarm.AlarmToolExecutor(
                 alarmDao,
-                com.opendash.app.voice.alarm.AndroidAlarmScheduler(context)
+                com.opendash.app.voice.alarm.AndroidAlarmScheduler(context),
+                alarmRingtoneController = alarmRingtoneController
             ),
             com.opendash.app.tool.entertainment.FunToolExecutor(),
             com.opendash.app.tool.translate.TranslateToolExecutor(

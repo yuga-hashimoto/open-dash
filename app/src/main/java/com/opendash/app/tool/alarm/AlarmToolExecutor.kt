@@ -9,6 +9,7 @@ import com.opendash.app.tool.ToolResult
 import com.opendash.app.tool.ToolSchema
 import com.opendash.app.tool.escapeJson
 import com.opendash.app.voice.alarm.AlarmOccurrenceCalculator
+import com.opendash.app.voice.alarm.AlarmRingtoneController
 import com.opendash.app.voice.alarm.AlarmScheduler
 import timber.log.Timber
 import java.time.DayOfWeek
@@ -24,10 +25,16 @@ import java.util.UUID
  * Backed by [AlarmScheduler] (AlarmManager in production) so an alarm
  * fires even if the app process has been killed, and by [AlarmDao] so
  * alarms survive restart and can be listed/cancelled.
+ *
+ * [alarmRingtoneController] is only relevant while an alarm is actively
+ * ringing: cancelling or snoozing a *currently-firing* alarm needs to
+ * silence the live [AlarmRingtoneController]-owned sound, not just
+ * touch the DB row / future schedule.
  */
 class AlarmToolExecutor(
     private val dao: AlarmDao,
     private val scheduler: AlarmScheduler,
+    private val alarmRingtoneController: AlarmRingtoneController,
     private val nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
 ) : ToolExecutor {
 
@@ -132,6 +139,7 @@ class AlarmToolExecutor(
         dao.get(id) ?: return ToolResult(call.id, false, "", "No alarm with id $id")
         dao.delete(id)
         scheduler.cancel(id)
+        alarmRingtoneController.stopRinging(id)
         return ToolResult(call.id, true, """{"cancelled":"$id"}""")
     }
 
@@ -145,6 +153,7 @@ class AlarmToolExecutor(
         val snoozeUntilMs = nowProvider().plusMinutes(minutes.toLong())
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         scheduler.schedule(alarm.id, alarm.label, alarm.hour, alarm.minute, alarm.repeatDaysMask, snoozeUntilMs)
+        alarmRingtoneController.stopRinging(id)
 
         return ToolResult(call.id, true, """{"id":"$id","snoozed_minutes":$minutes}""")
     }

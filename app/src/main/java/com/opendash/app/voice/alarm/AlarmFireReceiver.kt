@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.opendash.app.data.db.AlarmDao
+import com.opendash.app.service.VoiceService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,14 @@ import javax.inject.Inject
  * an hour/minute with an empty repeat mask), so
  * [com.opendash.app.service.BootRescheduler] would re-arm it as if it
  * were newly set on every subsequent reboot.
+ *
+ * The looping, fading alarm sound itself is started by
+ * [VoiceService][com.opendash.app.service.VoiceService] rather than
+ * from here: a [android.media.MediaPlayer] started inside
+ * `onReceive()` wouldn't survive past the few seconds Android allows a
+ * `BroadcastReceiver` to run before freezing the process, so this just
+ * wakes the (already-foreground) service, which owns the live
+ * [AlarmRingtoneController] singleton.
  */
 @AndroidEntryPoint
 class AlarmFireReceiver : BroadcastReceiver() {
@@ -42,6 +51,7 @@ class AlarmFireReceiver : BroadcastReceiver() {
         }
 
         AlarmNotifier.notify(context, id, label, hour, minute)
+        VoiceService.startWithAlarmRinging(context, id)
 
         if (repeatDaysMask != 0) {
             val days = AlarmOccurrenceCalculator.maskToDays(repeatDaysMask)
