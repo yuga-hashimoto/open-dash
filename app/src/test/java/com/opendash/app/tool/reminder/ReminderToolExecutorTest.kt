@@ -101,16 +101,34 @@ class ReminderToolExecutorTest {
 
         assertThat(result.success).isTrue()
         assertThat(result.data).contains("\"text\":\"take out trash\"")
+        assertThat(result.data).contains("\"total_count\":1")
+        assertThat(result.data).contains("\"truncated\":false")
     }
 
     @Test
-    fun `list_reminders empty returns empty array`() = runTest {
+    fun `list_reminders empty returns empty items array`() = runTest {
         coEvery { dao.listUpcoming(fixedNowMs) } returns emptyList()
 
         val result = executor.execute(ToolCall("7", "list_reminders", emptyMap()))
 
         assertThat(result.success).isTrue()
-        assertThat(result.data).isEqualTo("[]")
+        assertThat(result.data).contains("\"items\":[]")
+        assertThat(result.data).contains("\"total_count\":0")
+    }
+
+    @Test
+    fun `list_reminders caps a long list to 10 spoken items and flags truncation`() = runTest {
+        val twelveReminders = (1..12).map {
+            ReminderEntity("id-$it", "reminder-$it", fixedNowMs + it, fixedNowMs)
+        }
+        coEvery { dao.listUpcoming(fixedNowMs) } returns twelveReminders
+
+        val result = executor.execute(ToolCall("6b", "list_reminders", emptyMap()))
+
+        assertThat(result.success).isTrue()
+        assertThat(result.data).contains("\"total_count\":12")
+        assertThat(result.data).contains("\"truncated\":true")
+        assertThat(result.data).doesNotContain("\"text\":\"reminder-11\"")
     }
 
     @Test

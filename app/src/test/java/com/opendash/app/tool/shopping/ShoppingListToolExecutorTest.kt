@@ -137,10 +137,12 @@ class ShoppingListToolExecutorTest {
         assertThat(result.data).contains("\"completed\":false")
         assertThat(result.data).contains("\"text\":\"eggs\"")
         assertThat(result.data).contains("\"completed\":true")
+        assertThat(result.data).contains("\"total_count\":2")
+        assertThat(result.data).contains("\"truncated\":false")
     }
 
     @Test
-    fun `list_items empty list returns empty array`() = runTest {
+    fun `list_items empty list returns empty items array`() = runTest {
         coEvery { dao.listByName("todo") } returns emptyList()
 
         val result = executor.execute(
@@ -148,7 +150,27 @@ class ShoppingListToolExecutorTest {
         )
 
         assertThat(result.success).isTrue()
-        assertThat(result.data).isEqualTo("[]")
+        assertThat(result.data).contains("\"items\":[]")
+        assertThat(result.data).contains("\"total_count\":0")
+        assertThat(result.data).contains("\"truncated\":false")
+    }
+
+    @Test
+    fun `list_items caps a long list to 10 spoken items and flags truncation`() = runTest {
+        val fifteenItems = (1..15).map {
+            ShoppingListItemEntity("id-$it", "shopping", "item-$it", false, it.toLong())
+        }
+        coEvery { dao.listByName("shopping") } returns fifteenItems
+
+        val result = executor.execute(
+            ToolCall("8b", "list_items", mapOf("list_name" to "shopping"))
+        )
+
+        assertThat(result.success).isTrue()
+        assertThat(result.data).contains("\"total_count\":15")
+        assertThat(result.data).contains("\"truncated\":true")
+        assertThat(result.data).doesNotContain("\"text\":\"item-11\"")
+        assertThat(result.data).contains("\"text\":\"item-10\"")
     }
 
     @Test

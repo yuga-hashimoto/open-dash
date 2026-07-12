@@ -48,7 +48,9 @@ class ShoppingListToolExecutor(
         ),
         ToolSchema(
             name = "list_items",
-            description = "List all items on a named list, including completion status.",
+            description = "List items on a named list with completion status. Returns up to 10 items " +
+                "plus total_count/truncated fields — when truncated is true, mention there are more " +
+                "(e.g. 'and N more') instead of trying to read every item.",
             parameters = mapOf(
                 "list_name" to ToolParameter("string", "Name of the list", required = true)
             )
@@ -130,10 +132,17 @@ class ShoppingListToolExecutor(
         val listName = (call.arguments["list_name"] as? String)?.takeIf { it.isNotBlank() }
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val items = dao.listByName(listName)
-        val data = items.joinToString(",") { i ->
+        // Capped so a long list doesn't turn into a runaway TTS monologue —
+        // total_count/truncated let the caller phrase "…and 5 more" instead
+        // of silently dropping items with no signal.
+        val spoken = items.take(MAX_SPOKEN_ITEMS)
+        val data = spoken.joinToString(",") { i ->
             """{"text":"${i.text.escapeJson()}","completed":${i.completed}}"""
         }
-        return ToolResult(call.id, true, "[$data]")
+        return ToolResult(
+            call.id, true,
+            """{"items":[$data],"total_count":${items.size},"truncated":${items.size > spoken.size}}"""
+        )
     }
 
     private suspend fun executeClear(call: ToolCall): ToolResult {
@@ -141,5 +150,9 @@ class ShoppingListToolExecutor(
             ?: return ToolResult(call.id, false, "", "Missing list_name")
         val count = dao.clearList(listName)
         return ToolResult(call.id, true, """{"list":"${listName.escapeJson()}","cleared":$count}""")
+    }
+
+    private companion object {
+        const val MAX_SPOKEN_ITEMS = 10
     }
 }

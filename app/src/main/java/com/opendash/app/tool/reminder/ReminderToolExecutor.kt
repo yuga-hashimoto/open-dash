@@ -46,7 +46,9 @@ class ReminderToolExecutor(
         ),
         ToolSchema(
             name = "list_reminders",
-            description = "List all upcoming (not yet triggered) reminders.",
+            description = "List upcoming (not yet triggered) reminders. Returns up to 10 items plus " +
+                "total_count/truncated fields — when truncated is true, mention there are more " +
+                "(e.g. 'and N more') instead of trying to read every reminder.",
             parameters = emptyMap()
         ),
         ToolSchema(
@@ -96,10 +98,17 @@ class ReminderToolExecutor(
 
     private suspend fun executeList(call: ToolCall): ToolResult {
         val reminders = dao.listUpcoming(clock())
-        val data = reminders.joinToString(",") { r ->
+        // Capped so a long list doesn't turn into a runaway TTS monologue —
+        // total_count/truncated let the caller phrase "…and 3 more" instead
+        // of silently dropping items with no signal.
+        val spoken = reminders.take(MAX_SPOKEN_ITEMS)
+        val data = spoken.joinToString(",") { r ->
             """{"id":"${r.id}","text":"${r.text.escapeJson()}","trigger_at_ms":${r.triggerAtMs}}"""
         }
-        return ToolResult(call.id, true, "[$data]")
+        return ToolResult(
+            call.id, true,
+            """{"items":[$data],"total_count":${reminders.size},"truncated":${reminders.size > spoken.size}}"""
+        )
     }
 
     private suspend fun executeCancel(call: ToolCall): ToolResult {
@@ -130,5 +139,9 @@ class ReminderToolExecutor(
             }
         }
         return null
+    }
+
+    private companion object {
+        const val MAX_SPOKEN_ITEMS = 10
     }
 }
