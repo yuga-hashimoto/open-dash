@@ -41,6 +41,9 @@ class TermuxBridgeToolExecutor(
                 description = "Run a shell command through the user's Termux app. " +
                     "Advanced power-user only; the user has explicitly enabled " +
                     "this in Settings and understands that commands execute on-device. " +
+                    "Requires explicit user confirmation before using — describe exactly " +
+                    "what the command will do and wait for the user to say yes before " +
+                    "calling this tool, the same as send_sms. " +
                     "Prefer other tools when available; only use this when no first-class tool fits.",
                 parameters = mapOf(
                     "command" to ToolParameter(

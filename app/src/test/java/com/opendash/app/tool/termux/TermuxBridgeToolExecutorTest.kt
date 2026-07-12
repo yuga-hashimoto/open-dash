@@ -78,6 +78,20 @@ class TermuxBridgeToolExecutorTest {
     }
 
     @Test
+    fun `tool description instructs the model to confirm with the user before running`() = runTest {
+        availability.installed = true
+        availability.permitted = true
+        setPreferenceEnabled(true)
+
+        val description = newExecutor().availableTools().single().description
+
+        // Same prompt-level confirmation pattern as send_sms
+        // (SmsToolExecutor) — this tool runs arbitrary shell commands, so
+        // it needs at least as strong a confirmation instruction.
+        assertThat(description).contains("confirmation")
+    }
+
+    @Test
     fun `tool exposed when all gates open`() = runTest {
         availability.installed = true
         availability.permitted = true
