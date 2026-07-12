@@ -7,11 +7,16 @@ import com.opendash.app.voice.stt.AndroidSttProvider
 import com.opendash.app.voice.stt.DelegatingSttProvider
 import com.opendash.app.voice.stt.OfflineSttStub
 import com.opendash.app.voice.stt.SpeechToText
+import com.opendash.app.voice.stt.whisper.AmplitudeVad
 import com.opendash.app.voice.stt.whisper.AudioRecordPcmSource
+import com.opendash.app.voice.stt.whisper.VadEngine
 import com.opendash.app.voice.stt.whisper.WhisperCppBridge
 import com.opendash.app.voice.stt.whisper.WhisperModelCatalog
 import com.opendash.app.voice.stt.whisper.WhisperModelDownloader
 import com.opendash.app.voice.stt.whisper.WhisperSttProvider
+import com.opendash.app.voice.vad.silero.OrtSileroVadSession
+import com.opendash.app.voice.vad.silero.SileroVadEngine
+import com.opendash.app.voice.vad.silero.SileroVadModelDownloader
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
 import dagger.Module
@@ -21,6 +26,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import java.io.File
 import javax.inject.Singleton
+import timber.log.Timber
 
 /**
  * SpeechToText binding lives in its own module so instrumented tests can
@@ -65,7 +71,7 @@ object SttModule {
         return if (WhisperCppBridge.isAvailable()) {
             WhisperSttProvider(
                 bridge = WhisperCppBridge(),
-                pcmSource = AudioRecordPcmSource(context),
+                pcmSource = AudioRecordPcmSource(context, vadFactory = { buildVadEngine(context) }),
                 modelPathProvider = { resolveWhisperModelFile(context, preferences) },
                 languageProvider = { resolveWhisperLanguage(preferences) },
                 translateProvider = { resolveWhisperTranslate(preferences) }
@@ -73,6 +79,24 @@ object SttModule {
         } else {
             OfflineSttStub("Whisper")
         }
+    }
+
+    /**
+     * P16.2: uses the neural [SileroVadEngine] when its model has been
+     * downloaded (no Settings toggle needed — same auto-upgrade pattern
+     * as [WhisperCppBridge.isAvailable] gating the real STT provider),
+     * otherwise falls back to the always-available [AmplitudeVad]. Any
+     * failure loading the ONNX session (corrupt file, incompatible
+     * device) also falls back rather than leaving VAD entirely broken.
+     */
+    private fun buildVadEngine(context: Context): VadEngine {
+        val downloader = SileroVadModelDownloader(context)
+        if (downloader.isDownloaded()) {
+            val session = OrtSileroVadSession.create(downloader.modelFile())
+            if (session != null) return SileroVadEngine(session)
+            Timber.w("Silero VAD model present but failed to load; falling back to amplitude VAD")
+        }
+        return AmplitudeVad(sampleRate = AudioRecordPcmSource.SAMPLE_RATE)
     }
 
     internal fun resolveWhisperModelFile(
@@ -122,4 +146,15 @@ object SttModule {
     fun provideWhisperModelDownloader(
         @ApplicationContext context: Context
     ): WhisperModelDownloader = WhisperModelDownloader(context)
+
+    /**
+     * P16.2 Silero VAD model downloader. Not yet surfaced in a Settings
+     * card (no UI trigger to download it exists today) — injectable so
+     * that follow-up work only needs to add the UI, not more DI.
+     */
+    @Provides
+    @Singleton
+    fun provideSileroVadModelDownloader(
+        @ApplicationContext context: Context
+    ): SileroVadModelDownloader = SileroVadModelDownloader(context)
 }

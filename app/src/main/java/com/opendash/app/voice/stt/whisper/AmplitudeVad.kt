@@ -1,12 +1,10 @@
 package com.opendash.app.voice.stt.whisper
 
 /**
- * Pure-Kotlin amplitude-based VAD for [AudioRecordPcmSource].
- *
- * Real VAD (Silero ONNX) is Phase 16 item — pending a heavy ONNX
- * Runtime dep. In the meantime this gives Whisper "stop when the user
- * stops talking" instead of capturing a fixed 15-second buffer every
- * time.
+ * Pure-Kotlin amplitude-based [VadEngine] for [AudioRecordPcmSource].
+ * Always available (no model download, no ONNX Runtime) — the default,
+ * and the fallback if [com.opendash.app.voice.vad.silero.SileroVadEngine]'s
+ * model isn't downloaded yet or fails to load.
  *
  * Algorithm:
  *
@@ -32,8 +30,7 @@ class AmplitudeVad(
     private val minSpeechMs: Int = 300,
     /** Consecutive silence that terminates capture once speech has been heard. */
     private val silenceTrailMs: Int = 800
-) {
-    enum class Decision { Listening, EndpointDetected }
+) : VadEngine {
 
     private var speechMs: Int = 0
     private var silenceMs: Int = 0
@@ -41,11 +38,11 @@ class AmplitudeVad(
     /**
      * Feed a chunk of float samples. [len] is the valid prefix length —
      * matches AudioRecord's read() return value. Returns
-     * [Decision.EndpointDetected] the first time minSpeech + silenceTrail
-     * are both satisfied.
+     * [VadEngine.Decision.EndpointDetected] the first time minSpeech +
+     * silenceTrail are both satisfied.
      */
-    fun feed(chunk: FloatArray, len: Int): Decision {
-        if (len <= 0) return Decision.Listening
+    override fun feed(chunk: FloatArray, len: Int): VadEngine.Decision {
+        if (len <= 0) return VadEngine.Decision.Listening
         val rms = rms(chunk, len)
         val chunkMs = (len * 1000L / sampleRate).toInt()
 
@@ -62,9 +59,9 @@ class AmplitudeVad(
         }
 
         return if (speechMs >= minSpeechMs && silenceMs >= silenceTrailMs) {
-            Decision.EndpointDetected
+            VadEngine.Decision.EndpointDetected
         } else {
-            Decision.Listening
+            VadEngine.Decision.Listening
         }
     }
 
@@ -73,7 +70,7 @@ class AmplitudeVad(
      * `AudioRecordPcmSource.capture()` instantiates a new VAD per call,
      * so this is only useful for long-lived test harnesses.
      */
-    fun reset() {
+    override fun reset() {
         speechMs = 0
         silenceMs = 0
     }

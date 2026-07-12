@@ -22,16 +22,17 @@ import java.util.concurrent.atomic.AtomicBoolean
  * just so the failure surfaces as a clear SecurityException rather than a
  * cryptic AudioRecord init error.
  *
- * Amplitude VAD: each captured chunk is fed to [AmplitudeVad]. Once the
- * VAD declares the user has stopped talking, capture returns early with
- * the collected prefix — no more fixed-15-second waits. Disable by
- * passing `vadEnabled = false` (the wake-word keep-alive path still does
- * timed captures).
+ * VAD: each captured chunk is fed to a [VadEngine] (default
+ * [AmplitudeVad]; [com.opendash.app.voice.vad.silero.SileroVadEngine] is
+ * a neural drop-in alternative). Once the VAD declares the user has
+ * stopped talking, capture returns early with the collected prefix — no
+ * more fixed-15-second waits. Disable by passing `vadEnabled = false`
+ * (the wake-word keep-alive path still does timed captures).
  */
 class AudioRecordPcmSource(
     private val context: Context,
     private val vadEnabled: Boolean = true,
-    private val vadFactory: () -> AmplitudeVad = { AmplitudeVad(sampleRate = SAMPLE_RATE) }
+    private val vadFactory: () -> VadEngine = { AmplitudeVad(sampleRate = SAMPLE_RATE) }
 ) : WhisperPcmSource {
 
     private val running = AtomicBoolean(false)
@@ -93,11 +94,11 @@ class AudioRecordPcmSource(
 
                 if (vad != null) {
                     when (vad.feed(floatChunk, read)) {
-                        AmplitudeVad.Decision.EndpointDetected -> {
+                        VadEngine.Decision.EndpointDetected -> {
                             Timber.d("Whisper VAD endpoint detected at ${offset * 1000 / SAMPLE_RATE}ms")
                             break
                         }
-                        AmplitudeVad.Decision.Listening -> { /* keep going */ }
+                        VadEngine.Decision.Listening -> { /* keep going */ }
                     }
                 }
             }

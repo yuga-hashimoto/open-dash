@@ -24,7 +24,7 @@ class AmplitudeVadTest {
         repeat(100) {
             val chunk = silentChunk(160) // 10 ms at 16 kHz
             assertThat(vad.feed(chunk, chunk.size))
-                .isEqualTo(AmplitudeVad.Decision.Listening)
+                .isEqualTo(VadEngine.Decision.Listening)
         }
     }
 
@@ -34,7 +34,7 @@ class AmplitudeVadTest {
         repeat(100) {
             val chunk = speechChunk(160)
             assertThat(vad.feed(chunk, chunk.size))
-                .isEqualTo(AmplitudeVad.Decision.Listening)
+                .isEqualTo(VadEngine.Decision.Listening)
         }
     }
 
@@ -49,10 +49,10 @@ class AmplitudeVadTest {
         // 600 ms of silence — crosses silenceTrail.
         val decisions = (1..60).map { vad.feed(silentChunk(160), 160) }
 
-        assertThat(decisions).contains(AmplitudeVad.Decision.EndpointDetected)
+        assertThat(decisions).contains(VadEngine.Decision.EndpointDetected)
         // The first endpoint should fire around the 50th silent chunk
         // (500 ms) — assertion is loose to allow for off-by-one framing.
-        val idx = decisions.indexOfFirst { it == AmplitudeVad.Decision.EndpointDetected }
+        val idx = decisions.indexOfFirst { it == VadEngine.Decision.EndpointDetected }
         assertThat(idx).isIn(48..52)
     }
 
@@ -68,7 +68,7 @@ class AmplitudeVadTest {
         // speechMs has accumulated past minSpeechMs.
         val decisions = (1..50).map { vad.feed(silentChunk(160), 160) }
 
-        assertThat(decisions).contains(AmplitudeVad.Decision.EndpointDetected)
+        assertThat(decisions).contains(VadEngine.Decision.EndpointDetected)
     }
 
     @Test
@@ -80,19 +80,19 @@ class AmplitudeVadTest {
         repeat(40) { vad.feed(speechChunk(160), 160) } // 400 ms speech
         repeat(30) {
             val d = vad.feed(silentChunk(160), 160) // 300 ms silence
-            assertThat(d).isEqualTo(AmplitudeVad.Decision.Listening)
+            assertThat(d).isEqualTo(VadEngine.Decision.Listening)
         }
         repeat(30) {
             val d = vad.feed(speechChunk(160), 160) // 300 ms more speech
-            assertThat(d).isEqualTo(AmplitudeVad.Decision.Listening)
+            assertThat(d).isEqualTo(VadEngine.Decision.Listening)
         }
     }
 
     @Test
     fun `len zero or negative treated as listening with no state change`() {
         val vad = AmplitudeVad()
-        assertThat(vad.feed(FloatArray(10), 0)).isEqualTo(AmplitudeVad.Decision.Listening)
-        assertThat(vad.feed(FloatArray(10), -5)).isEqualTo(AmplitudeVad.Decision.Listening)
+        assertThat(vad.feed(FloatArray(10), 0)).isEqualTo(VadEngine.Decision.Listening)
+        assertThat(vad.feed(FloatArray(10), -5)).isEqualTo(VadEngine.Decision.Listening)
     }
 
     @Test
@@ -107,6 +107,6 @@ class AmplitudeVadTest {
         vad.feed(speechChunk(160), 160) // 10 ms
         vad.feed(speechChunk(160), 160) // 20 ms total
         val decisions = (1..50).map { vad.feed(silentChunk(160), 160) }
-        assertThat(decisions).doesNotContain(AmplitudeVad.Decision.EndpointDetected)
+        assertThat(decisions).doesNotContain(VadEngine.Decision.EndpointDetected)
     }
 }
