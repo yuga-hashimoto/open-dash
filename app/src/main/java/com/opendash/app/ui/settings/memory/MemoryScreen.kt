@@ -110,6 +110,9 @@ private fun LoadedContent(
         contentPadding = PaddingValues(16.dp)
     ) {
         item {
+            EmbeddingGemmaCard()
+        }
+        item {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = onQueryChange,

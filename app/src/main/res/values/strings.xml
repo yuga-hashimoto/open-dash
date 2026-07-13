@@ -418,6 +418,17 @@
     <string name="settings_silero_vad_ready">Ready — in use</string>
     <string name="settings_silero_vad_error">Download failed: %1$s</string>
 
+    <!-- P16.4 EmbeddingGemma model download -->
+    <string name="settings_embedding_gemma_title">Smarter memory search (EmbeddingGemma)</string>
+    <string name="settings_embedding_gemma_hint">Download a model to search saved memories by meaning instead of matching words. Falls back automatically until it\'s downloaded.</string>
+    <string name="settings_embedding_gemma_size">%1$d MB</string>
+    <string name="settings_embedding_gemma_progress">%1$d / %2$d MB</string>
+    <string name="settings_embedding_gemma_download">Download</string>
+    <string name="settings_embedding_gemma_delete">Delete</string>
+    <string name="settings_embedding_gemma_downloading">Downloading…</string>
+    <string name="settings_embedding_gemma_ready">Ready — in use</string>
+    <string name="settings_embedding_gemma_error">Download failed: %1$s</string>
+
     <!-- P14.9 Piper offline TTS voice management -->
     <string name="settings_piper_voices_title">Piper voices</string>
     <string name="settings_piper_voices_hint">Download a Piper neural voice to synthesize speech fully on-device. Each voice is about 60 MB.</string>

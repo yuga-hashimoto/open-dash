@@ -191,10 +191,12 @@ smoke testing).
   convention as Whisper's active-model resolution — and caches the loaded embedder since constructing
   it is expensive. Falls back to the existing `TfIdfIndex` whenever the embedder is unavailable, the
   model isn't downloaded yet, or embedding fails for any input. Unit-tested with a fake embedder
-  (ranks by cosine similarity, falls back on unavailable/failed embed). **Not yet done**: a Settings
-  UI card to trigger the download (same gap as Silero VAD/P16.2 — downloader is a wired Hilt
-  singleton, just no button yet) and real-device validation of retrieval quality on real memory
-  entries. Ref: google-ai-edge (MediaPipe) EmbeddingGemma; originally shubham0204/Sentence-Embeddings-Android
+  (ranks by cosine similarity, falls back on unavailable/failed embed). **Settings UI shipped this
+  cycle**: `EmbeddingGemmaCard` + `EmbeddingGemmaSettingsViewModel` (`ui/settings/memory/`),
+  rendered at the top of `MemoryScreen` since that's where semantic search quality is directly
+  visible — same pattern as Silero VAD/P16.2's card. **Still not done**: real-device validation of
+  retrieval quality on real memory entries. Ref: google-ai-edge (MediaPipe) EmbeddingGemma;
+  originally shubham0204/Sentence-Embeddings-Android
 - [ ] P16.5: Local knowledge base — bundled Wikipedia-lite (compressed) + SQLite FTS5 for
   `knowledge` tool offline fallback when no network
 - [ ] P16.6: Model hot-swap — **core swap capability shipped this cycle; UI + real-device
