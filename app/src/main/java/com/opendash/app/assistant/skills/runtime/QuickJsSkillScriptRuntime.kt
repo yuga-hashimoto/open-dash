@@ -20,11 +20,12 @@ import timber.log.Timber
  * object into the context. Nothing needs to be explicitly denied because nothing is
  * exposed in the first place.
  *
- * Deliberately NOT implemented in this pass: a `call_tool`/`read_memory` bridge back
- * into the app. Building that means exposing a real capability surface to
- * script-authored code — a materially different, security-sensitive piece of work
- * from "run this JS and get a string back" — so it's left for a dedicated follow-up
- * rather than bolted on here. Every script sees only [SkillScriptContext.input].
+ * `read_memory` is real: [SkillScriptContext.memory] is pre-fetched by
+ * [com.opendash.app.assistant.skills.SkillToolExecutor] (scoped to the skill's own
+ * `memory_keys` frontmatter, never the full store) and baked into the wrapped source
+ * by [SkillScriptWrapper] — see its KDoc for why that works despite `evaluate()` being
+ * fully synchronous with no live host callback. `call_tool` still has no bridge; see
+ * [SkillScriptRuntime]'s KDoc for exactly why that one is a bigger, separate problem.
  */
 @OptIn(EngineApi::class)
 class QuickJsSkillScriptRuntime : SkillScriptRuntime {
@@ -35,7 +36,7 @@ class QuickJsSkillScriptRuntime : SkillScriptRuntime {
         script: SkillScript,
         context: SkillScriptContext
     ): SkillScriptResult = withContext(Dispatchers.Default) {
-        val wrapped = SkillScriptWrapper.wrap(script.source, context.input)
+        val wrapped = SkillScriptWrapper.wrap(script.source, context.input, context.memory)
         val deadlineNanos = System.nanoTime() + TIMEOUT_MS * 1_000_000L
 
         val quickJs = try {

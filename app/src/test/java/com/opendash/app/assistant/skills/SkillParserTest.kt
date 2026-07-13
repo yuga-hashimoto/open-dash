@@ -59,4 +59,33 @@ body
         assertThat(skill?.name).isEqualTo("quoted-name")
         assertThat(skill?.description).isEqualTo("single quoted desc")
     }
+
+    @Test
+    fun `parse splits comma-separated memory_keys into a trimmed list`() {
+        val content = """---
+name: weather-helper
+description: Helps with weather-related queries
+memory_keys: favorite_city, home_address ,  favorite_color
+---
+body
+""".trimIndent()
+
+        val skill = parser.parse("test.md", content)
+
+        assertThat(skill?.memoryKeys).containsExactly("favorite_city", "home_address", "favorite_color").inOrder()
+    }
+
+    @Test
+    fun `parse defaults memory_keys to empty when absent`() {
+        val content = """---
+name: weather-helper
+description: Helps with weather-related queries
+---
+body
+""".trimIndent()
+
+        val skill = parser.parse("test.md", content)
+
+        assertThat(skill?.memoryKeys).isEmpty()
+    }
 }

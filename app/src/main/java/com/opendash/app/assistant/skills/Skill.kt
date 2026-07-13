@@ -11,5 +11,12 @@ data class Skill(
     val name: String,
     val description: String,
     val body: String,
-    val source: String = "bundled"
+    val source: String = "bundled",
+    /**
+     * Optional `memory_keys` frontmatter field (comma-separated) — the exact
+     * set of memory keys this skill's embedded JS may read via `read_memory`
+     * (P19.1's follow-up bridge). Empty means the skill's scripts have no
+     * memory access at all; there is no wildcard/"read everything" option.
+     */
+    val memoryKeys: List<String> = emptyList()
 )

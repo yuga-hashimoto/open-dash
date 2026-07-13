@@ -10,7 +10,9 @@ package com.opendash.app.assistant.skills
  * # Instructions
  * (markdown body)
  *
- * Only `name` and `description` are required. Other fields are ignored here.
+ * Only `name` and `description` are required. `memory_keys` (comma-separated)
+ * is optional and scopes what a skill's embedded JS may read via `read_memory`
+ * — see [Skill.memoryKeys]. Other fields are ignored here.
  * The body is the content after the closing `---`.
  */
 class SkillParser {
@@ -29,12 +31,18 @@ class SkillParser {
         val fields = parseFrontmatter(frontmatter)
         val name = fields["name"] ?: return null
         val description = fields["description"] ?: return null
+        val memoryKeys = fields["memory_keys"]
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
 
         return Skill(
             name = name.trim(),
             description = description.trim(),
             body = body.trim(),
-            source = source
+            source = source,
+            memoryKeys = memoryKeys
         )
     }
 

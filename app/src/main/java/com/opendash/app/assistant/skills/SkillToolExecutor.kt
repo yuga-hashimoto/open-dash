@@ -4,6 +4,7 @@ import com.opendash.app.assistant.skills.runtime.SkillScriptContext
 import com.opendash.app.assistant.skills.runtime.SkillScriptExtractor
 import com.opendash.app.assistant.skills.runtime.SkillScriptResult
 import com.opendash.app.assistant.skills.runtime.SkillScriptRuntime
+import com.opendash.app.data.db.MemoryDao
 import com.opendash.app.tool.ToolCall
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.tool.ToolParameter
@@ -17,13 +18,18 @@ import com.opendash.app.tool.ToolSchema
  * - list_skills: list available skills (also visible via system prompt XML)
  * - install_skill_from_url: download + register a SKILL.md from a URL
  * - run_skill_script: execute an embedded JS script (P19.1) — only advertised
- *   when a real runtime is installed (stub keeps the tool hidden)
+ *   when a real runtime is installed (stub keeps the tool hidden). When the
+ *   skill declares `memory_keys` in its frontmatter, those entries are
+ *   pre-fetched from [memoryDao] and handed to the script as `read_memory` —
+ *   see [SkillScriptContext.memory] for why this is a real bridge despite
+ *   the sandbox having no live host-callback mechanism.
  */
 class SkillToolExecutor(
     private val registry: SkillRegistry,
     private val installer: SkillInstaller? = null,
     private val scriptRuntime: SkillScriptRuntime? = null,
-    private val scriptExtractor: SkillScriptExtractor = SkillScriptExtractor()
+    private val scriptExtractor: SkillScriptExtractor = SkillScriptExtractor(),
+    private val memoryDao: MemoryDao? = null
 ) : ToolExecutor {
 
     override suspend fun availableTools(): List<ToolSchema> {
@@ -54,7 +60,7 @@ class SkillToolExecutor(
         if (scriptRuntime?.isAvailable() == true) {
             tools.add(ToolSchema(
                 name = "run_skill_script",
-                description = "Execute a JavaScript script block embedded in a SKILL.md body. Requires a skill with at least one ```js fenced block.",
+                description = "Execute a JavaScript script block embedded in a SKILL.md body. Requires a skill with at least one ```js fenced block. If the skill declares memory_keys in its frontmatter, the script can read those specific memory entries via a read_memory(key) function — nothing else in memory is visible to it.",
                 parameters = mapOf(
                     "skill" to ToolParameter("string", "Skill name", required = true),
                     "script_index" to ToolParameter("integer", "Zero-based index of the script block within the skill body", required = false),
@@ -134,13 +140,30 @@ class SkillToolExecutor(
                 "script_index $requestedIndex out of range (skill has ${scripts.size} blocks)"
             )
 
-        val context = SkillScriptContext(input = call.arguments["input"] as? String ?: "")
+        val context = SkillScriptContext(
+            input = call.arguments["input"] as? String ?: "",
+            memory = fetchMemory(skill)
+        )
 
         return when (val result = runtime.execute(script, context)) {
             is SkillScriptResult.Success -> ToolResult(call.id, true, result.output)
             is SkillScriptResult.Failure -> ToolResult(call.id, false, "", result.error)
             is SkillScriptResult.NotAvailable -> ToolResult(call.id, false, "", result.reason)
         }
+    }
+
+    /**
+     * Fetches exactly [Skill.memoryKeys] from [memoryDao] — never the whole
+     * memory store, and never anything a skill didn't explicitly declare in
+     * its own frontmatter. A key with no stored value is simply absent from
+     * the result rather than an error.
+     */
+    private suspend fun fetchMemory(skill: Skill): Map<String, String> {
+        val dao = memoryDao ?: return emptyMap()
+        if (skill.memoryKeys.isEmpty()) return emptyMap()
+        return skill.memoryKeys
+            .mapNotNull { key -> dao.get(key)?.let { key to it.value } }
+            .toMap()
     }
 
     private fun String.escapeJson(): String =

@@ -15,14 +15,28 @@ package com.opendash.app.assistant.skills.runtime
  * `input` is embedded as a JS string literal rather than passed as a real
  * function argument, since `QuickJs.evaluate` only accepts a source string --
  * there is no separate argument channel at this API level.
+ *
+ * `memory` (pre-fetched, read-only key/value pairs — see [SkillScriptContext.memory])
+ * is embedded the same way: injected as a JS object literal built from
+ * escaped string-literal entries, with a `read_memory(key)` global defined
+ * over it. Since the whole memory map is baked into the source text before
+ * a single synchronous `evaluate()` call, this is a real, working bridge for
+ * *reads* despite `QuickJs` having no live host-callback mechanism -- there's
+ * nothing to call back into, the data already exists in the script's scope.
  */
 internal object SkillScriptWrapper {
 
-    fun wrap(source: String, input: String): String = buildString {
+    fun wrap(source: String, input: String, memory: Map<String, String> = emptyMap()): String = buildString {
         append("(function() {\n")
         append("  var input = ")
         append(input.toJsStringLiteral())
         append(";\n")
+        append("  var __memory = ")
+        append(memory.toJsObjectLiteral())
+        append(";\n")
+        append("  function read_memory(key) {\n")
+        append("    return Object.prototype.hasOwnProperty.call(__memory, key) ? __memory[key] : null;\n")
+        append("  }\n")
         append("  var __skillResult = (function() {\n")
         append(source)
         append("\n  })();\n")
@@ -53,5 +67,17 @@ internal object SkillScriptWrapper {
             }
         }
         append('"')
+    }
+
+    /** Builds `{"key": "value", ...}` with every key and value string-literal escaped. */
+    private fun Map<String, String>.toJsObjectLiteral(): String = buildString {
+        append('{')
+        entries.forEachIndexed { index, (key, value) ->
+            if (index > 0) append(',')
+            append(key.toJsStringLiteral())
+            append(':')
+            append(value.toJsStringLiteral())
+        }
+        append('}')
     }
 }

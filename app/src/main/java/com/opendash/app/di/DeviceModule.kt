@@ -693,7 +693,7 @@ object DeviceModule {
                 com.opendash.app.tool.translate.MlKitTranslateEngine()
             ),
             com.opendash.app.tool.spotify.SpotifyToolExecutor(spotifyAuthManager, spotifyApiClient),
-            SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime),
+            SkillToolExecutor(skillRegistry, skillInstaller, skillScriptRuntime, memoryDao = memoryDao),
             com.opendash.app.tool.system.FindDeviceTool(context),
             // Composites — call back into the executor they're part of via
             // lambda to avoid a Hilt cycle.

@@ -50,4 +50,43 @@ class SkillScriptWrapperTest {
             "if (__skillResult === undefined || __skillResult === null) return \"\";"
         )
     }
+
+    @Test
+    fun `defaults to an empty memory object when none is supplied`() {
+        val wrapped = SkillScriptWrapper.wrap(source = "return 1;", input = "")
+
+        assertThat(wrapped).contains("var __memory = {};")
+    }
+
+    @Test
+    fun `embeds memory entries as an escaped JS object literal`() {
+        val wrapped = SkillScriptWrapper.wrap(
+            source = "return read_memory('favorite_color');",
+            input = "",
+            memory = mapOf("favorite_color" to "blue", "favorite_food" to "sushi")
+        )
+
+        assertThat(wrapped).contains(
+            "var __memory = {\"favorite_color\":\"blue\",\"favorite_food\":\"sushi\"};"
+        )
+    }
+
+    @Test
+    fun `escapes quotes inside memory keys and values`() {
+        val wrapped = SkillScriptWrapper.wrap(
+            source = "return 1;",
+            input = "",
+            memory = mapOf("""say "hi"""" to """quoted "value"""")
+        )
+
+        assertThat(wrapped).contains(""""say \"hi\"":"quoted \"value\""""")
+    }
+
+    @Test
+    fun `defines read_memory as a function that falls back to null for missing keys`() {
+        val wrapped = SkillScriptWrapper.wrap(source = "return 1;", input = "")
+
+        assertThat(wrapped).contains("function read_memory(key)")
+        assertThat(wrapped).contains("__memory[key] : null")
+    }
 }

@@ -103,4 +103,37 @@ class QuickJsSkillScriptRuntimeE2ETest {
 
         assertThat(result).isInstanceOf(SkillScriptResult.Failure::class.java)
     }
+
+    @Test
+    fun execute_readMemoryReturnsPreFetchedValues() = runBlocking {
+        val script = SkillScript(
+            skillName = "test",
+            index = 0,
+            language = "js",
+            source = "return read_memory('favorite_color');"
+        )
+
+        val result = runtime.execute(
+            script,
+            SkillScriptContext(memory = mapOf("favorite_color" to "blue"))
+        )
+
+        assertThat(result).isInstanceOf(SkillScriptResult.Success::class.java)
+        assertThat((result as SkillScriptResult.Success).output).isEqualTo("blue")
+    }
+
+    @Test
+    fun execute_readMemoryReturnsNullForUndeclaredKeys() = runBlocking {
+        val script = SkillScript(
+            skillName = "test",
+            index = 0,
+            language = "js",
+            source = "return read_memory('never_set') === null;"
+        )
+
+        val result = runtime.execute(script, SkillScriptContext(memory = emptyMap()))
+
+        assertThat(result).isInstanceOf(SkillScriptResult.Success::class.java)
+        assertThat((result as SkillScriptResult.Success).output).isEqualTo("true")
+    }
 }

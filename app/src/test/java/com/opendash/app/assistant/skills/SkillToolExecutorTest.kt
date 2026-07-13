@@ -5,6 +5,8 @@ import com.opendash.app.assistant.skills.runtime.SkillScript
 import com.opendash.app.assistant.skills.runtime.SkillScriptContext
 import com.opendash.app.assistant.skills.runtime.SkillScriptResult
 import com.opendash.app.assistant.skills.runtime.SkillScriptRuntime
+import com.opendash.app.data.db.MemoryDao
+import com.opendash.app.data.db.MemoryEntity
 import com.opendash.app.tool.ToolCall
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
@@ -216,6 +218,56 @@ class SkillToolExecutorTest {
         assertThat(result.error).isEqualTo("boom")
     }
 
+    @Test
+    fun `run_skill_script fetches only the skill's declared memory_keys`() = runTest {
+        registry.register(
+            Skill(
+                name = "s",
+                description = "d",
+                body = "```js\nreturn read_memory('favorite_color');\n```",
+                memoryKeys = listOf("favorite_color")
+            )
+        )
+        val dao = FakeMemoryDao(
+            mapOf(
+                "favorite_color" to "blue",
+                "favorite_food" to "sushi" // not declared by the skill — must not appear
+            )
+        )
+        val runtime = FakeAvailableRuntime()
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime, memoryDao = dao)
+
+        exec.execute(ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "s")))
+
+        assertThat(runtime.lastContext?.memory).containsExactly("favorite_color", "blue")
+    }
+
+    @Test
+    fun `run_skill_script omits keys the skill has not stored yet`() = runTest {
+        registry.register(
+            Skill("s", "d", "```js\nreturn 1;\n```", memoryKeys = listOf("never_set"))
+        )
+        val runtime = FakeAvailableRuntime()
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime, memoryDao = FakeMemoryDao(emptyMap()))
+
+        exec.execute(ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "s")))
+
+        assertThat(runtime.lastContext?.memory).isEmpty()
+    }
+
+    @Test
+    fun `run_skill_script passes empty memory when no memoryDao is wired`() = runTest {
+        registry.register(
+            Skill("s", "d", "```js\nreturn 1;\n```", memoryKeys = listOf("favorite_color"))
+        )
+        val runtime = FakeAvailableRuntime()
+        val exec = SkillToolExecutor(registry, scriptRuntime = runtime)
+
+        exec.execute(ToolCall(id = "r", name = "run_skill_script", arguments = mapOf("skill" to "s")))
+
+        assertThat(runtime.lastContext?.memory).isEmpty()
+    }
+
     private class FakeAvailableRuntime(
         private val result: SkillScriptResult = SkillScriptResult.Success("ok")
     ) : SkillScriptRuntime {
@@ -230,5 +282,16 @@ class SkillToolExecutorTest {
             lastContext = context
             return result
         }
+    }
+
+    private class FakeMemoryDao(private val entries: Map<String, String>) : MemoryDao {
+        override suspend fun upsert(memory: MemoryEntity) = Unit
+        override suspend fun get(key: String): MemoryEntity? =
+            entries[key]?.let { MemoryEntity(key, it, updatedAtMs = 0L) }
+        override suspend fun search(query: String, limit: Int) = emptyList<MemoryEntity>()
+        override suspend fun list(limit: Int) = emptyList<MemoryEntity>()
+        override suspend fun listByPrefix(prefix: String, limit: Int) = emptyList<MemoryEntity>()
+        override suspend fun delete(key: String): Int = 0
+        override suspend fun clear() = Unit
     }
 }
