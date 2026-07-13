@@ -85,6 +85,14 @@ object PreferenceKeys {
     val WAKE_WORD = stringPreferencesKey("wake_word")
     val HOTWORD_ENABLED = booleanPreferencesKey("hotword_enabled")
     val WAKE_WORD_SENSITIVITY = floatPreferencesKey("wake_word_sensitivity")
+    /**
+     * P21.7 opt-in engine choice: "vosk" (default) or "openwakeword". Default
+     * stays Vosk for every existing user unless they explicitly switch —
+     * openWakeWord only recognizes the fixed English "hey jarvis" phrase, not
+     * the user's custom [WAKE_WORD], so this is a real behavior change that
+     * must be an explicit choice, never an auto-upgrade.
+     */
+    val WAKE_WORD_ENGINE = stringPreferencesKey("wake_word_engine")
     /** When true, wake-word detection pauses while battery is low and unplugged. */
     val BATTERY_SAVER_ENABLED = booleanPreferencesKey("battery_saver_enabled")
 

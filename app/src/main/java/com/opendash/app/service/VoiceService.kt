@@ -15,6 +15,9 @@ import com.opendash.app.voice.pipeline.VoicePipeline
 import com.opendash.app.voice.wakeword.VoskModelDownloader
 import com.opendash.app.voice.wakeword.VoskWakeWordDetector
 import com.opendash.app.voice.wakeword.WakeWordConfig
+import com.opendash.app.voice.wakeword.WakeWordDetector
+import com.opendash.app.voice.wakeword.openwakeword.OpenWakeWordDetector
+import com.opendash.app.voice.wakeword.openwakeword.OpenWakeWordModelDownloader
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +53,7 @@ class VoiceService : Service() {
         onStart = { startMultiroom() },
         onStop = { stopMultiroom() },
     )
-    private var wakeWordDetector: VoskWakeWordDetector? = null
+    private var wakeWordDetector: WakeWordDetector? = null
     @Volatile
     private var isSessionActive = false
     private var resumeJob: kotlinx.coroutines.Job? = null
@@ -297,28 +300,79 @@ class VoiceService : Service() {
         }
 
         try {
-            val downloader = VoskModelDownloader(this)
-            if (!downloader.isModelDownloaded()) return
-
             val savedWakeWord = preferences.observe(PreferenceKeys.WAKE_WORD).first() ?: "dash"
             val savedSensitivity = preferences.observe(PreferenceKeys.WAKE_WORD_SENSITIVITY).first() ?: 0.6f
             val config = WakeWordConfig(keyword = savedWakeWord, sensitivity = savedSensitivity)
+            val engine = preferences.observe(PreferenceKeys.WAKE_WORD_ENGINE).first() ?: ENGINE_VOSK
+
+            val detector = if (engine == ENGINE_OPEN_WAKE_WORD) {
+                buildOpenWakeWordDetector() ?: buildVoskDetector(config)
+            } else {
+                buildVoskDetector(config)
+            }
+            if (detector == null) {
+                Timber.w("No wake word model downloaded for engine=$engine, not starting detector")
+                return
+            }
 
             // Always create fresh detector (OpenClaw pattern: destroy + recreate)
             wakeWordDetector?.stop()
-            wakeWordDetector = VoskWakeWordDetector(config, downloader.getModelDir())
-            wakeWordDetector?.start {
-                Timber.d("Wake word detected! Pausing hotword and starting STT...")
-                isSessionActive = true
-                wakeWordDetector?.stop()
-                scope.launch {
-                    delay(300) // Wait for mic release
-                    voicePipeline.startListening()
-                }
+            wakeWordDetector = detector
+            detector.start { onWakeWordDetected() }
+            Timber.d("Wake word detection active for: '$savedWakeWord' (engine=$engine)")
+
+            // openWakeWord's start() fails asynchronously (retries with backoff,
+            // then gives up silently — see OpenWakeWordDetector.start()) rather
+            // than throwing synchronously, so the try/catch around this block
+            // can't see that failure. Fall back to Vosk if it never actually
+            // started listening, so the device never ends up with no working
+            // wake word at all just because openWakeWord's model was corrupt
+            // or its ONNX session failed to load.
+            if (engine == ENGINE_OPEN_WAKE_WORD && detector is OpenWakeWordDetector) {
+                watchForOpenWakeWordGiveUp(detector, config)
             }
-            Timber.d("Wake word detection active for: '$savedWakeWord'")
         } catch (e: Exception) {
             Timber.e(e, "Failed to start wake word detection")
+        }
+    }
+
+    private fun buildVoskDetector(config: WakeWordConfig): WakeWordDetector? {
+        val downloader = VoskModelDownloader(this)
+        if (!downloader.isModelDownloaded()) return null
+        return VoskWakeWordDetector(config, downloader.getModelDir())
+    }
+
+    private fun buildOpenWakeWordDetector(): WakeWordDetector? {
+        val downloader = OpenWakeWordModelDownloader(this)
+        if (!downloader.allDownloaded()) return null
+        return OpenWakeWordDetector(
+            threshold = OpenWakeWordDetector.DEFAULT_THRESHOLD,
+            modelDir = downloader.modelDirectory()
+        )
+    }
+
+    private fun onWakeWordDetected() {
+        Timber.d("Wake word detected! Pausing hotword and starting STT...")
+        isSessionActive = true
+        wakeWordDetector?.stop()
+        scope.launch {
+            delay(300) // Wait for mic release
+            voicePipeline.startListening()
+        }
+    }
+
+    private fun watchForOpenWakeWordGiveUp(detector: OpenWakeWordDetector, config: WakeWordConfig) {
+        scope.launch {
+            delay(OPEN_WAKE_WORD_GIVE_UP_WATCH_MS)
+            if (wakeWordDetector !== detector) return@launch // superseded by a newer start/stop
+            if (isSessionActive) return@launch // it worked at least once already
+            if (!detector.isListening.value) {
+                Timber.w("openWakeWord failed to start after its retry budget; falling back to Vosk")
+                val fallback = buildVoskDetector(config) ?: return@launch
+                wakeWordDetector?.stop()
+                wakeWordDetector = fallback
+                fallback.start { onWakeWordDetected() }
+            }
         }
     }
 
@@ -340,6 +394,17 @@ class VoiceService : Service() {
     }
 
     companion object {
+        const val ENGINE_VOSK = "vosk"
+        const val ENGINE_OPEN_WAKE_WORD = "openwakeword"
+
+        /**
+         * Must exceed openWakeWord's own worst-case retry budget (5 attempts,
+         * backoff 1000/2000/3000/4000/5000ms = 15s) with margin, so the
+         * fallback watcher never fires while a legitimate retry is still
+         * in flight.
+         */
+        const val OPEN_WAKE_WORD_GIVE_UP_WATCH_MS = 20_000L
+
         const val NOTIFICATION_ID = 1001
         const val ACTION_START_LISTENING = "com.opendash.app.START_LISTENING"
         const val ACTION_STOP_LISTENING = "com.opendash.app.STOP_LISTENING"

@@ -44,6 +44,7 @@ import com.opendash.app.ui.settings.offline.OfflineStackCard
 import com.opendash.app.ui.settings.piper.PiperVoicesCard
 import com.opendash.app.ui.settings.termux.TermuxBridgeSettingsCard
 import com.opendash.app.ui.settings.vad.SileroVadCard
+import com.opendash.app.ui.settings.wakeword.WakeWordEngineCard
 import com.opendash.app.ui.settings.weather.WeatherLocationPickerRow
 import com.opendash.app.ui.settings.whisper.WhisperModelsCard
 
@@ -416,6 +417,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
         )
         SettingsHint(stringResource(R.string.settings_sensitivity_hint))
+
+        WakeWordEngineCard()
 
         val batterySaver by viewModel.batterySaverEnabled.collectAsState()
         SettingsToggle(stringResource(R.string.settings_battery_saver), batterySaver) { viewModel.saveBatterySaverEnabled(it) }

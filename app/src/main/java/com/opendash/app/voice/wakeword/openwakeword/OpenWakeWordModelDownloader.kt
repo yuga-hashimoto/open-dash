@@ -48,6 +48,9 @@ class OpenWakeWordModelDownloader(
     private val modelDir: File
         get() = File(context.filesDir, "openwakeword").apply { mkdirs() }
 
+    /** Directory [OpenWakeWordDetector] needs its constructor `modelDir` argument to point at. */
+    fun modelDirectory(): File = modelDir
+
     fun file(model: OpenWakeWordModelFile): File = File(modelDir, model.filename)
 
     fun isDownloaded(model: OpenWakeWordModelFile): Boolean {
