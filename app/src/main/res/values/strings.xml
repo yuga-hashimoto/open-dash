@@ -429,6 +429,14 @@
     <string name="settings_embedding_gemma_ready">Ready — in use</string>
     <string name="settings_embedding_gemma_error">Download failed: %1$s</string>
 
+    <!-- P16.6 embedded LLM model switch -->
+    <string name="settings_model_switch_title">Active model</string>
+    <string name="settings_model_switch_hint">Switch which downloaded model answers you, without restarting the app.</string>
+    <string name="settings_model_switch_active">Active</string>
+    <string name="settings_model_switch_action">Switch</string>
+    <string name="settings_model_switch_switching">Switching…</string>
+    <string name="settings_model_switch_error">Couldn\'t load that model — kept the previous one active.</string>
+
     <!-- P14.9 Piper offline TTS voice management -->
     <string name="settings_piper_voices_title">Piper voices</string>
     <string name="settings_piper_voices_hint">Download a Piper neural voice to synthesize speech fully on-device. Each voice is about 60 MB.</string>

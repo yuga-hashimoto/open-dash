@@ -84,7 +84,12 @@ class ProviderManager @Inject constructor(
         try {
             val models = modelManager.listAvailableModels()
             if (models.isNotEmpty()) {
-                val modelPath = models.first().path
+                // Prefer the model the user last picked via switchEmbeddedModel
+                // (P16.6); fall back to the first model found if unset or if
+                // it points at a file that's since been deleted.
+                val savedPath = preferences.observe(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH).first()
+                val selected = models.firstOrNull { it.path == savedPath } ?: models.first()
+                val modelPath = selected.path
                 // User-customized system prompt overrides the default when set
                 val customPrompt = preferences.observe(PreferenceKeys.CUSTOM_SYSTEM_PROMPT).first()
                 val systemPrompt = customPrompt?.takeIf { it.isNotBlank() }
@@ -104,7 +109,7 @@ class ProviderManager @Inject constructor(
                     deviceManager = deviceManager
                 )
                 router.registerProvider(provider)
-                Timber.d("Registered EmbeddedLlmProvider with model: ${models.first().name} (custom prompt: ${!customPrompt.isNullOrBlank()})")
+                Timber.d("Registered EmbeddedLlmProvider with model: ${selected.name} (custom prompt: ${!customPrompt.isNullOrBlank()})")
                 // Pre-warm the engine in the background so the first user
                 // request doesn't pay the GPU/CPU init cost.
                 scope.launch { provider.warmUp() }
@@ -185,11 +190,18 @@ class ProviderManager @Inject constructor(
      * mode is active) or if the underlying [EmbeddedLlmProvider.switchModel]
      * failed to load [modelPath] (it reverts to the previous model in that case,
      * so the app keeps working — this call just reports the swap didn't happen).
+     * On success, persists [modelPath] so `registerEmbeddedLlm()` picks the
+     * same model back up after the app is killed and relaunched — otherwise
+     * the swap would only last until the next cold start.
      */
     suspend fun switchEmbeddedModel(modelPath: String): Boolean {
         val provider = router.availableProviders.value
             .filterIsInstance<EmbeddedLlmProvider>()
             .firstOrNull() ?: return false
-        return provider.switchModel(modelPath)
+        val success = provider.switchModel(modelPath)
+        if (success) {
+            preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, modelPath)
+        }
+        return success
     }
 }

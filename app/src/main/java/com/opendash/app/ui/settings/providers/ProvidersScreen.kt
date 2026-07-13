@@ -38,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opendash.app.R
 import com.opendash.app.data.preferences.PreferenceKeys
+import com.opendash.app.ui.settings.model.ModelSwitchCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +80,11 @@ fun ProvidersScreen(
                     onSelectApi = { viewModel.setMode(PreferenceKeys.MODE_API) },
                     onAddProvider = { showAddProviderDialog = true }
                 )
+            }
+            if (assistantMode == PreferenceKeys.MODE_LOCAL) {
+                item(key = "__model_switch__") {
+                    ModelSwitchCard()
+                }
             }
             if (rows.isEmpty()) {
                 item(key = "__empty__") {

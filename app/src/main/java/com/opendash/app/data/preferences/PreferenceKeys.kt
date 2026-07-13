@@ -191,6 +191,16 @@ object PreferenceKeys {
     val WHISPER_ACTIVE_MODEL_ID = stringPreferencesKey("whisper_active_model_id")
 
     /**
+     * P16.6 active embedded LLM model file path (one of
+     * [com.opendash.app.assistant.provider.embedded.ModelManager.listAvailableModels]'s
+     * `ModelInfo.path` values). Empty / unset / pointing at a file that no
+     * longer exists falls back to the first model `registerEmbeddedLlm()`
+     * finds, same "sensible default if the preference is stale" pattern as
+     * [WHISPER_ACTIVE_MODEL_ID].
+     */
+    val EMBEDDED_LLM_ACTIVE_MODEL_PATH = stringPreferencesKey("embedded_llm_active_model_path")
+
+    /**
      * P14.9 active Piper voice id. Stores one of the `PiperVoice.id`
      * values from the catalogue so a future `PiperTtsProvider` can
      * resolve the `.onnx` + `.onnx.json` pair. Empty / unset falls

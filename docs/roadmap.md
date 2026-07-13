@@ -221,11 +221,15 @@ smoke testing).
   target today via manual import. Tests: `ProviderManagerTest` covers the dispatch/not-found
   paths with mocks; `EmbeddedLlmProviderSwitchModelE2ETest` (androidTest, written but not run —
   no device available) covers the invalid-path failure+revert case — a real success-path swap
-  needs an actual multi-GB model file, not something a test should provision. **Still open**:
-  (1) whether `ModelDownloader`'s delete-old-models-on-download behavior should change to make
-  swapping meaningful from the onboarding flow too — a real storage-quota UX trade-off (LLM
-  models are 1-4GB each) worth a user decision, not something to flip unilaterally; (2) a
-  Settings UI to trigger `switchEmbeddedModel`; (3) real-device validation that repeated
+  needs an actual multi-GB model file, not something a test should provision.
+  **Resolved this cycle**: asked the user directly whether `ModelDownloader` should stop deleting
+  old models on new downloads — they chose to keep the existing behavior, so the onboarding flow
+  intentionally still produces at most one model; `ModelSwitchCard` (in `ui/settings/model/`,
+  shown on `ProvidersScreen` under the local-mode card) only renders once a second model exists
+  via manual import, and correctly shows nothing when there's just one. Added
+  `EMBEDDED_LLM_ACTIVE_MODEL_PATH` preference so a successful swap survives an app restart —
+  `registerEmbeddedLlm()` now reads it (falling back to the first model found if unset/stale)
+  instead of always picking `models.first()`. **Still open**: real-device validation that repeated
   close+reinit is clean across GPU vendors (no native leak) — the API contract says it's
   supported, but that's inherent to any native teardown+reinit and isn't verifiable without
   hardware regardless of how careful the Kotlin-level code is.

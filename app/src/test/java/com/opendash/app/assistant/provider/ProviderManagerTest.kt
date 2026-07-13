@@ -207,11 +207,35 @@ class ProviderManagerTest {
         val embedded = mockk<EmbeddedLlmProvider>(relaxed = true)
         coEvery { embedded.switchModel("/models/other.task") } returns true
         every { router.availableProviders } returns MutableStateFlow(listOf(embedded))
+        coEvery { preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, "/models/other.task") } returns Unit
 
         val result = manager().switchEmbeddedModel("/models/other.task")
 
         assertThat(result).isTrue()
         coVerify { embedded.switchModel("/models/other.task") }
+    }
+
+    @Test
+    fun `switchEmbeddedModel persists the new path on success so it survives a restart`() = runTest {
+        val embedded = mockk<EmbeddedLlmProvider>(relaxed = true)
+        coEvery { embedded.switchModel("/models/other.task") } returns true
+        every { router.availableProviders } returns MutableStateFlow(listOf(embedded))
+        coEvery { preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, "/models/other.task") } returns Unit
+
+        manager().switchEmbeddedModel("/models/other.task")
+
+        coVerify { preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, "/models/other.task") }
+    }
+
+    @Test
+    fun `switchEmbeddedModel does not persist anything when the swap fails`() = runTest {
+        val embedded = mockk<EmbeddedLlmProvider>(relaxed = true)
+        coEvery { embedded.switchModel(any()) } returns false
+        every { router.availableProviders } returns MutableStateFlow(listOf(embedded))
+
+        manager().switchEmbeddedModel("/models/corrupt.task")
+
+        coVerify(exactly = 0) { preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, any()) }
     }
 
     @Test

@@ -386,6 +386,12 @@
     <string name="settings_embedding_gemma_downloading">ダウンロード中…</string>
     <string name="settings_embedding_gemma_ready">準備完了 — 使用中</string>
     <string name="settings_embedding_gemma_error">ダウンロードに失敗しました: %1$s</string>
+    <string name="settings_model_switch_title">使用中のモデル</string>
+    <string name="settings_model_switch_hint">アプリを再起動せずに、応答に使うダウンロード済みモデルを切り替えます。</string>
+    <string name="settings_model_switch_active">使用中</string>
+    <string name="settings_model_switch_action">切り替え</string>
+    <string name="settings_model_switch_switching">切り替え中…</string>
+    <string name="settings_model_switch_error">モデルを読み込めませんでした — 前のモデルのまま使用中です。</string>
     <string name="settings_piper_voices_title">Piperボイス</string>
     <string name="settings_piper_voices_hint">端末内で音声合成するためのPiperニューラル音声をダウンロードできます。1音声あたり約60MBです。</string>
     <string name="settings_piper_voice_size">%1$s • %2$d MB</string>
