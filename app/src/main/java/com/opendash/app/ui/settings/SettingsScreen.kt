@@ -43,6 +43,7 @@ import com.opendash.app.ui.settings.news.NewsFeedPickerRow
 import com.opendash.app.ui.settings.offline.OfflineStackCard
 import com.opendash.app.ui.settings.piper.PiperVoicesCard
 import com.opendash.app.ui.settings.termux.TermuxBridgeSettingsCard
+import com.opendash.app.ui.settings.vad.SileroVadCard
 import com.opendash.app.ui.settings.weather.WeatherLocationPickerRow
 import com.opendash.app.ui.settings.whisper.WhisperModelsCard
 
@@ -371,6 +372,7 @@ fun SettingsScreen(
         // discoverable without a separate Settings page.
         if (sttProvider == "whisper") {
             WhisperModelsCard()
+            SileroVadCard()
         }
 
         val sttLanguage by viewModel.sttLanguage.collectAsState()

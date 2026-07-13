@@ -368,6 +368,15 @@
     <string name="settings_whisper_model_downloading">ダウンロード中…</string>
 
     <!-- P14.9 Piperオフライン音声合成 -->
+    <string name="settings_silero_vad_title">ニューラル音声検出（Silero VAD）</string>
+    <string name="settings_silero_vad_hint">音量だけに頼るより高精度に発話を検出する小型モデルをダウンロードします。ダウンロードするまでは自動的に簡易方式にフォールバックします。</string>
+    <string name="settings_silero_vad_size">%1$d MB</string>
+    <string name="settings_silero_vad_progress">%1$d / %2$d MB</string>
+    <string name="settings_silero_vad_download">ダウンロード</string>
+    <string name="settings_silero_vad_delete">削除</string>
+    <string name="settings_silero_vad_downloading">ダウンロード中…</string>
+    <string name="settings_silero_vad_ready">準備完了 — 使用中</string>
+    <string name="settings_silero_vad_error">ダウンロードに失敗しました: %1$s</string>
     <string name="settings_piper_voices_title">Piperボイス</string>
     <string name="settings_piper_voices_hint">端末内で音声合成するためのPiperニューラル音声をダウンロードできます。1音声あたり約60MBです。</string>
     <string name="settings_piper_voice_size">%1$s • %2$d MB</string>

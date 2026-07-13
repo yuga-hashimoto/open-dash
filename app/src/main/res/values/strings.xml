@@ -407,6 +407,17 @@
     <string name="settings_whisper_model_delete">Delete</string>
     <string name="settings_whisper_model_downloading">Downloading…</string>
 
+    <!-- P16.2 Silero VAD model download -->
+    <string name="settings_silero_vad_title">Neural voice detection (Silero VAD)</string>
+    <string name="settings_silero_vad_hint">Download a small on-device model to detect speech more accurately than simple volume level. Falls back automatically until it\'s downloaded.</string>
+    <string name="settings_silero_vad_size">%1$d MB</string>
+    <string name="settings_silero_vad_progress">%1$d / %2$d MB</string>
+    <string name="settings_silero_vad_download">Download</string>
+    <string name="settings_silero_vad_delete">Delete</string>
+    <string name="settings_silero_vad_downloading">Downloading…</string>
+    <string name="settings_silero_vad_ready">Ready — in use</string>
+    <string name="settings_silero_vad_error">Download failed: %1$s</string>
+
     <!-- P14.9 Piper offline TTS voice management -->
     <string name="settings_piper_voices_title">Piper voices</string>
     <string name="settings_piper_voices_hint">Download a Piper neural voice to synthesize speech fully on-device. Each voice is about 60 MB.</string>
