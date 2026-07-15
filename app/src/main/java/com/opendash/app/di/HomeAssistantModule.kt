@@ -1,8 +1,8 @@
 package com.opendash.app.di
 
 import com.opendash.app.homeassistant.client.HomeAssistantClient
-import com.opendash.app.homeassistant.client.HomeAssistantConfig
 import com.opendash.app.homeassistant.client.HomeAssistantRestClient
+import com.opendash.app.device.settings.DeviceSettingsRepository
 import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
@@ -17,17 +17,9 @@ object HomeAssistantModule {
 
     @Provides
     @Singleton
-    fun provideHomeAssistantConfig(): HomeAssistantConfig =
-        HomeAssistantConfig(
-            baseUrl = "http://homeassistant.local:8123",
-            token = ""
-        )
-
-    @Provides
-    @Singleton
     fun provideHomeAssistantClient(
         client: OkHttpClient,
         moshi: Moshi,
-        config: HomeAssistantConfig
-    ): HomeAssistantClient = HomeAssistantRestClient(client, moshi, config)
+        settingsRepository: DeviceSettingsRepository
+    ): HomeAssistantClient = HomeAssistantRestClient(client, moshi, settingsRepository)
 }

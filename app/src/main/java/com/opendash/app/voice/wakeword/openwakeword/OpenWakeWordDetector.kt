@@ -7,6 +7,7 @@ import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.NoiseSuppressor
 import com.opendash.app.voice.AudioEffects
 import com.opendash.app.voice.wakeword.WakeWordDetector
+import com.opendash.app.voice.wakeword.WakeWordHealth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,6 +47,11 @@ class OpenWakeWordDetector(
     private val _isListening = MutableStateFlow(false)
     override val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
 
+    private val _health = MutableStateFlow<WakeWordHealth>(
+        WakeWordHealth.Unavailable("not started")
+    )
+    override val health: StateFlow<WakeWordHealth> = _health.asStateFlow()
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var listeningJob: Job? = null
     private var audioRecord: AudioRecord? = null
@@ -63,6 +69,7 @@ class OpenWakeWordDetector(
 
         listeningJob = scope.launch {
             var retryCount = 0
+            var lastError: String? = null
             while (retryCount < MAX_RETRY_ATTEMPTS) {
                 try {
                     initializeSessions()
@@ -70,6 +77,7 @@ class OpenWakeWordDetector(
                     break
                 } catch (e: Exception) {
                     retryCount++
+                    lastError = e.message ?: e.javaClass.simpleName
                     Timber.e(e, "openWakeWord detection failed (attempt $retryCount)")
                     val backoff = (RETRY_BACKOFF_BASE_MS * retryCount).coerceAtMost(RETRY_BACKOFF_MAX_MS)
                     delay(backoff)
@@ -78,6 +86,9 @@ class OpenWakeWordDetector(
             if (retryCount >= MAX_RETRY_ATTEMPTS) {
                 Timber.e("openWakeWord detection failed after $MAX_RETRY_ATTEMPTS attempts")
                 _isListening.value = false
+                _health.value = WakeWordHealth.Failed(
+                    lastError ?: "openWakeWord failed after $MAX_RETRY_ATTEMPTS attempts"
+                )
             }
         }
     }
@@ -85,6 +96,7 @@ class OpenWakeWordDetector(
     override fun stop() {
         isPaused = true
         _isListening.value = false
+        _health.value = WakeWordHealth.Paused
         listeningJob?.cancel()
         listeningJob = null
         releaseAudio()
@@ -94,6 +106,7 @@ class OpenWakeWordDetector(
     fun pause() {
         isPaused = true
         _isListening.value = false
+        _health.value = WakeWordHealth.Paused
         listeningJob?.cancel()
         listeningJob = null
         releaseAudio()
@@ -145,6 +158,7 @@ class OpenWakeWordDetector(
         echoCanceler = AudioEffects.applyAcousticEchoCanceler(record.audioSessionId)
         noiseSuppressor = AudioEffects.applyNoiseSuppressor(record.audioSessionId)
         _isListening.value = true
+        _health.value = WakeWordHealth.Listening
         Timber.d("openWakeWord listening (hey jarvis)")
 
         val chunk = ShortArray(OpenWakeWordSessions.FRAME_SAMPLES)
@@ -157,10 +171,16 @@ class OpenWakeWordDetector(
                         ar.read(chunk, offset, chunk.size - offset)
                     } catch (e: IllegalStateException) {
                         Timber.d("openWakeWord: AudioRecord read threw (likely released) — exiting loop")
+                        if (!isPaused) {
+                            _health.value = WakeWordHealth.Failed("AudioRecord released")
+                        }
                         return
                     }
                     if (read < 0) {
                         Timber.d("openWakeWord: AudioRecord read returned error $read — exiting loop")
+                        if (!isPaused) {
+                            _health.value = WakeWordHealth.Failed("AudioRecord error $read")
+                        }
                         return
                     }
                     if (read == 0) break
@@ -185,6 +205,10 @@ class OpenWakeWordDetector(
         } finally {
             releaseAudio()
             _isListening.value = false
+            if (_health.value is WakeWordHealth.Listening) {
+                _health.value = if (isPaused) WakeWordHealth.Paused
+                else WakeWordHealth.Failed("openWakeWord audio loop stopped unexpectedly")
+            }
         }
     }
 

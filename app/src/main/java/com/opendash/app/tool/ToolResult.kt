@@ -4,5 +4,7 @@ data class ToolResult(
     val callId: String,
     val success: Boolean,
     val data: String,
-    val error: String? = null
+    val error: String? = null,
+    val confirmed: Boolean = true,
+    val confirmationToken: String? = null
 )

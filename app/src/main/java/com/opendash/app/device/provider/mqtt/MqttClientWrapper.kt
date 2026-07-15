@@ -3,6 +3,7 @@ package com.opendash.app.device.provider.mqtt
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
+import com.opendash.app.device.settings.DeviceSettingsRepository
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -23,15 +24,28 @@ data class MqttIncomingMessage(
     val payload: String
 )
 
-class MqttClientWrapper(private val config: MqttConfig) {
+class MqttClientWrapper(
+    private val configProvider: suspend () -> MqttConfig
+) {
+
+    constructor(config: MqttConfig) : this({ config })
+
+    constructor(settingsRepository: DeviceSettingsRepository) :
+        this({ settingsRepository.snapshot().mqtt })
 
     private var client: MqttClient? = null
+    private var connectedConfig: MqttConfig? = null
     private val messageChannel = Channel<MqttIncomingMessage>(Channel.BUFFERED)
 
     val messages: Flow<MqttIncomingMessage> = messageChannel.receiveAsFlow()
 
-    fun connect(): Boolean {
+    suspend fun connect(): Boolean {
         return try {
+            val config = configProvider()
+            if (client?.isConnected == true && connectedConfig == config) {
+                return true
+            }
+            disconnect()
             val mqttClient = MqttClient(config.brokerUrl, config.clientId, MemoryPersistence())
             val options = MqttConnectOptions().apply {
                 isAutomaticReconnect = true
@@ -57,6 +71,7 @@ class MqttClientWrapper(private val config: MqttConfig) {
 
             mqttClient.connect(options)
             client = mqttClient
+            connectedConfig = config
             Timber.d("MQTT connected to ${config.brokerUrl}")
             true
         } catch (e: Exception) {
@@ -74,14 +89,17 @@ class MqttClientWrapper(private val config: MqttConfig) {
         }
     }
 
-    fun publish(topic: String, payload: String, qos: Int = 0, retain: Boolean = false) {
+    fun publish(topic: String, payload: String, qos: Int = 0, retain: Boolean = false): Boolean {
         try {
-            client?.publish(topic, MqttMessage(payload.toByteArray()).apply {
+            val mqttClient = client?.takeIf { it.isConnected } ?: return false
+            mqttClient.publish(topic, MqttMessage(payload.toByteArray()).apply {
                 this.qos = qos
                 isRetained = retain
             })
+            return true
         } catch (e: Exception) {
             Timber.e(e, "MQTT publish failed: $topic")
+            return false
         }
     }
 
@@ -89,6 +107,7 @@ class MqttClientWrapper(private val config: MqttConfig) {
         try {
             client?.disconnect()
             client = null
+            connectedConfig = null
         } catch (e: Exception) {
             Timber.w(e, "MQTT disconnect error")
         }

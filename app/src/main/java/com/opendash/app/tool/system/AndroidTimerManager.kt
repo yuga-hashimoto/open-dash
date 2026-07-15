@@ -68,6 +68,14 @@ class AndroidTimerManager(
 
     private val activeTimers = ConcurrentHashMap<String, ActiveTimer>()
 
+    /**
+     * Fired whenever the set of currently-firing timers changes. Used by
+     * the wake-word-free alert session (P21.5) so listening begins only
+     * while something is actually ringing.
+     */
+    @Volatile
+    override var onFiringChanged: ((Boolean) -> Unit)? = null
+
     private data class ActiveTimer(
         val id: String,
         val label: String,
@@ -114,6 +122,7 @@ class AndroidTimerManager(
         existing.alarmPlayer?.stop()
         existing.cancelSafety?.invoke()
         Timber.d("Timer cancelled: $timerId (wasFiring=${existing.isFiring})")
+        if (existing.isFiring) notifyFiringChanged()
         return true
     }
 
@@ -162,6 +171,7 @@ class AndroidTimerManager(
                 Timber.w("Timer $id hit firing safety cap; auto-stopping")
                 val stopped = activeTimers.remove(id)
                 stopped?.alarmPlayer?.stop()
+                if (stopped != null) notifyFiringChanged()
             }
         }.getOrNull()
 
@@ -172,6 +182,14 @@ class AndroidTimerManager(
             cancelSafety = cancelSafety
         )
         Timber.d("Timer fired: $id (${existing.label})")
+        notifyFiringChanged()
+    }
+
+    private fun anyFiring(): Boolean = activeTimers.values.any { it.isFiring }
+
+    private fun notifyFiringChanged() {
+        runCatching { onFiringChanged?.invoke(anyFiring()) }
+            .onFailure { Timber.w(it, "onFiringChanged listener threw") }
     }
 
     companion object {

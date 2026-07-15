@@ -197,4 +197,17 @@ class AndroidTimerManagerTest {
         assertThat(active[0].isFiring).isFalse()
         assertThat(active[0].remainingSeconds).isAtMost(120)
     }
+
+    @Test
+    fun `onFiringChanged fires when a timer starts and stops ringing`() = runTest {
+        val (mgr, _, _) = newManager()
+        seedCountingDownTimer(mgr, "tid1", "pasta", 30)
+        val events = mutableListOf<Boolean>()
+        mgr.onFiringChanged = { events += it }
+
+        mgr.fireTimer("tid1")
+        mgr.cancelTimer("tid1")
+
+        assertThat(events).containsExactly(true, false).inOrder()
+    }
 }

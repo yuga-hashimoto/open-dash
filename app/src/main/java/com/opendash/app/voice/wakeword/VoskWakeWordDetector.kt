@@ -35,6 +35,11 @@ class VoskWakeWordDetector(
     private val _isListening = MutableStateFlow(false)
     override val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
 
+    private val _health = MutableStateFlow<WakeWordHealth>(
+        WakeWordHealth.Unavailable("not started")
+    )
+    override val health: StateFlow<WakeWordHealth> = _health.asStateFlow()
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var listeningJob: Job? = null
     private var audioRecord: AudioRecord? = null
@@ -71,6 +76,7 @@ class VoskWakeWordDetector(
 
         listeningJob = scope.launch {
             var retryCount = 0
+            var lastError: String? = null
             while (retryCount < MAX_RETRY_ATTEMPTS) {
                 try {
                     initializeVosk()
@@ -78,6 +84,7 @@ class VoskWakeWordDetector(
                     break
                 } catch (e: Exception) {
                     retryCount++
+                    lastError = e.message ?: e.javaClass.simpleName
                     Timber.e(e, "Vosk wake word detection failed (attempt $retryCount)")
                     val backoff = (RETRY_BACKOFF_BASE_MS * retryCount).coerceAtMost(RETRY_BACKOFF_MAX_MS)
                     delay(backoff)
@@ -86,6 +93,9 @@ class VoskWakeWordDetector(
             if (retryCount >= MAX_RETRY_ATTEMPTS) {
                 Timber.e("Vosk wake word detection failed after $MAX_RETRY_ATTEMPTS attempts")
                 _isListening.value = false
+                _health.value = WakeWordHealth.Failed(
+                    lastError ?: "Vosk wake word failed after $MAX_RETRY_ATTEMPTS attempts"
+                )
             }
         }
     }
@@ -95,6 +105,7 @@ class VoskWakeWordDetector(
         // then release the AudioRecord to unblock any in-flight read().
         isPaused = true
         _isListening.value = false
+        _health.value = WakeWordHealth.Paused
         listeningJob?.cancel()
         listeningJob = null
         releaseAudio()
@@ -108,6 +119,7 @@ class VoskWakeWordDetector(
         Timber.d("Vosk: pausing wake word detection")
         isPaused = true
         _isListening.value = false
+        _health.value = WakeWordHealth.Paused
         // Cancel the listening job to force-stop the blocking read loop
         listeningJob?.cancel()
         listeningJob = null
@@ -173,6 +185,7 @@ class VoskWakeWordDetector(
         echoCanceler = AudioEffects.applyAcousticEchoCanceler(audioRecord!!.audioSessionId)
         noiseSuppressor = AudioEffects.applyNoiseSuppressor(audioRecord!!.audioSessionId)
         _isListening.value = true
+        _health.value = WakeWordHealth.Listening
         Timber.d("Vosk wake word listening for: '${config.keyword}'")
 
         val buffer = ShortArray(bufferSize / 2)
@@ -243,9 +256,16 @@ class VoskWakeWordDetector(
             }
         } catch (e: Exception) {
             Timber.w(e, "Vosk audio loop exited with exception")
+            if (!isPaused) {
+                _health.value = WakeWordHealth.Failed(e.message ?: "Vosk audio loop failed")
+            }
         } finally {
             releaseAudio()
             _isListening.value = false
+            if (_health.value is WakeWordHealth.Listening) {
+                _health.value = if (isPaused) WakeWordHealth.Paused
+                else WakeWordHealth.Failed("Vosk audio loop stopped unexpectedly")
+            }
         }
     }
 

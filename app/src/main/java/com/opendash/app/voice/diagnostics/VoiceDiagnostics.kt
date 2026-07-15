@@ -10,7 +10,14 @@ import android.os.Build
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import androidx.core.content.ContextCompat
-import java.util.Locale
+import com.opendash.app.R
+import com.opendash.app.assistant.provider.embedded.ModelDownloader
+import com.opendash.app.voice.stt.whisper.WhisperCppBridge
+import com.opendash.app.voice.stt.whisper.WhisperModelCatalog
+import com.opendash.app.voice.stt.whisper.WhisperModelDownloader
+import com.opendash.app.voice.tts.piper.PiperCppBridge
+import com.opendash.app.voice.tts.piper.PiperVoiceCatalog
+import com.opendash.app.voice.tts.piper.PiperVoiceDownloader
 
 /**
  * Diagnostic checks for voice-related subsystems.
@@ -32,15 +39,152 @@ object VoiceDiagnostics {
         val actionIntent: Intent? = null
     )
 
-    fun run(context: Context): List<DiagnosticItem> {
+    fun run(
+        context: Context,
+        offlineInputsProvider: () -> OfflineVoiceProfile.Inputs = {
+            probeOfflineInputs(context)
+        },
+        measurementRecorder: VoiceMeasurementRecorder? = null,
+    ): List<DiagnosticItem> {
         val items = mutableListOf<DiagnosticItem>()
 
         items += checkRecordAudioPermission(context)
         items += checkMicrophonePrivacy(context)
         items += checkSpeechRecognition(context)
         items += checkTtsEngine(context)
+        items += checkOfflineVoiceProfile(context, offlineInputsProvider())
+        measurementRecorder?.let { items += measurementSessionItem(it) }
 
         return items
+    }
+
+    /**
+     * Summary card for the in-memory measurement session. Counts and device
+     * metadata only — never transcripts or secrets.
+     */
+    fun measurementSessionItem(recorder: VoiceMeasurementRecorder): DiagnosticItem {
+        val snap = recorder.snapshot()
+        val latencyBits = snap.latency.entries
+            .sortedBy { it.key }
+            .joinToString("; ") { (name, s) ->
+                "$name n=${s.count} avg=${s.averageMs}ms p95=${s.p95Ms}ms"
+            }
+            .ifBlank { "none" }
+        val message = buildString {
+            append("samples=${snap.sampleCount}")
+            append(" wakes=${snap.wakeCount}")
+            append(" falseWakes=${snap.falseWakeCount}")
+            append(" stt=${snap.sttFinalCount}/${snap.sttErrorCount}")
+            append(" tts=${snap.ttsStopCount}")
+            append(" batterySamples=${snap.batterySamples.size}")
+            append(" thermalSamples=${snap.thermalSamples.size}")
+            append(" latency=[$latencyBits]")
+            append(" — instrumentation only; not physical validation")
+        }
+        return DiagnosticItem(
+            id = "voice_measurement",
+            title = "Voice measurement session",
+            message = message,
+            severity = Severity.OK,
+        )
+    }
+
+    /**
+     * Probe local STT / LLM / system TTS / neural TTS readiness without
+     * initializing asynchronous TextToSpeech engines. Gates use bridge
+     * availability and on-disk model/voice presence only — never the selected
+     * preference alone.
+     */
+    fun probeOfflineInputs(context: Context): OfflineVoiceProfile.Inputs {
+        val whisperNative = WhisperCppBridge.isAvailable()
+        val whisperDownloader = WhisperModelDownloader(context)
+        val whisperModelReady = WhisperModelCatalog.all.any { whisperDownloader.isDownloaded(it) }
+        val localSttReady = whisperNative && whisperModelReady
+        val localSttReason = when {
+            localSttReady -> context.getString(R.string.voice_health_offline_stt_ready)
+            !whisperNative && !whisperModelReady ->
+                context.getString(R.string.voice_health_offline_stt_missing_both)
+            !whisperNative -> context.getString(R.string.voice_health_offline_stt_missing_native)
+            else -> context.getString(R.string.voice_health_offline_stt_missing_model)
+        }
+
+        val llmReady = ModelDownloader(context).isModelDownloaded()
+        val localLlmReason = if (llmReady) {
+            context.getString(R.string.voice_health_offline_llm_ready)
+        } else {
+            context.getString(R.string.voice_health_offline_llm_missing)
+        }
+
+        val systemTtsReady = isSystemTtsEnginePresent(context)
+        val systemTtsReason = if (systemTtsReady) {
+            context.getString(R.string.voice_health_offline_system_tts_ready)
+        } else {
+            context.getString(R.string.voice_health_offline_system_tts_missing)
+        }
+
+        val piperNative = PiperCppBridge.isAvailable()
+        val piperDownloader = PiperVoiceDownloader(context)
+        val piperVoiceReady = PiperVoiceCatalog.all.any { piperDownloader.isDownloaded(it) }
+        val neuralReady = piperNative && piperVoiceReady
+        val neuralReason = when {
+            neuralReady -> context.getString(R.string.voice_health_offline_neural_tts_ready)
+            !piperNative && !piperVoiceReady ->
+                context.getString(R.string.voice_health_offline_neural_tts_missing_both)
+            !piperNative -> context.getString(R.string.voice_health_offline_neural_tts_missing_native)
+            else -> context.getString(R.string.voice_health_offline_neural_tts_missing_voice)
+        }
+
+        return OfflineVoiceProfile.Inputs(
+            localStt = OfflineVoiceProfile.ComponentStatus(
+                ready = localSttReady,
+                label = context.getString(R.string.voice_health_offline_component_stt),
+                reason = localSttReason
+            ),
+            localLlm = OfflineVoiceProfile.ComponentStatus(
+                ready = llmReady,
+                label = context.getString(R.string.voice_health_offline_component_llm),
+                reason = localLlmReason
+            ),
+            systemTts = OfflineVoiceProfile.ComponentStatus(
+                ready = systemTtsReady,
+                label = context.getString(R.string.voice_health_offline_component_system_tts),
+                reason = systemTtsReason
+            ),
+            neuralTts = OfflineVoiceProfile.ComponentStatus(
+                ready = neuralReady,
+                label = context.getString(R.string.voice_health_offline_component_neural_tts),
+                reason = neuralReason
+            )
+        )
+    }
+
+    private fun checkOfflineVoiceProfile(
+        context: Context,
+        inputs: OfflineVoiceProfile.Inputs
+    ): DiagnosticItem {
+        val profile = OfflineVoiceProfile.evaluate(inputs)
+        val missing = profile.components.filterNot { it.ready }
+        val detail = if (missing.isEmpty()) {
+            profile.components.joinToString("; ") { "${it.label}: ${it.reason}" }
+        } else {
+            missing.joinToString("; ") { "${it.label}: ${it.reason}" }
+        }
+
+        val (message, severity) = when (profile.supportedMode) {
+            OfflineVoiceProfile.SupportedMode.FullyOffline ->
+                context.getString(R.string.voice_health_offline_mode_fully_offline, detail) to Severity.OK
+            OfflineVoiceProfile.SupportedMode.LocalSTTAndLLMSystemTts ->
+                context.getString(R.string.voice_health_offline_mode_system_tts, detail) to Severity.WARNING
+            OfflineVoiceProfile.SupportedMode.NotReady ->
+                context.getString(R.string.voice_health_offline_mode_not_ready, detail) to Severity.ERROR
+        }
+
+        return DiagnosticItem(
+            id = "offline_voice_profile",
+            title = context.getString(R.string.voice_health_offline_profile_title),
+            message = message,
+            severity = severity
+        )
     }
 
     private fun checkRecordAudioPermission(context: Context): DiagnosticItem {
@@ -128,9 +272,7 @@ object VoiceDiagnostics {
      * here we use the TTS_SERVICE intent query as a cheap first-line check.
      */
     private fun checkTtsEngine(context: Context): DiagnosticItem {
-        val pm = context.packageManager
-        val intent = Intent(TextToSpeech.Engine.INTENT_ACTION_TTS_SERVICE)
-        val services = pm.queryIntentServices(intent, 0)
+        val services = queryTtsServices(context)
         return if (services.isNotEmpty()) {
             DiagnosticItem(
                 id = "tts_engine",
@@ -151,4 +293,13 @@ object VoiceDiagnostics {
             )
         }
     }
+
+    private fun isSystemTtsEnginePresent(context: Context): Boolean =
+        queryTtsServices(context).isNotEmpty()
+
+    private fun queryTtsServices(context: Context) =
+        context.packageManager.queryIntentServices(
+            Intent(TextToSpeech.Engine.INTENT_ACTION_TTS_SERVICE),
+            0
+        )
 }

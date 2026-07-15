@@ -65,8 +65,9 @@ Rules:
 - **Runtime**: Every endSpan that blows its budget emits a Timber
   warning (`Latency budget exceeded: WAKE_TO_LISTENING took 680ms`).
   `adb logcat -s OpenDash` surfaces these.
-- **CI**: No CI assertion yet; instrumented-test enforcement is on
-  the Phase 16 backlog.
+- **Instrumented coverage**: `LatencyBudgetE2ETest` exercises span recording
+  and budget classification on ART. Connected tests are not currently run in
+  CI, and these assertions do not establish real microphone/speaker latency.
 
 ## Real-device smoke test
 

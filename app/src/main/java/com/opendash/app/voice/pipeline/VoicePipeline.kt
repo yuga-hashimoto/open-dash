@@ -6,8 +6,12 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
+import com.opendash.app.R
 import com.opendash.app.assistant.agent.AgentToolDispatcher
 import com.opendash.app.assistant.context.ContextCompactor
+import com.opendash.app.assistant.provider.RemoteDataDecision
+import com.opendash.app.assistant.provider.RemoteDataPolicy
+import com.opendash.app.device.DeviceCommandPolicy
 import com.opendash.app.tool.cache.CachingToolExecutor
 import com.opendash.app.tool.cache.RefreshIntent
 import com.opendash.app.assistant.model.AssistantMessage
@@ -22,6 +26,7 @@ import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.tool.ToolCall
 import com.opendash.app.tool.ToolExecutor
 import com.opendash.app.voice.fastpath.FastPathRouter
+import com.opendash.app.voice.diagnostics.VoiceMeasurementRecorder
 import com.opendash.app.voice.metrics.LatencyRecorder
 import com.opendash.app.voice.stt.AndroidSttProvider
 import com.opendash.app.voice.stt.SpeechToText
@@ -56,15 +61,23 @@ class VoicePipeline(
     private val wakeWordDetector: WakeWordDetector? = null,
     private val fastPathRouter: FastPathRouter? = null,
     private val latencyRecorder: LatencyRecorder = LatencyRecorder(),
+    private val measurementRecorder: VoiceMeasurementRecorder? = null,
     private val fastPathLlmPolisher: FastPathLlmPolisher = FastPathLlmPolisher(),
     private val toolDispatcher: AgentToolDispatcher = AgentToolDispatcher(toolExecutor, moshi),
     private val contextCompactor: ContextCompactor = ContextCompactor(
         maxMessages = 50,
         keepRecent = 30
-    )
+    ),
+    private val remoteDataPolicy: RemoteDataPolicy? = null
 ) {
     /** Exposed for diagnostics / Settings debug screen. */
     fun latencySummary() = latencyRecorder.summarize()
+
+    /** Best-effort measurement hook — never throws into the voice path. */
+    private fun measure(block: (VoiceMeasurementRecorder) -> Unit) {
+        val recorder = measurementRecorder ?: return
+        runCatching { block(recorder) }
+    }
     private val _state = MutableStateFlow<VoicePipelineState>(VoicePipelineState.Idle)
     val state: StateFlow<VoicePipelineState> = _state.asStateFlow()
 
@@ -205,12 +218,33 @@ class VoicePipeline(
     }
 
     suspend fun startListening() {
+        val finalText = captureUtterance(playBeep = true, resumeWakeWordOnIdle = true) ?: return
+        if (finalText.isNotBlank()) {
+            processUserInput(finalText)
+        }
+    }
+
+    /**
+     * Bounded one-shot STT capture for the wake-word-free alert session
+     * (P21.5). Ends on final transcript, quiet no-match/timeout, or
+     * actionable STT error — never leaves the mic open indefinitely.
+     *
+     * When [resumeWakeWordOnIdle] is false the caller owns wake-word
+     * resume (alert session policy). Does not invoke the LLM or fast path.
+     *
+     * @return final transcript, empty string on quiet no-match / silence,
+     *   or null when an actionable error was surfaced.
+     */
+    suspend fun captureUtterance(
+        playBeep: Boolean = false,
+        resumeWakeWordOnIdle: Boolean = false,
+    ): String? {
         // Barge-in handling
         if (_state.value is VoicePipelineState.Speaking) {
             val bargeInEnabled = preferences.observe(PreferenceKeys.BARGE_IN_ENABLED).first() ?: true
             if (!bargeInEnabled) {
                 Timber.d("Barge-in disabled, ignoring mic tap during speech")
-                return
+                return null
             }
             tts.stop()
         }
@@ -226,14 +260,22 @@ class VoicePipeline(
         VoiceService.pauseHotword(context)
 
         requestAudioFocus()
-        playListeningBeep()
-        // Wait for beep to finish and mic to be fully released
-        delay(500)
+        if (playBeep) playListeningBeep()
+        // Wait for beep / mic release. Shorter when silent so alarm stop is snappy.
+        delay(if (playBeep) 500 else 200)
 
         _state.value = VoicePipelineState.Listening
         resetWatchdog()
 
         var finalText = ""
+        var settledEarly = false
+        measure {
+            it.recordTurnStart()
+            it.recordSttStart()
+            it.recordState("Listening")
+            it.recordBatterySample()
+            it.recordThermalSample()
+        }
         latencyRecorder.startSpan(LatencyRecorder.Span.STT_DURATION)
         try {
             stt.startListening().collect { result ->
@@ -244,48 +286,105 @@ class VoicePipeline(
                     is SttResult.Final -> {
                         finalText = result.text
                         _partialText.value = result.text
-                        latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+                        val sttMs = latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+                        measure {
+                            it.recordSttFinal(durationMs = sttMs)
+                            if (sttMs != null) {
+                                it.recordLatency(LatencyRecorder.Span.STT_DURATION.name, sttMs)
+                            }
+                        }
                     }
                     is SttResult.Error -> {
-                        latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+                        val sttMs = latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+                        measure {
+                            it.recordSttError()
+                            if (sttMs != null) {
+                                it.recordLatency(LatencyRecorder.Span.STT_DURATION.name, sttMs)
+                            }
+                        }
                         Timber.w("STT error: ${result.message}")
-                        // Every STT-layer failure (NO_MATCH, SPEECH_TIMEOUT,
-                        // NETWORK, CLIENT, SERVER, RECOGNIZER_BUSY …) drops
-                        // us back to Idle silently. All of these indicate
-                        // either "user never spoke" or "transient
-                        // transcription hiccup" — neither warrants the
-                        // intrusive red "Sorry, I didn't catch that"
-                        // overlay on the ambient Home. The user just tries
-                        // again by saying the wake word.
+                        // Quiet no-match / speech-timeout: user never spoke or
+                        // the recognizer couldn't match — return to Idle without
+                        // an Error overlay. Actionable failures (permission, mic,
+                        // recognizer, network) surface copy then recover to Idle.
+                        if (errorClassifier.isQuietNoMatch(result.message)) {
+                            abandonAudioFocus()
+                            if (resumeWakeWordOnIdle) resumeWakeWord()
+                            _state.value = VoicePipelineState.Idle
+                            measure { it.recordState("Idle") }
+                            settledEarly = true
+                            finalText = ""
+                            return@collect
+                        }
+                        val recovery = errorClassifier.classify(
+                            result.message,
+                            kind = currentProviderKind()
+                        )
+                        _lastResponse.value = recovery.userSpokenMessage
+                        _state.value = VoicePipelineState.Error(recovery.userSpokenMessage)
+                        measure { it.recordState("Error") }
                         abandonAudioFocus()
-                        resumeWakeWord()
+                        delay(2000)
+                        if (resumeWakeWordOnIdle) resumeWakeWord()
                         _state.value = VoicePipelineState.Idle
+                        measure { it.recordState("Idle") }
+                        settledEarly = true
+                        // null signals actionable failure to alert-session callers.
+                        finalText = ""
                         return@collect
                     }
                 }
             }
         } catch (e: Exception) {
-            latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+            val sttMs = latencyRecorder.endSpan(LatencyRecorder.Span.STT_DURATION)
+            measure {
+                it.recordSttError()
+                if (sttMs != null) {
+                    it.recordLatency(LatencyRecorder.Span.STT_DURATION.name, sttMs)
+                }
+            }
             Timber.e(e, "STT failed")
             val recovery = errorClassifier.classify(e.message, e, kind = currentProviderKind())
             _lastResponse.value = recovery.userSpokenMessage
             _state.value = VoicePipelineState.Error(recovery.userSpokenMessage)
+            measure { it.recordState("Error") }
             abandonAudioFocus()
             delay(2000)
-            resumeWakeWord()
+            if (resumeWakeWordOnIdle) resumeWakeWord()
             _state.value = VoicePipelineState.Idle
-            return
+            measure { it.recordState("Idle") }
+            return null
+        }
+
+        if (settledEarly) {
+            // Quiet no-match → empty transcript (retryable). Actionable error
+            // already recovered; still return empty so alert policy can decide.
+            return finalText
         }
 
         Timber.d("STT finalText='$finalText' (blank=${finalText.isBlank()})")
-        if (finalText.isNotBlank()) {
-            processUserInput(finalText)
-        } else {
+        if (finalText.isBlank()) {
             abandonAudioFocus()
-            resumeWakeWord()
+            if (resumeWakeWordOnIdle) resumeWakeWord()
             Timber.d("No speech detected, returning to Idle")
             _state.value = VoicePipelineState.Idle
+            return ""
         }
+
+        // Hand transcript to caller; leave focus/state for processUserInput
+        // when used from startListening. For alert capture, drop to Idle so
+        // a subsequent listen cycle can re-enter cleanly.
+        if (!resumeWakeWordOnIdle) {
+            abandonAudioFocus()
+            _state.value = VoicePipelineState.Idle
+        }
+        return finalText
+    }
+
+    /** Short spoken reply without starting a full conversation turn. */
+    suspend fun speakBrief(message: String) {
+        _lastResponse.value = message
+        runCatching { tts.speak(message) }
     }
 
     suspend fun processUserInput(text: String) {
@@ -330,6 +429,23 @@ class VoicePipeline(
             // one is registered.
             val provider = router.resolveProvider(userInput = text)
             Timber.d("Provider resolved: ${provider.id}")
+            when (remoteDataPolicy?.decide(provider) ?: RemoteDataDecision.Allow) {
+                RemoteDataDecision.Allow -> Unit
+                RemoteDataDecision.BlockedByLocalOnly -> {
+                    fillerJob.cancel()
+                    announcePolicyBlock(
+                        "${provider.displayName}. ${context.getString(R.string.provider_mode_local_description)}"
+                    )
+                    return
+                }
+                RemoteDataDecision.RequiresDisclosure -> {
+                    fillerJob.cancel()
+                    announcePolicyBlock(
+                        "${provider.displayName}. ${context.getString(R.string.provider_mode_api_description)}"
+                    )
+                    return
+                }
+            }
             if (currentSession == null) {
                 Timber.d("Creating new session...")
                 currentSession = provider.startSession()
@@ -401,6 +517,7 @@ class VoicePipeline(
                         val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
                         if (ttsEnabled) {
                             _state.value = VoicePipelineState.Speaking
+                            measure { it.recordState("Speaking") }
                             // Barge-in: re-arm wake word BEFORE we start speaking
                             // so the user can interrupt TTS playback by calling
                             // the wake word (Alexa/Nest parity). When detected,
@@ -408,16 +525,29 @@ class VoicePipeline(
                             // hit the `state is Speaking` branch and tts.stop().
                             resumeWakeWordForBargeInIfEnabled()
                             try {
+                                measure { it.recordTtsStart() }
                                 latencyRecorder.startSpan(LatencyRecorder.Span.TTS_PREPARATION)
                                 tts.speak(response.content)
-                                latencyRecorder.endSpan(LatencyRecorder.Span.TTS_PREPARATION)
+                                val ttsMs = latencyRecorder.endSpan(LatencyRecorder.Span.TTS_PREPARATION)
+                                measure {
+                                    it.recordTtsStop(durationMs = ttsMs)
+                                    if (ttsMs != null) {
+                                        it.recordLatency(LatencyRecorder.Span.TTS_PREPARATION.name, ttsMs)
+                                    }
+                                }
                                 Timber.d("TTS completed")
                             } catch (e: Exception) {
+                                measure { it.recordTtsStop() }
                                 Timber.e(e, "TTS failed")
                             }
                         }
 
                         // Continuous conversation mode (see finishTurnAndMaybeContinue)
+                        measure {
+                            it.recordTurnEnd()
+                            it.recordBatterySample()
+                            it.recordThermalSample()
+                        }
                         finishTurnAndMaybeContinue()
                         return
                     }
@@ -425,6 +555,10 @@ class VoicePipeline(
                         abandonAudioFocus()
                         resumeWakeWord()
                         _state.value = VoicePipelineState.Idle
+                        measure {
+                            it.recordState("Idle")
+                            it.recordTurnEnd()
+                        }
                         return
                     }
                 }
@@ -443,10 +577,14 @@ class VoicePipeline(
             val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
             if (ttsEnabled) {
                 _state.value = VoicePipelineState.Speaking
+                measure { it.recordState("Speaking") }
                 resumeWakeWordForBargeInIfEnabled()
                 try {
+                    measure { it.recordTtsStart() }
                     tts.speak(fallback)
+                    measure { it.recordTtsStop() }
                 } catch (e: Exception) {
+                    measure { it.recordTtsStop() }
                     Timber.e(e, "TTS failed for round-cap fallback")
                 }
             }
@@ -503,6 +641,12 @@ class VoicePipeline(
             delay(4000)
             _state.value = VoicePipelineState.Idle
         }
+    }
+
+    /** Spoken degraded-state response when no assistant provider is usable. */
+    suspend fun announceDegraded(message: String) {
+        showError(message)
+        runCatching { tts.speak(message) }
     }
 
     fun interruptAndListen() {
@@ -703,6 +847,14 @@ class VoicePipeline(
     @Volatile
     private var pendingCall: PendingCall? = null
 
+    private data class PendingDeviceCommand(
+        val call: ToolCall,
+        val expiresAt: Long,
+    )
+
+    @Volatile
+    private var pendingDeviceCommand: PendingDeviceCommand? = null
+
     private fun currentPendingCall(): PendingCall? {
         val pc = pendingCall ?: return null
         if (pc.expiresAt < System.currentTimeMillis()) {
@@ -710,6 +862,32 @@ class VoicePipeline(
             return null
         }
         return pc
+    }
+
+    private fun currentPendingDeviceCommand(): PendingDeviceCommand? {
+        val pending = pendingDeviceCommand ?: return null
+        if (pending.expiresAt < System.currentTimeMillis()) {
+            pendingDeviceCommand = null
+            return null
+        }
+        return pending
+    }
+
+    private suspend fun executePendingDeviceCommand(pending: PendingDeviceCommand) {
+        val result = toolExecutor.execute(pending.call)
+        val spoken = when {
+            !result.success -> result.error ?: "I couldn't complete that device command."
+            !result.confirmed -> result.error ?: "The command was accepted, but I couldn't confirm the device state."
+            else -> "Done."
+        }
+        _lastResponse.value = spoken
+        conversationHistory.add(AssistantMessage.Assistant(content = spoken))
+        trimConversationHistory()
+        persistAssistantMessage(spoken)
+        _state.value = VoicePipelineState.Speaking
+        resumeWakeWordForBargeInIfEnabled()
+        speakResponse(spoken)
+        onResponseComplete()
     }
 
     private suspend fun placeConfirmedCall(pending: PendingCall) {
@@ -743,6 +921,15 @@ class VoicePipeline(
     private suspend fun speakResponse(text: String) {
         runCatching { tts.speak(text) }
             .onFailure { Timber.w(it, "TTS failed for confirmation speech") }
+    }
+
+    private suspend fun announcePolicyBlock(message: String) {
+        _lastResponse.value = message
+        _state.value = VoicePipelineState.Error(message)
+        abandonAudioFocus()
+        runCatching { tts.speak(message) }
+        resumeWakeWord()
+        _state.value = VoicePipelineState.Idle
     }
 
     private suspend fun onResponseComplete() {
@@ -789,35 +976,63 @@ class VoicePipeline(
         // pending_confirmation.
         if (match.toolName == "__confirm_pending_call__") {
             val pending = currentPendingCall()
-            pendingCall = null
-            if (pending == null) {
-                return false // nothing pending → fall through to LLM path
+            if (pending != null) {
+                pendingCall = null
+                Timber.d("Fast-path: confirming pending call to ${pending.displayName}")
+                placeConfirmedCall(pending)
+                return true
             }
-            Timber.d("Fast-path: confirming pending call to ${pending.displayName}")
-            placeConfirmedCall(pending)
-            return true
+            val pendingDevice = currentPendingDeviceCommand()
+            if (pendingDevice != null) {
+                pendingDeviceCommand = null
+                Timber.d("Fast-path: confirming pending device command")
+                executePendingDeviceCommand(pendingDevice)
+                return true
+            }
+            return false
         }
         if (match.toolName == "__cancel_pending_call__") {
             val pending = currentPendingCall()
-            pendingCall = null
-            if (pending == null) return false
-            Timber.d("Fast-path: cancelling pending call to ${pending.displayName}")
-            val spoken = "キャンセルしました"
-            _lastResponse.value = spoken
-            conversationHistory.add(AssistantMessage.Assistant(content = spoken))
-            trimConversationHistory()
-            persistAssistantMessage(spoken)
-            _state.value = VoicePipelineState.Speaking
-            resumeWakeWordForBargeInIfEnabled()
-            speakResponse(spoken)
-            onResponseComplete()
-            return true
+            if (pending != null) {
+                pendingCall = null
+                Timber.d("Fast-path: cancelling pending call to ${pending.displayName}")
+                val spoken = "キャンセルしました"
+                _lastResponse.value = spoken
+                conversationHistory.add(AssistantMessage.Assistant(content = spoken))
+                trimConversationHistory()
+                persistAssistantMessage(spoken)
+                _state.value = VoicePipelineState.Speaking
+                resumeWakeWordForBargeInIfEnabled()
+                speakResponse(spoken)
+                onResponseComplete()
+                return true
+            }
+            if (currentPendingDeviceCommand() != null) {
+                pendingDeviceCommand = null
+                val spoken = "キャンセルしました"
+                _lastResponse.value = spoken
+                conversationHistory.add(AssistantMessage.Assistant(content = spoken))
+                trimConversationHistory()
+                persistAssistantMessage(spoken)
+                _state.value = VoicePipelineState.Speaking
+                resumeWakeWordForBargeInIfEnabled()
+                speakResponse(spoken)
+                onResponseComplete()
+                return true
+            }
+            return false
         }
         // Any other fast-path utterance invalidates a stale pending call
         // (user changed topic) — drop it so "はい" two turns later
         // doesn't accidentally dial the old target.
         if (match.toolName != "make_call") {
             pendingCall = null
+        }
+        if (match.toolName != "make_call" &&
+            match.toolName != "__confirm_pending_call__" &&
+            match.toolName != "__cancel_pending_call__"
+        ) {
+            pendingDeviceCommand = null
         }
 
         return try {
@@ -831,6 +1046,39 @@ class VoicePipeline(
                         arguments = match.arguments
                     )
                 )
+            }
+            if (result?.success == false &&
+                result.error?.startsWith(DeviceCommandPolicy.CONFIRMATION_REQUIRED_PREFIX) == true
+            ) {
+                val confirmationToken = result.confirmationToken
+                if (confirmationToken.isNullOrBlank()) {
+                    Timber.w("Sensitive command was rejected without a confirmation token")
+                    return false
+                }
+                val confirmedArguments = match.arguments +
+                    ("confirmed" to true) +
+                    (DeviceCommandPolicy.CONFIRMATION_TOKEN_KEY to confirmationToken)
+                pendingDeviceCommand = PendingDeviceCommand(
+                    call = ToolCall(
+                        id = "confirmed_device_${System.currentTimeMillis()}",
+                        name = match.toolName,
+                        arguments = confirmedArguments
+                    ),
+                    expiresAt = System.currentTimeMillis() + PENDING_CALL_TIMEOUT_MS
+                )
+                val spoken = result.error
+                _lastResponse.value = spoken
+                conversationHistory.add(AssistantMessage.User(content = userText))
+                conversationHistory.add(AssistantMessage.Assistant(content = spoken))
+                trimConversationHistory()
+                persistUserMessage(userText)
+                persistAssistantMessage(spoken)
+                _state.value = VoicePipelineState.Speaking
+                resumeWakeWordForBargeInIfEnabled()
+                speakResponse(spoken)
+                _state.value = VoicePipelineState.Idle
+                armListeningForConfirmation()
+                return true
             }
             // Special-case make_call: when the tool returns a
             // pending_confirmation payload we store the resolved phone
@@ -878,7 +1126,18 @@ class VoicePipeline(
                 }
             }
             val spoken = when {
-                match.spokenConfirmation != null -> match.spokenConfirmation
+                result?.success == false -> {
+                    // A matcher confirmation describes the intended action,
+                    // not the outcome. Never say "Done" after the provider
+                    // explicitly reported a failure.
+                    errorClassifier.classify(
+                        result.error,
+                        kind = currentProviderKind()
+                    ).userSpokenMessage
+                }
+                result?.success == true && !result.confirmed ->
+                    result.error ?: "The command was accepted, but I couldn't confirm the device state."
+                canUseFastPathSpokenConfirmation(match, result) -> match.spokenConfirmation.orEmpty()
                 result == null -> "Done."
                 result.success -> {
                     // Info tools (weather / forecast / web_search / news) have
@@ -910,13 +1169,19 @@ class VoicePipeline(
                     val polished = if (shouldPolish) {
                         try {
                             val provider = router.resolveProvider(userInput = userText)
-                            fastPathLlmPolisher.polish(
-                                provider = provider,
-                                toolName = toolName,
-                                userText = userText,
-                                resultData = result.data,
-                                ttsLanguageTag = ttsLang
-                            )
+                            when (remoteDataPolicy?.decide(provider) ?: RemoteDataDecision.Allow) {
+                                RemoteDataDecision.Allow -> fastPathLlmPolisher.polish(
+                                    provider = provider,
+                                    toolName = toolName,
+                                    userText = userText,
+                                    resultData = result.data,
+                                    ttsLanguageTag = ttsLang
+                                )
+                                else -> {
+                                    Timber.i("Skipped remote fast-path polish: assistant request is not allowed to leave device")
+                                    null
+                                }
+                            }
                         } catch (e: Exception) {
                             Timber.w(e, "Failed to resolve provider for LLM polish")
                             null
@@ -955,13 +1220,17 @@ class VoicePipeline(
             val ttsEnabled = preferences.observe(PreferenceKeys.TTS_ENABLED).first() ?: true
             if (ttsEnabled) {
                 _state.value = VoicePipelineState.Speaking
+                measure { it.recordState("Speaking") }
                 // Barge-in on fast-path too: re-arm wake word before speaking
                 // so short fast-path confirmations ("Timer set for 5 minutes.")
                 // are interruptible just like LLM replies.
                 resumeWakeWordForBargeInIfEnabled()
                 try {
+                    measure { it.recordTtsStart() }
                     tts.speak(spoken)
+                    measure { it.recordTtsStop() }
                 } catch (e: Exception) {
+                    measure { it.recordTtsStop() }
                     Timber.w(e, "TTS failed on fast-path")
                 }
             }
@@ -970,6 +1239,11 @@ class VoicePipeline(
             // fast-path turns (weather / timer / web search / …) also honour
             // the "Continuous Conversation" toggle. Before this was a bug —
             // users who enabled it still saw fast-path turns end in Idle.
+            measure {
+                it.recordTurnEnd()
+                it.recordBatterySample()
+                it.recordThermalSample()
+            }
             finishTurnAndMaybeContinue()
             true
         } catch (e: Exception) {

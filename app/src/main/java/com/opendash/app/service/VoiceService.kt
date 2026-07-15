@@ -9,18 +9,27 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
+import com.opendash.app.assistant.provider.ProviderManager
 import com.opendash.app.data.preferences.AppPreferences
 import com.opendash.app.data.preferences.PreferenceKeys
+import com.opendash.app.device.DeviceManager
+import com.opendash.app.voice.diagnostics.VoiceMeasurementRecorder
+import com.opendash.app.voice.diagnostics.VoiceAcceptanceRun
 import com.opendash.app.voice.pipeline.VoicePipeline
 import com.opendash.app.voice.wakeword.VoskModelDownloader
 import com.opendash.app.voice.wakeword.VoskWakeWordDetector
 import com.opendash.app.voice.wakeword.WakeWordConfig
 import com.opendash.app.voice.wakeword.WakeWordDetector
+import com.opendash.app.voice.wakeword.WakeWordHealth
+import com.opendash.app.voice.wakeword.WakeWordHealthStore
+import com.opendash.app.voice.wakeword.WakeWordRecoveryPolicy
 import com.opendash.app.voice.wakeword.openwakeword.OpenWakeWordDetector
 import com.opendash.app.voice.wakeword.openwakeword.OpenWakeWordModelDownloader
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -47,8 +56,16 @@ class VoiceService : Service() {
     @Inject lateinit var peerLivenessTracker: com.opendash.app.multiroom.PeerLivenessTracker
     @Inject lateinit var toolExecutor: com.opendash.app.tool.ToolExecutor
     @Inject lateinit var alarmRingtoneController: com.opendash.app.voice.alarm.AlarmRingtoneController
+    @Inject lateinit var timerManager: com.opendash.app.tool.system.TimerManager
+    @Inject lateinit var deviceManager: DeviceManager
+    @Inject lateinit var providerManager: ProviderManager
+    @Inject lateinit var wakeWordHealthStore: WakeWordHealthStore
+    @Inject lateinit var measurementRecorder: VoiceMeasurementRecorder
+    @Inject lateinit var acceptanceRun: VoiceAcceptanceRun
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val deviceManagerReady = CompletableDeferred<Unit>()
+    private val recoveryPolicy = WakeWordRecoveryPolicy()
     private val multiroomController = com.opendash.app.multiroom.MultiroomLifecycleController(
         onStart = { startMultiroom() },
         onStop = { stopMultiroom() },
@@ -56,8 +73,12 @@ class VoiceService : Service() {
     private var wakeWordDetector: WakeWordDetector? = null
     @Volatile
     private var isSessionActive = false
-    private var resumeJob: kotlinx.coroutines.Job? = null
+    private var resumeJob: Job? = null
+    private var recoveryJob: Job? = null
+    private var openWakeWordWatchJob: Job? = null
+    private var recoveryAttempts = 0
     private var wakeLock: android.os.PowerManager.WakeLock? = null
+    private var alertSessionCoordinator: com.opendash.app.voice.alert.AlertSessionCoordinator? = null
 
     /**
      * Broadcast receiver for pause/resume hotword detection.
@@ -71,8 +92,10 @@ class VoiceService : Service() {
                     isSessionActive = true
                     resumeJob?.cancel() // Cancel any pending resume
                     resumeJob = null
+                    cancelRecoveryWatchers()
                     wakeWordDetector?.stop()
                     wakeWordDetector = null // OpenClaw: destroy + recreate
+                    wakeWordHealthStore.report(WakeWordHealth.Paused)
                     acquireWakeLock()
                 }
                 ACTION_RESUME_HOTWORD -> {
@@ -115,6 +138,18 @@ class VoiceService : Service() {
     override fun onCreate() {
         super.onCreate()
         Timber.d("VoiceService created")
+
+        // Ensure provider registration starts even when BootReceiver brought
+        // the service up without MainActivity. Idempotent with OpenDashApp.
+        providerManager.initialize()
+
+        installAlertSession()
+
+        scope.launch(Dispatchers.IO) {
+            runCatching { deviceManager.start() }
+                .onFailure { Timber.e(it, "Device manager failed to start") }
+            deviceManagerReady.complete(Unit)
+        }
 
         val filter = IntentFilter().apply {
             addAction(ACTION_PAUSE_HOTWORD)
@@ -187,10 +222,12 @@ class VoiceService : Service() {
                 isSessionActive = true
                 resumeJob?.cancel()
                 resumeJob = null
+                cancelRecoveryWatchers()
                 wakeWordDetector?.stop()
                 wakeWordDetector = null
                 acquireWakeLock()
                 scope.launch {
+                    if (!awaitVoiceEntryReady()) return@launch
                     delay(500) // Wait for mic release
                     voicePipeline.startListening()
                 }
@@ -201,6 +238,7 @@ class VoiceService : Service() {
             ACTION_RUN_ROUTINE -> {
                 val routineName = intent.getStringExtra(EXTRA_ROUTINE_NAME)
                 scope.launch {
+                    deviceManagerReady.await()
                     initializeWakeWord()
                     if (routineName != null) runScheduledRoutine(routineName)
                 }
@@ -208,10 +246,67 @@ class VoiceService : Service() {
             ACTION_ALARM_RINGING -> {
                 val alarmId = intent.getStringExtra(EXTRA_ALARM_ID)
                 if (alarmId != null) alarmRingtoneController.startRinging(alarmId)
-                scope.launch { initializeWakeWord() }
+                // startRinging notifies the alert session via onRingingChanged.
+                scope.launch {
+                    deviceManagerReady.await()
+                    // Wake-word stays available as fallback; alert session also
+                    // opens a bounded listen while the alarm is ringing.
+                    initializeWakeWord()
+                }
+            }
+            ACTION_CLEAR_MEASUREMENT -> {
+                runCatching { measurementRecorder.clear() }
+                    .onFailure { Timber.w(it, "Clear measurement failed") }
+                Timber.i("Voice measurement session cleared")
+            }
+            ACTION_EXPORT_MEASUREMENT -> {
+                runCatching {
+                    val report = measurementRecorder.exportText()
+                    Timber.i("VoiceMeasurementReport\n$report")
+                }.onFailure { Timber.w(it, "Export measurement failed") }
+            }
+            ACTION_START_ACCEPTANCE_RUN -> {
+                val runId = intent.getStringExtra(EXTRA_ACCEPTANCE_RUN_ID)
+                val snapshot = acceptanceRun.start(id = runId ?: java.util.UUID.randomUUID().toString())
+                Timber.i("VoiceAcceptanceRun started: runId=${snapshot.runId}")
+            }
+            ACTION_OBSERVE_ACCEPTANCE_STEP -> {
+                val stepId = intent.getStringExtra(EXTRA_ACCEPTANCE_STEP_ID)
+                if (stepId == null) {
+                    Timber.w("Voice acceptance observation ignored: missing step_id")
+                } else {
+                    val result = acceptanceRun.observe(
+                        stepId = stepId,
+                        note = intent.getStringExtra(EXTRA_ACCEPTANCE_NOTE)
+                    )
+                    Timber.i("VoiceAcceptanceRun observe step=$stepId result=$result")
+                }
+            }
+            ACTION_VERIFY_ACCEPTANCE_STEP -> {
+                val stepId = intent.getStringExtra(EXTRA_ACCEPTANCE_STEP_ID)
+                if (stepId == null) {
+                    Timber.w("Voice acceptance verification ignored: missing step_id")
+                } else {
+                    val result = acceptanceRun.verify(
+                        stepId = stepId,
+                        passed = intent.getBooleanExtra(EXTRA_ACCEPTANCE_PASSED, false),
+                        verdict = intent.getStringExtra(EXTRA_ACCEPTANCE_NOTE)
+                    )
+                    Timber.i("VoiceAcceptanceRun verify step=$stepId result=$result")
+                }
+            }
+            ACTION_EXPORT_ACCEPTANCE_RUN -> {
+                Timber.i("VoiceAcceptanceReport\n${acceptanceRun.exportText()}")
+            }
+            ACTION_CLEAR_ACCEPTANCE_RUN -> {
+                acceptanceRun.clear()
+                Timber.i("VoiceAcceptanceRun cleared")
             }
             else -> {
-                scope.launch { initializeWakeWord() }
+                scope.launch {
+                    deviceManagerReady.await()
+                    initializeWakeWord()
+                }
             }
         }
 
@@ -241,11 +336,38 @@ class VoiceService : Service() {
         }
     }
 
+    /**
+     * Waits for provider + device readiness. Returns false when the voice
+     * entry should abort after announcing a degraded reason.
+     */
+    private suspend fun awaitVoiceEntryReady(): Boolean {
+        providerManager.initialize()
+        providerManager.awaitReady()
+        deviceManagerReady.await()
+        return when (
+            val decision = VoiceEntryReadiness.decide(
+                provider = providerManager.readiness.value,
+                deviceReady = true
+            )
+        ) {
+            is VoiceEntryReadiness.Decision.Proceed -> true
+            is VoiceEntryReadiness.Decision.Wait -> false
+            is VoiceEntryReadiness.Decision.Degraded -> {
+                Timber.w("Voice entry degraded: ${decision.reason}")
+                runCatching { voicePipeline.announceDegraded(decision.reason) }
+                isSessionActive = false
+                releaseWakeLock()
+                false
+            }
+        }
+    }
+
     private suspend fun initializeWakeWord() {
         // Check HOTWORD_ENABLED preference (default true)
         val hotwordEnabled = preferences.observe(PreferenceKeys.HOTWORD_ENABLED).first() ?: true
         if (!hotwordEnabled) {
             Timber.d("Hotword disabled via preference, skipping wake word init")
+            wakeWordHealthStore.report(WakeWordHealth.Unavailable("hotword disabled"))
             return
         }
 
@@ -253,6 +375,7 @@ class VoiceService : Service() {
             Class.forName("org.vosk.Model")
         } catch (e: ClassNotFoundException) {
             Timber.w("Vosk library not available, wake word disabled.")
+            wakeWordHealthStore.report(WakeWordHealth.Unavailable("vosk library missing"))
             return
         }
 
@@ -267,9 +390,13 @@ class VoiceService : Service() {
                 startWakeWord()
             } else {
                 Timber.w("Vosk model unavailable, wake word disabled")
+                wakeWordHealthStore.report(WakeWordHealth.Unavailable("vosk model missing"))
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to initialize wake word")
+            wakeWordHealthStore.report(
+                WakeWordHealth.Failed(e.message ?: "wake word init failed")
+            )
         }
     }
 
@@ -312,12 +439,17 @@ class VoiceService : Service() {
             }
             if (detector == null) {
                 Timber.w("No wake word model downloaded for engine=$engine, not starting detector")
+                wakeWordHealthStore.report(
+                    WakeWordHealth.Unavailable("no model for engine=$engine")
+                )
                 return
             }
 
             // Always create fresh detector (OpenClaw pattern: destroy + recreate)
+            cancelRecoveryWatchers()
             wakeWordDetector?.stop()
             wakeWordDetector = detector
+            watchDetectorHealth(detector)
             detector.start { onWakeWordDetected() }
             Timber.d("Wake word detection active for: '$savedWakeWord' (engine=$engine)")
 
@@ -333,6 +465,42 @@ class VoiceService : Service() {
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to start wake word detection")
+            wakeWordHealthStore.report(
+                WakeWordHealth.Failed(e.message ?: "start wake word failed")
+            )
+        }
+    }
+
+    private fun cancelRecoveryWatchers() {
+        recoveryJob?.cancel()
+        recoveryJob = null
+        openWakeWordWatchJob?.cancel()
+        openWakeWordWatchJob = null
+    }
+
+    private fun watchDetectorHealth(detector: WakeWordDetector) {
+        recoveryJob?.cancel()
+        recoveryJob = scope.launch {
+            detector.health.collect { health ->
+                wakeWordHealthStore.report(health)
+                if (wakeWordDetector !== detector) return@collect
+                if (health is WakeWordHealth.Listening) {
+                    recoveryAttempts = 0
+                    return@collect
+                }
+                if (!recoveryPolicy.shouldRecover(health, recoveryAttempts)) return@collect
+                if (isSessionActive) return@collect
+                val attempt = recoveryAttempts
+                recoveryAttempts = attempt + 1
+                val delayMs = recoveryPolicy.backoffMs(attempt)
+                Timber.w(
+                    "Wake word failed (attempt ${attempt + 1}/" +
+                        "${WakeWordRecoveryPolicy.MAX_ATTEMPTS}); retrying in ${delayMs}ms"
+                )
+                delay(delayMs)
+                if (wakeWordDetector !== detector || isSessionActive) return@collect
+                startWakeWord()
+            }
         }
     }
 
@@ -353,24 +521,34 @@ class VoiceService : Service() {
 
     private fun onWakeWordDetected() {
         Timber.d("Wake word detected! Pausing hotword and starting STT...")
+        runCatching {
+            measurementRecorder.recordWakeDetected()
+            measurementRecorder.recordBatterySample()
+            measurementRecorder.recordThermalSample()
+        }
         isSessionActive = true
+        cancelRecoveryWatchers()
         wakeWordDetector?.stop()
         scope.launch {
+            if (!awaitVoiceEntryReady()) return@launch
             delay(300) // Wait for mic release
             voicePipeline.startListening()
         }
     }
 
     private fun watchForOpenWakeWordGiveUp(detector: OpenWakeWordDetector, config: WakeWordConfig) {
-        scope.launch {
+        openWakeWordWatchJob?.cancel()
+        openWakeWordWatchJob = scope.launch {
             delay(OPEN_WAKE_WORD_GIVE_UP_WATCH_MS)
             if (wakeWordDetector !== detector) return@launch // superseded by a newer start/stop
             if (isSessionActive) return@launch // it worked at least once already
             if (!detector.isListening.value) {
                 Timber.w("openWakeWord failed to start after its retry budget; falling back to Vosk")
                 val fallback = buildVoskDetector(config) ?: return@launch
+                cancelRecoveryWatchers()
                 wakeWordDetector?.stop()
                 wakeWordDetector = fallback
+                watchDetectorHealth(fallback)
                 fallback.start { onWakeWordDetected() }
             }
         }
@@ -378,13 +556,82 @@ class VoiceService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /**
+     * P21.5: while an in-app alarm/timer is ringing, open a bounded STT
+     * listen that accepts unqualified stop/cancel/snooze without the wake
+     * word. Policy + routing are pure (see voice/alert/); this only wires
+     * the live managers and VoicePipeline capture path.
+     */
+    private fun installAlertSession() {
+        val inventory = com.opendash.app.voice.alert.RingingAlertInventory(
+            alarmRingtoneController = alarmRingtoneController,
+            timerManager = timerManager,
+        )
+        val executor = com.opendash.app.voice.alert.AlertCommandExecutor(
+            stopAlarm = { id -> alarmRingtoneController.stopRinging(id) },
+            cancelTimer = { id -> timerManager.cancelTimer(id) },
+            snoozeAlarm = { id, minutes ->
+                val result = toolExecutor.execute(
+                    com.opendash.app.tool.ToolCall(
+                        id = "alert_snooze_${System.currentTimeMillis()}",
+                        name = "snooze_alarm",
+                        arguments = mapOf("id" to id, "minutes" to minutes.toDouble()),
+                    )
+                )
+                // Always silence even if the DB row was already deleted (one-shot).
+                alarmRingtoneController.stopRinging(id)
+                result.success
+            },
+            speak = { msg -> voicePipeline.speakBrief(msg) },
+            stillRinging = { inventory.hasRinging() },
+        )
+        val coordinator = com.opendash.app.voice.alert.AlertSessionCoordinator(
+            scope = scope,
+            inventory = inventory,
+            executor = executor,
+            captureUtterance = {
+                voicePipeline.captureUtterance(playBeep = false, resumeWakeWordOnIdle = false)
+            },
+            resumeWakeWord = {
+                isSessionActive = false
+                releaseWakeLock()
+                resumeJob?.cancel()
+                resumeJob = scope.launch {
+                    delay(500)
+                    if (!isSessionActive) startWakeWord()
+                }
+            },
+            onOutcome = { outcome ->
+                runCatching {
+                    measurementRecorder.recordAlertOutcome(outcome::class.simpleName ?: "Unknown")
+                    measurementRecorder.recordBatterySample()
+                    measurementRecorder.recordThermalSample()
+                }
+            },
+        )
+        alertSessionCoordinator = coordinator
+
+        alarmRingtoneController.onRingingChanged = {
+            coordinator.notifyRingingChanged()
+        }
+        timerManager.onFiringChanged = {
+            coordinator.notifyRingingChanged()
+        }
+    }
+
     override fun onDestroy() {
         try {
             unregisterReceiver(controlReceiver)
         } catch (e: Exception) { /* ignore */ }
+        cancelRecoveryWatchers()
         wakeWordDetector?.stop()
+        wakeWordHealthStore.report(WakeWordHealth.Unavailable("service destroyed"))
         voicePipeline.stopSpeaking()
         voicePipeline.destroy()
+        deviceManager.stop()
+        alarmRingtoneController.onRingingChanged = null
+        timerManager.onFiringChanged = null
+        alertSessionCoordinator = null
         runCatching { alarmRingtoneController.stopAll() }
         // Safe to call even if we never registered — controller is idempotent
         // and each teardown step is already wrapped in runCatching.
@@ -412,8 +659,21 @@ class VoiceService : Service() {
         const val ACTION_RESUME_HOTWORD = "com.opendash.app.RESUME_HOTWORD"
         const val ACTION_RUN_ROUTINE = "com.opendash.app.RUN_ROUTINE"
         const val ACTION_ALARM_RINGING = "com.opendash.app.ALARM_RINGING"
+        /** Clears the in-memory voice/power measurement session (privacy-safe counters only). */
+        const val ACTION_CLEAR_MEASUREMENT = "com.opendash.app.CLEAR_MEASUREMENT"
+        /** Logs a redacted text export of the current measurement session to logcat. */
+        const val ACTION_EXPORT_MEASUREMENT = "com.opendash.app.EXPORT_MEASUREMENT"
+        const val ACTION_START_ACCEPTANCE_RUN = "com.opendash.app.START_ACCEPTANCE_RUN"
+        const val ACTION_OBSERVE_ACCEPTANCE_STEP = "com.opendash.app.OBSERVE_ACCEPTANCE_STEP"
+        const val ACTION_VERIFY_ACCEPTANCE_STEP = "com.opendash.app.VERIFY_ACCEPTANCE_STEP"
+        const val ACTION_EXPORT_ACCEPTANCE_RUN = "com.opendash.app.EXPORT_ACCEPTANCE_RUN"
+        const val ACTION_CLEAR_ACCEPTANCE_RUN = "com.opendash.app.CLEAR_ACCEPTANCE_RUN"
         const val EXTRA_ROUTINE_NAME = "routine_name"
         const val EXTRA_ALARM_ID = "alarm_id"
+        const val EXTRA_ACCEPTANCE_RUN_ID = "acceptance_run_id"
+        const val EXTRA_ACCEPTANCE_STEP_ID = "step_id"
+        const val EXTRA_ACCEPTANCE_NOTE = "note"
+        const val EXTRA_ACCEPTANCE_PASSED = "passed"
 
         fun start(context: Context) {
             val intent = Intent(context, VoiceService::class.java)

@@ -89,6 +89,5 @@ class DashboardViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        deviceManager.stop()
     }
 }

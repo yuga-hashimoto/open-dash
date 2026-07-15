@@ -4,6 +4,7 @@ import com.opendash.app.homeassistant.model.Area
 import com.opendash.app.homeassistant.model.Entity
 import com.opendash.app.homeassistant.model.ServiceCall
 import com.opendash.app.homeassistant.model.ServiceCallResult
+import com.opendash.app.device.settings.DeviceSettingsRepository
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -18,8 +19,20 @@ import timber.log.Timber
 class HomeAssistantRestClient(
     private val client: OkHttpClient,
     private val moshi: Moshi,
-    private val config: HomeAssistantConfig
+    private val configProvider: suspend () -> HomeAssistantConfig
 ) : HomeAssistantClient {
+
+    constructor(
+        client: OkHttpClient,
+        moshi: Moshi,
+        config: HomeAssistantConfig
+    ) : this(client, moshi, { config })
+
+    constructor(
+        client: OkHttpClient,
+        moshi: Moshi,
+        settingsRepository: DeviceSettingsRepository
+    ) : this(client, moshi, { settingsRepository.snapshot().homeAssistant })
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
@@ -43,6 +56,7 @@ class HomeAssistantRestClient(
     }
 
     override suspend fun callService(call: ServiceCall): ServiceCallResult = withContext(Dispatchers.IO) {
+        val config = configProvider()
         val payload = mutableMapOf<String, Any?>()
         call.entityId?.let { payload["entity_id"] = it }
         payload.putAll(call.data)
@@ -83,12 +97,14 @@ class HomeAssistantRestClient(
         }
     }
 
-    private fun buildRequest(path: String): Request =
-        Request.Builder()
+    private suspend fun buildRequest(path: String): Request {
+        val config = configProvider()
+        return Request.Builder()
             .url("${config.baseUrl}$path")
             .addHeader("Authorization", "Bearer ${config.token}")
             .addHeader("Content-Type", "application/json")
             .build()
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun parseEntityList(json: String): List<Entity> {

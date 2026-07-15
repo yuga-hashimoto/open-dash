@@ -5,6 +5,7 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 ## Start here
 
 - **[State of the project](state-of-the-project.md)** — what works today, what's scaffolding, what's missing
+- **[Smart-speaker audit](smart-speaker-audit.md)** — evidence-backed product verdict, release gates, and prioritized gaps
 - **[Architecture](architecture.md)** — layer map, key abstractions
 - **[Conventions](conventions.md)** — Kotlin style, package layout, testing
 - **[Testing conventions](testing-conventions.md)** — runTest, MockK landmines, virtual-time pitfalls
@@ -26,13 +27,14 @@ Tablet-first Android smart speaker with on-device LLM agent, inspired by Alexa a
 - **[Multi-room protocol](multi-room-protocol.md)** — WebSocket message bus design
 - **[Multi-room FAQ](multi-room-faq.md)** — answers to common questions about pairing, privacy, and scope
 - **[Real-device smoke test](real-device-smoke-test.md)** — on-device validation run before each release
-- **[Offline stack smoke test](offline-stack-smoke-test.md)** — Whisper STT + Piper TTS end-to-end checklist (P14.1 / P14.9)
+- **[Offline stack smoke test](offline-stack-smoke-test.md)** — current Whisper/Silero/Piper readiness and offline validation checklist
+- **[E2E testing](e2e-testing.md)** — unit, instrumented, CI, and real-device test boundaries
 - **[Latency budgets](latency-budgets.md)** — per-span timing targets for the voice pipeline
 
 ## Running locally
 
 ```bash
-./gradlew testDebugUnitTest   # unit tests (~500)
+./gradlew testDebugUnitTest   # JVM unit tests (all supported debug variants use ./gradlew test)
 ./gradlew lintDebug           # Android Lint (baseline applied)
 ./gradlew assembleDebug       # arm64-v8a APK
 ```

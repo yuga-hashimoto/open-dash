@@ -37,6 +37,15 @@ class ErrorClassifier {
      */
     enum class ProviderKind { LOCAL, REMOTE, UNKNOWN }
 
+    /**
+     * Soft STT outcomes that should return to Idle without an Error overlay
+     * or spoken apology — the user simply didn't speak / wasn't matched.
+     */
+    fun isQuietNoMatch(raw: String?): Boolean {
+        val lower = raw?.lowercase().orEmpty().replace('_', ' ')
+        return contains(lower, "no match", "speech timeout")
+    }
+
     fun classify(
         raw: String?,
         cause: Throwable? = null,
@@ -59,10 +68,30 @@ class ErrorClassifier {
                     "The on-device model had trouble. Let me try again.",
                     canRetry = true
                 )
+            contains(lower, "insufficient permissions", "permission", "not granted", "denied") ->
+                Recovery(
+                    Category.PERMISSION,
+                    "I need permission for that. Check settings.",
+                    canRetry = false
+                )
+            contains(lower, "not available", "recognizer busy", "failed to create speech",
+                "failed to start speech", "audio", "microphone", "could not capture") ->
+                Recovery(
+                    Category.STT_FAILURE,
+                    "Speech recognition isn't working right now. Check the microphone and try again.",
+                    canRetry = true
+                )
             contains(lower, "index out of range", "no match", "speech timeout", "list index") ->
                 Recovery(
                     Category.STT_FAILURE,
                     "Sorry, I didn't catch that. Try again?",
+                    canRetry = true
+                )
+            contains(lower, "network timeout", "network", "unable to resolve", "connection",
+                "unreachable", "host") ->
+                Recovery(
+                    Category.NETWORK,
+                    "Network hiccup. Checking again.",
                     canRetry = true
                 )
             contains(lower, "timeout", "timed out", "deadline") ->
@@ -70,18 +99,6 @@ class ErrorClassifier {
                     Category.LLM_TIMEOUT,
                     "That took too long. Let me try again.",
                     canRetry = true
-                )
-            contains(lower, "unable to resolve", "connection", "unreachable", "host") ->
-                Recovery(
-                    Category.NETWORK,
-                    "Network hiccup. Checking again.",
-                    canRetry = true
-                )
-            contains(lower, "permission", "not granted", "denied") ->
-                Recovery(
-                    Category.PERMISSION,
-                    "I need permission for that. Check settings.",
-                    canRetry = false
                 )
             contains(lower, "no shared secret") ->
                 Recovery(

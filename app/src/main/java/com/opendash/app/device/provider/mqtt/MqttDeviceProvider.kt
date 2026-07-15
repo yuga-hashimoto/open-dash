@@ -35,6 +35,7 @@ class MqttDeviceProvider(
     private val discoveredDevices = mutableMapOf<String, MqttDevice>()
     private val stateChangeChannel = Channel<DeviceState>(Channel.BUFFERED)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var messageCollectorStarted = false
 
     data class MqttDevice(
         val device: Device,
@@ -44,19 +45,22 @@ class MqttDeviceProvider(
 
     override suspend fun discover(): List<Device> {
         if (!mqttClient.isConnected()) {
-            mqttClient.connect()
+            if (!mqttClient.connect()) return emptyList()
         }
         // Subscribe to MQTT discovery topics
         mqttClient.subscribe("homeassistant/+/+/config")
 
-        scope.launch {
-            mqttClient.messages.collect { msg ->
-                when {
-                    msg.topic.startsWith("homeassistant/") && msg.topic.endsWith("/config") -> {
-                        handleDiscoveryMessage(msg)
-                    }
-                    else -> {
-                        handleStateUpdate(msg)
+        if (!messageCollectorStarted) {
+            messageCollectorStarted = true
+            scope.launch {
+                mqttClient.messages.collect { msg ->
+                    when {
+                        msg.topic.startsWith("homeassistant/") && msg.topic.endsWith("/config") -> {
+                            handleDiscoveryMessage(msg)
+                        }
+                        else -> {
+                            handleStateUpdate(msg)
+                        }
                     }
                 }
             }
@@ -84,8 +88,11 @@ class MqttDeviceProvider(
             else -> command.action.uppercase()
         }
 
-        mqttClient.publish(mqttDevice.commandTopic, payload)
-        return CommandResult(true)
+        val published = mqttClient.publish(mqttDevice.commandTopic, payload)
+        return CommandResult(
+            success = published,
+            message = if (published) null else "MQTT publish failed"
+        )
     }
 
     override fun stateChanges(): Flow<DeviceState> = stateChangeChannel.receiveAsFlow()

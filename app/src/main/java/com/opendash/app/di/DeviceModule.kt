@@ -5,11 +5,10 @@ import com.opendash.app.device.provider.DeviceProvider
 import com.opendash.app.device.provider.homeassistant.HomeAssistantDeviceProvider
 import com.opendash.app.device.provider.matter.MatterDeviceProvider
 import com.opendash.app.device.provider.mqtt.MqttClientWrapper
-import com.opendash.app.device.provider.mqtt.MqttConfig
 import com.opendash.app.device.provider.mqtt.MqttDeviceProvider
 import com.opendash.app.device.provider.switchbot.SwitchBotApiClient
-import com.opendash.app.device.provider.switchbot.SwitchBotConfig
 import com.opendash.app.device.provider.switchbot.SwitchBotDeviceProvider
+import com.opendash.app.device.settings.DeviceSettingsRepository
 import android.content.Context
 import com.opendash.app.device.tool.DeviceToolExecutor
 import com.opendash.app.homeassistant.client.HomeAssistantClient
@@ -28,8 +27,12 @@ import com.opendash.app.tool.info.EspnSportsScoreProvider
 import com.opendash.app.tool.info.SportsToolExecutor
 import com.opendash.app.tool.info.HtmlWebFetcher
 import com.opendash.app.tool.info.SearchProviderChain
-import com.opendash.app.tool.info.InMemoryKnowledgeStore
+import com.opendash.app.tool.info.KnowledgeStore
 import com.opendash.app.tool.info.KnowledgeToolExecutor
+import com.opendash.app.tool.info.RoomKnowledgeStore
+import com.opendash.app.tool.info.OfflineKnowledgeCorpus
+import com.opendash.app.tool.info.OfflineKnowledgeStore
+import com.opendash.app.tool.info.SqliteFts5KnowledgeIndex
 import com.opendash.app.tool.info.NewsToolExecutor
 import com.opendash.app.tool.info.OpenMeteoWeatherProvider
 import com.opendash.app.tool.info.RssNewsProvider
@@ -116,15 +119,18 @@ object DeviceModule {
     @IntoSet
     fun provideSwitchBotDeviceProvider(
         client: OkHttpClient,
-        moshi: Moshi
+        moshi: Moshi,
+        settingsRepository: DeviceSettingsRepository
     ): DeviceProvider = SwitchBotDeviceProvider(
-        SwitchBotApiClient(client, moshi, SwitchBotConfig())
+        SwitchBotApiClient(client, moshi, settingsRepository)
     )
 
     @Provides
     @IntoSet
-    fun provideMqttDeviceProvider(moshi: Moshi): DeviceProvider =
-        MqttDeviceProvider(MqttClientWrapper(MqttConfig()), moshi)
+    fun provideMqttDeviceProvider(
+        moshi: Moshi,
+        settingsRepository: DeviceSettingsRepository
+    ): DeviceProvider = MqttDeviceProvider(MqttClientWrapper(settingsRepository), moshi)
 
     @Provides
     @Singleton
@@ -368,6 +374,21 @@ object DeviceModule {
 
     @Provides
     @Singleton
+    fun provideKnowledgeStore(
+        database: com.opendash.app.data.db.AppDatabase,
+        dao: com.opendash.app.data.db.KnowledgeDao,
+        moshi: Moshi
+    ): KnowledgeStore {
+        val userStore = RoomKnowledgeStore(dao, moshi)
+        val index = SqliteFts5KnowledgeIndex(
+            database = database.openHelper.writableDatabase,
+            corpus = OfflineKnowledgeCorpus.entries
+        )
+        return OfflineKnowledgeStore(userStore, index)
+    }
+
+    @Provides
+    @Singleton
     fun provideRoutineRepository(
         dao: RoutineDao,
         moshi: Moshi
@@ -535,6 +556,7 @@ object DeviceModule {
         skillInstaller: SkillInstaller,
         skillScriptRuntime: com.opendash.app.assistant.skills.runtime.SkillScriptRuntime,
         memoryDao: MemoryDao,
+        knowledgeStore: KnowledgeStore,
         routineDao: RoutineDao,
         shoppingListDao: ShoppingListDao,
         reminderDao: com.opendash.app.data.db.ReminderDao,
@@ -610,7 +632,7 @@ object DeviceModule {
                     }.getOrNull()
                 }
             ),
-            KnowledgeToolExecutor(InMemoryKnowledgeStore()),
+            KnowledgeToolExecutor(knowledgeStore),
             NotificationToolExecutor(notificationProvider),
             NotificationReplyToolExecutor(notificationProvider),
             CalendarToolExecutor(

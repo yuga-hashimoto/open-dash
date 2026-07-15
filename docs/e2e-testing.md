@@ -12,11 +12,11 @@ what is automated, what is not, and how to run it locally / in CI.
 | Layer | Lives in | Tools | Automated? |
 |---|---|---|---|
 | **L1 Unit** | `app/src/test/` | JUnit 5, MockK, Turbine, MockWebServer | Fully — `./gradlew testDebugUnitTest` |
-| **L2 Component (UI)** | `app/src/test/...ui/` (Robolectric where applicable) | Compose UI test | Fully — same Gradle task |
-| **L3 E2E (instrumented)** | `app/src/androidTest/` | UiAutomator, Hilt-test, Compose UI test | Fully — needs an emulator or device |
+| **L2 Component (UI)** | `app/src/test/...ui/` | ViewModel/component tests; no full Compose screenshot flow | Partial — same Gradle task |
+| **L3 E2E (instrumented)** | `app/src/androidTest/` | UiAutomator, Hilt-test, fake provider boundaries | Partial — needs an emulator or device |
 | **L4 Smoke (real device)** | [docs/real-device-smoke-test.md](real-device-smoke-test.md) | Manual + adb scripts | Half — checklist-driven |
 
-L1/L2 catch logic regressions; L3 catches Android runtime / DI / lifecycle
+L1/L2 catch logic regressions; L3 catches selected Android runtime / DI / lifecycle
 regressions; L4 catches everything that needs a real microphone, speaker,
 LAN router, or thermal sensor (and therefore can't run in CI).
 
@@ -63,6 +63,11 @@ keep L4 manual. Specifically:
 | `e2e/FastPathRouterE2ETest.kt` | Sanity-checks `DefaultFastPathRouter` matches `set_timer` (EN+JA), `help` (speak-only), and lets ambiguous queries fall through to the LLM. |
 | `e2e/HiltInjectionE2ETest.kt` | Demonstrates the `@HiltAndroidTest` pipeline by round-tripping a value through the real `AppPreferences` `DataStore`. |
 | `e2e/VoicePipelineFastPathE2ETest.kt` | Drives the **real** `VoicePipeline.processUserInput(text)` through FastPathRouter → ToolExecutor → TimerManager → TTS confirmation, asserting EN+JA `set_timer` utterances both speak the right confirmation and create the right alarm. Uses `fakes/FakeTextToSpeech` swapped via `FakeTtsTestModule`. |
+| `e2e/AssistantProviderE2ETest.kt` | Exercises the provider boundary with the fake assistant. |
+| `e2e/EmbeddedLlmProviderSwitchModelE2ETest.kt` | Exercises embedded-provider model switching without requiring a downloaded model. |
+| `e2e/FakeSttPipelineE2ETest.kt` | Runs the pipeline with the fake STT boundary. |
+| `e2e/LatencyBudgetE2ETest.kt` | Checks latency span recording and budget classification on ART. |
+| `e2e/QuickJsSkillScriptRuntimeE2ETest.kt` | Exercises the bundled skill script runtime. |
 
 ### Swapping providers via `@TestInstallIn`
 
@@ -72,7 +77,9 @@ Each provider boundary that we want to swap lives in its own Hilt module so a `@
 |---|---|---|
 | `TextToSpeech` | `di/TtsModule.kt` → `TtsManager` | `e2e/fakes/FakeTtsTestModule.kt` → `FakeTextToSpeech` |
 
-Future swaps (planned: `SpeechToText`, `AssistantProvider`, `WakeWordDetector`) follow the same pattern — extract the binding into its own module under `di/`, then add a `@TestInstallIn` test module under `androidTest/.../e2e/fakes/`. Keep production modules narrow so swapping one doesn't drag others.
+The existing fake assistant and STT boundaries follow the same pattern. A
+future wake-word fake can use the same `@TestInstallIn` approach; keep
+production modules narrow so swapping one doesn't drag others.
 
 Together these prove the four pieces of L3 plumbing work:
 
@@ -80,6 +87,10 @@ Together these prove the four pieces of L3 plumbing work:
 2. `@HiltAndroidTest` resolves real `@Singleton`s.
 3. Pure logic exposed via `androidTest` runs against the device's ART.
 4. `MainActivity` cold-starts without the production DI graph crashing.
+
+These tests do not prove far-field wake accuracy, real provider configuration,
+Matter/MQTT/SwitchBot command delivery, or background microphone-service policy.
+Those are explicit P22 release gates in [smart-speaker-audit.md](smart-speaker-audit.md).
 
 ## How to run
 

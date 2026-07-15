@@ -50,8 +50,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.opendash.app.R
+import com.opendash.app.service.VoiceService
 import com.opendash.app.ui.conversations.ConversationsScreen
 import com.opendash.app.ui.devices.DevicesScreen
 import com.opendash.app.ui.home.ConnectionBadge
@@ -78,6 +82,8 @@ fun ModeScaffold(
     val responseText by viewModel.lastResponse.collectAsState()
     val spokenText by viewModel.currentSpokenText.collectAsState()
     val isOnline by viewModel.isOnline.collectAsState()
+    val showMicTalk by viewModel.showMicTalk.collectAsState()
+    val context = LocalContext.current
     val pagerState = rememberPagerState(initialPage = 0) { 3 }
     var showSettings by remember { mutableStateOf(false) }
     var showProviders by remember { mutableStateOf(false) }
@@ -164,10 +170,18 @@ fun ModeScaffold(
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
-        // Mic FAB intentionally hidden — voice input is wake-word driven
-        // ("dash") so a tappable mic button isn't required on the
-        // ambient Home. Removing it keeps the dashboard chrome-free and
-        // closer to an Echo Show / Nest Hub aesthetic.
+        // Mic Talk FAB — hidden while hotword is healthy so the ambient
+        // shell stays chrome-free. Exposed when hotword is disabled,
+        // model-missing, or the detector failed (degraded recovery path).
+        if (showMicTalk && !showOverlay && !showListeningBar) {
+            MicFab(
+                isListening = false,
+                onClick = { VoiceService.triggerListening(context) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp)
+            )
+        }
 
         // Bottom listening bar — appears in-place over the Home bottom
         // edge while the mic is active. Alexa / Nest Hub style: no
@@ -321,7 +335,7 @@ private fun MicFab(
         ) {
             Icon(
                 Icons.Filled.Mic,
-                contentDescription = "Voice",
+                contentDescription = stringResource(R.string.voice_tile_label),
                 tint = SpeakerOnPrimary,
                 modifier = Modifier.size(28.dp)
             )

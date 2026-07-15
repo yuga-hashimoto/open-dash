@@ -5,15 +5,22 @@ local-first**, not a client for someone else's cloud. This page
 enumerates exactly which data crosses the device boundary, where it
 goes, and how to turn each channel off.
 
+The privacy boundary is documented here. Before an assistant request is sent
+to a remote provider, `RemoteDataPolicy` requires an explicit acknowledgement
+of the cloud-provider description; Settings also offers a persistent local-only
+routing switch. Physical first-use UX validation remains a release gate. See the
+[smart-speaker audit](smart-speaker-audit.md).
+
 If a capability is not on this page, it does not leave the tablet.
 
 ## What stays on device (always)
 
-- **Voice**: raw microphone audio never leaves the tablet. STT runs
-  through Android `SpeechRecognizer` (on-device on all shipped SKUs)
-  or the experimental offline Whisper provider when that lands. The
-  LLM reply the user hears is TTS'd locally via Android TTS
-  (Piper-cpp planned for Phase 16).
+- **Voice**: raw microphone audio is intended to stay on the tablet for the
+  local/offline paths. Android `SpeechRecognizer` is the default system
+  recognizer and its actual network behavior depends on the installed Android
+  recognition service; Whisper is an opt-in offline path that is compile-wired
+  but not yet physically validated. Android TTS is the default local output;
+  Piper native output remains unshipped and currently falls back to Android TTS.
 - **Conversation history**: stored in in-memory `ConversationHistoryManager`
   during a session. Not persisted to disk. Not uploaded.
 - **Memory entries** (`remember`/`recall` tools): Room DB on the
@@ -22,8 +29,14 @@ If a capability is not on this page, it does not leave the tablet.
   storage (user-installed). No telemetry on which skills fired.
 - **Tool usage analytics**: persisted locally in a Room table; purely
   for the Settings → Analytics dashboard. Not uploaded.
-- **Device state** (HA / SwitchBot / MQTT): fetched from the user's
-  own hub. We never forward it anywhere.
+- **Voice/power measurement session**: bounded in-memory counters, latency,
+  battery percentage, thermal status names, and build metadata used by Voice
+  Health and the real-device smoke procedure. It does not store transcripts,
+  microphone audio, API keys, or wattage; export is an explicit redacted
+  logcat action and is not uploaded by OpenDash.
+- **Device state** (HA / SwitchBot / MQTT): intended to be fetched from the
+  user's configured hub. The current provider wiring is still under the P22
+  runtime audit; do not infer a successful connection from saved Settings alone.
 
 ## What can leave the device (opt-in + user-targeted)
 
@@ -44,6 +57,15 @@ app's developers.
 | HermesAgent          | User prompt + reply.                                  | The user's Hermes endpoint.            | Switch `AssistantProvider`.                   |
 | Multi-room broadcast | NDJSON/WebSocket envelopes signed with HMAC.          | Other speakers on the same LAN only.   | Turn off `MULTIROOM_BROADCAST_ENABLED`.       |
 | Model downloads      | LiteRT model URL (one-off).                           | The URL the user pasted.               | Pre-load the model manually and skip the downloader. |
+
+## Remote assistant guard
+
+The first assistant turn that resolves to a non-local provider is blocked until
+the user acknowledges the localized API/cloud-provider description in Settings.
+Enabling local-only routing blocks API, OpenClaw, and Hermes assistant turns
+even when those providers remain configured. Fast-path tool execution stays
+available, and optional remote LLM polishing is skipped and replaced by the
+local formatter when the gate is closed.
 
 ## What we never do
 
@@ -103,10 +125,10 @@ Everything else is user-added.
 
 ## Open issues
 
-- Phase 16 offline STT/TTS (Whisper / Piper) removes the last
-  dependency on Android's on-device speech stack, which is currently
-  on-device on all shipped SKUs but not contractually guaranteed by
-  Google.
+- Phase 16 offline STT/TTS remains partial: Whisper is compile-wired but
+  unverified on hardware, while Piper native inference still needs its Android
+  port. Android's installed recognition/TTS services are not a contractual
+  offline guarantee.
 - Phase 17 multi-room pairing word-phrase is in; a full
   challenge-response handshake is tracked on the ADR backlog.
 - Model downloads currently trust the URL the user pasted. A future

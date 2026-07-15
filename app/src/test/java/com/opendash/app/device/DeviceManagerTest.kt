@@ -3,6 +3,7 @@ package com.opendash.app.device
 import com.google.common.truth.Truth.assertThat
 import com.opendash.app.device.model.CommandResult
 import com.opendash.app.device.model.Device
+import com.opendash.app.device.model.DeviceCapability
 import com.opendash.app.device.model.DeviceCommand
 import com.opendash.app.device.model.DeviceState
 import com.opendash.app.device.model.DeviceType
@@ -22,8 +23,12 @@ class DeviceManagerTest {
     ) : DeviceProvider {
         override val displayName: String = id
         var lastCommand: DeviceCommand? = null
+        var discoverCount: Int = 0
 
-        override suspend fun discover(): List<Device> = devices
+        override suspend fun discover(): List<Device> {
+            discoverCount++
+            return devices
+        }
         override suspend fun getDevices(): List<Device> = devices
         override suspend fun getDeviceState(deviceId: String): DeviceState =
             devices.first { it.id == deviceId }.state
@@ -35,11 +40,21 @@ class DeviceManagerTest {
         override suspend fun isAvailable(): Boolean = available
     }
 
-    private fun device(id: String, providerId: String = "ha", type: DeviceType = DeviceType.LIGHT, room: String? = null) =
+    private fun device(
+        id: String,
+        providerId: String = "ha",
+        type: DeviceType = DeviceType.LIGHT,
+        room: String? = null,
+        capabilities: Set<DeviceCapability> = if (type == DeviceType.LIGHT) {
+            setOf(DeviceCapability.ON_OFF)
+        } else {
+            emptySet()
+        }
+    ) =
         Device(
             id = id, providerId = providerId, name = id,
             room = room, type = type,
-            capabilities = emptySet(),
+            capabilities = capabilities,
             state = DeviceState(deviceId = id)
         )
 
@@ -52,6 +67,17 @@ class DeviceManagerTest {
         mgr.refreshAll()
 
         assertThat(mgr.devices.value.keys).containsExactly("ha.l1", "sb.1")
+    }
+
+    @Test
+    fun `refreshAll discovers devices instead of reading an undiscovered cache`() = runTest {
+        val provider = FakeProvider(id = "mqtt", devices = listOf(device("mqtt.l1", "mqtt")))
+        val mgr = DeviceManager(providers = setOf(provider))
+
+        mgr.refreshAll()
+
+        assertThat(provider.discoverCount).isEqualTo(1)
+        assertThat(mgr.getDevice("mqtt.l1")).isNotNull()
     }
 
     @Test
@@ -102,6 +128,52 @@ class DeviceManagerTest {
     }
 
     @Test
+    fun `lock requires confirmation and readback before reporting confirmed`() = runTest {
+        val lock = device(
+            id = "front-door",
+            type = DeviceType.LOCK,
+            capabilities = setOf(DeviceCapability.LOCK_UNLOCK)
+        )
+        val provider = FakeProvider(id = "ha", devices = listOf(lock))
+        val mgr = DeviceManager(providers = setOf(provider))
+        mgr.refreshAll()
+
+        val blocked = mgr.executeCommand(DeviceCommand("front-door", "unlock"))
+        assertThat(blocked.success).isFalse()
+        assertThat(blocked.message).startsWith(DeviceCommandPolicy.CONFIRMATION_REQUIRED_PREFIX)
+        assertThat(provider.lastCommand).isNull()
+        val token = blocked.confirmationToken
+        assertThat(token).isNotEmpty()
+
+        val confirmed = mgr.executeCommand(
+            DeviceCommand(
+                "front-door",
+                "unlock",
+                parameters = mapOf("confirmed" to true, DeviceCommandPolicy.CONFIRMATION_TOKEN_KEY to token)
+            )
+        )
+        assertThat(confirmed.success).isTrue()
+        assertThat(confirmed.confirmed).isTrue()
+        assertThat(provider.lastCommand?.parameters?.get("confirmed")).isEqualTo(true)
+    }
+
+    @Test
+    fun `executeCommand rejects an action missing the device capability`() = runTest {
+        val provider = FakeProvider(
+            id = "ha",
+            devices = listOf(device("ha.l1", capabilities = setOf(DeviceCapability.ON_OFF)))
+        )
+        val mgr = DeviceManager(providers = setOf(provider))
+        mgr.refreshAll()
+
+        val result = mgr.executeCommand(DeviceCommand("ha.l1", "set_brightness"))
+
+        assertThat(result.success).isFalse()
+        assertThat(result.message).contains("capability")
+        assertThat(provider.lastCommand).isNull()
+    }
+
+    @Test
     fun `executeCommand reports device-not-found`() = runTest {
         val mgr = DeviceManager(providers = setOf(FakeProvider("ha")))
         val result = mgr.executeCommand(DeviceCommand("ghost", "off"))
@@ -114,8 +186,8 @@ class DeviceManagerTest {
         val boom = object : DeviceProvider {
             override val id = "boom"
             override val displayName = "boom"
-            override suspend fun discover() = emptyList<Device>()
-            override suspend fun getDevices() = listOf(device("b1", "boom"))
+            override suspend fun discover() = listOf(device("b1", "boom"))
+            override suspend fun getDevices() = emptyList<Device>()
             override suspend fun getDeviceState(deviceId: String) = DeviceState(deviceId)
             override suspend fun executeCommand(command: DeviceCommand): CommandResult =
                 throw RuntimeException("network down")
@@ -125,7 +197,7 @@ class DeviceManagerTest {
         val mgr = DeviceManager(providers = setOf(boom))
         mgr.refreshAll()
 
-        val result = mgr.executeCommand(DeviceCommand("b1", "off"))
+        val result = mgr.executeCommand(DeviceCommand("b1", "turn_on"))
         assertThat(result.success).isFalse()
         assertThat(result.message).contains("network down")
     }

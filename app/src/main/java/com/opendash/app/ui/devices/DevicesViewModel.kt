@@ -50,6 +50,5 @@ class DevicesViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        deviceManager.stop()
     }
 }

@@ -9,6 +9,15 @@ interface TimerManager {
     suspend fun cancelTimer(timerId: String): Boolean
     suspend fun getActiveTimers(): List<TimerInfo>
 
+    /**
+     * Optional listener for firing-state changes (any timer starts/stops
+     * ringing). Default no-op so fakes/tests stay simple; production
+     * [AndroidTimerManager] overrides with a real callback.
+     */
+    var onFiringChanged: ((Boolean) -> Unit)?
+        get() = null
+        set(@Suppress("UNUSED_PARAMETER") value) { /* no-op default */ }
+
     /** Cancel every active timer. Returns the number of timers cancelled. */
     suspend fun cancelAllTimers(): Int {
         var count = 0

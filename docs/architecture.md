@@ -13,9 +13,11 @@ Single `app` module. Package structure under `com.opendash.app`:
 assistant/
   model/              AssistantMessage, AssistantSession, ConversationState
   provider/           AssistantProvider interface + implementations
-    embedded/         EmbeddedLlmProvider (MediaPipe GenAI on-device)
-    openai/           OpenAiCompatibleProvider (REST + SSE streaming)
-    openclaw/         OpenClawProvider (WebSocket)
+  embedded/         EmbeddedLlmProvider (MediaPipe GenAI on-device)
+  openai/           OpenAiCompatibleProvider (REST + SSE streaming)
+  anthropic/        AnthropicProvider (Messages API + SSE streaming)
+  openclaw/         OpenClawProvider (WebSocket)
+  hermes/           HermesAgentProvider (HTTP NDJSON)
   router/             ConversationRouter + RoutingPolicy enum
   session/            ConversationHistoryManager, SessionManager
 
@@ -30,9 +32,10 @@ device/
 
 voice/
   pipeline/           VoicePipelineState
-  stt/                SpeechToText interface + AndroidSttProvider
-  tts/                TextToSpeech interface + AndroidTtsProvider
-  wakeword/           WakeWordDetector interface + VoskWakeWordDetector
+  stt/                SpeechToText + Android/Whisper delegates
+  tts/                TextToSpeech + Android/cloud/Piper delegates
+  vad/                amplitude and Silero endpointing
+  wakeword/           Vosk default + opt-in openWakeWord
 
 tool/                 ToolCall, ToolResult, ToolSchema, ToolExecutor interface
 homeassistant/        HA-specific: client, cache, model, ToolExecutorImpl
@@ -46,13 +49,20 @@ di/                   Hilt modules (AssistantModule, DatabaseModule, NetworkModu
 
 ### AssistantProvider
 Defines the contract for AI conversation backends. Each implementation handles
-connection, message sending, and streaming independently.
+session lifecycle, message sending, streaming, availability, and latency
+independently.
 
 ```
 interface AssistantProvider {
-    suspend fun sendMessage(message: String): Flow<String>
-    suspend fun initialize()
-    suspend fun shutdown()
+    val id: String
+    val displayName: String
+    val capabilities: ProviderCapabilities
+    suspend fun startSession(config: Map<String, String>): AssistantSession
+    suspend fun endSession(session: AssistantSession)
+    suspend fun send(session: AssistantSession, messages: List<AssistantMessage>, tools: List<ToolSchema>): AssistantMessage
+    fun sendStreaming(session: AssistantSession, messages: List<AssistantMessage>, tools: List<ToolSchema>): Flow<AssistantMessage.Delta>
+    suspend fun isAvailable(): Boolean
+    suspend fun latencyMs(): Long
 }
 ```
 
@@ -72,15 +82,18 @@ Bridges LLM function calling with device operations. The LLM emits ToolCall
 objects; ToolExecutor maps them to DeviceCommand executions and returns ToolResult.
 
 ### VoicePipeline
-Orchestrates the full voice interaction loop:
-wake word detection → STT → AssistantProvider → TTS
+Orchestrates the full voice interaction loop. It pauses/re-arms the hotword
+detector around an utterance, runs STT and VAD, checks deterministic fast paths
+before the LLM, executes tools when needed, and routes the final answer to TTS.
+The ambient surface is primarily wake-word driven, so recovery is part of this
+abstraction rather than a UI-only concern.
 
 ## Data Flow
 
 ```
-Microphone → VoskWakeWordDetector → AndroidSttProvider
-  → ConversationRouter → AssistantProvider → ToolExecutor (if device command)
-  → AndroidTtsProvider → Speaker
+Microphone → Vosk/openWakeWord → VAD + STT delegate
+  → FastPathRouter or ConversationRouter → AssistantProvider
+  → ToolExecutor / DeviceManager (if needed) → TTS delegate → Speaker
 ```
 
 ## Dependency Injection
@@ -95,6 +108,7 @@ Hilt modules in `di/` package:
 
 ## Persistence
 
-- **Room** — conversation history (Sessions + Messages)
+- **Room** — conversation history (Sessions + Messages), personal knowledge
+  entries (`knowledge` table), routines, memories, and other local state
 - **SecurePreferences** — API tokens, secrets (AES256-GCM encrypted)
 - **DataStore** — app settings (non-sensitive)

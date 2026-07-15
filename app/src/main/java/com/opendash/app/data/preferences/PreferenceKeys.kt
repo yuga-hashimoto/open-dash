@@ -66,6 +66,8 @@ object PreferenceKeys {
     // Routing
     val ROUTING_POLICY = stringPreferencesKey("routing_policy")
     val ACTIVE_PROVIDER_ID = stringPreferencesKey("active_provider_id")
+    val LOCAL_ONLY_ROUTING = booleanPreferencesKey("local_only_routing")
+    val REMOTE_DATA_DISCLOSURE_ACCEPTED = booleanPreferencesKey("remote_data_disclosure_accepted")
 
     // Assistant mode: "local" (embedded model) | "api" (cloud provider). Unset = first run.
     val ASSISTANT_MODE = stringPreferencesKey("assistant_mode")

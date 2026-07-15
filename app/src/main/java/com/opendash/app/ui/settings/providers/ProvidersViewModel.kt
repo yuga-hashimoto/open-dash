@@ -3,6 +3,7 @@ package com.opendash.app.ui.settings.providers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opendash.app.assistant.provider.AssistantProvider
+import com.opendash.app.assistant.provider.RemoteDataPolicy
 import com.opendash.app.assistant.provider.api.ApiProviderConfigStore
 import com.opendash.app.assistant.router.ConversationRouter
 import com.opendash.app.data.preferences.AppPreferences
@@ -15,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,7 +39,8 @@ class ProvidersViewModel @Inject constructor(
     private val securePreferences: SecurePreferences,
     private val discovery: MulticastDiscovery,
     private val liveness: PeerLivenessTracker,
-    private val apiProviderConfigStore: ApiProviderConfigStore
+    private val apiProviderConfigStore: ApiProviderConfigStore,
+    private val remoteDataPolicy: RemoteDataPolicy? = null
 ) : ViewModel() {
 
     data class Row(
@@ -122,6 +125,15 @@ class ProvidersViewModel @Inject constructor(
         .map { it.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    val localOnlyRouting: StateFlow<Boolean> = (remoteDataPolicy?.localOnly() ?: flowOf(false))
+        .map { it == true }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val remoteDataDisclosureAccepted: StateFlow<Boolean> =
+        (remoteDataPolicy?.disclosureAccepted() ?: flowOf(false))
+        .map { it == true }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     fun setMode(mode: String) {
         viewModelScope.launch {
             appPreferences.set(PreferenceKeys.ASSISTANT_MODE, mode)
@@ -132,6 +144,14 @@ class ProvidersViewModel @Inject constructor(
         viewModelScope.launch {
             router.selectProvider(providerId)
         }
+    }
+
+    fun setLocalOnly(enabled: Boolean) {
+        viewModelScope.launch { remoteDataPolicy?.setLocalOnly(enabled) }
+    }
+
+    fun acceptRemoteDataUse() {
+        viewModelScope.launch { remoteDataPolicy?.acceptRemoteUse() }
     }
 
     private fun AssistantProvider.toRow(active: AssistantProvider?): Row = Row(

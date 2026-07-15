@@ -45,7 +45,20 @@ class AlarmRingtoneController(
 
     private val ringing = ConcurrentHashMap<String, RingingAlarm>()
 
+    /**
+     * Fired whenever the set of currently-ringing alarm ids changes
+     * (start, stop, safety-cap auto-stop). Used by the wake-word-free
+     * alert session (P21.5) so listening begins only while something is
+     * actually ringing.
+     */
+    @Volatile
+    var onRingingChanged: ((Boolean) -> Unit)? = null
+
     private data class RingingAlarm(val player: AlarmPlayer, val cancelSafety: () -> Unit)
+
+    fun ringingIds(): Set<String> = ringing.keys.toSet()
+
+    fun isRinging(): Boolean = ringing.isNotEmpty()
 
     fun startRinging(id: String) {
         if (ringing.containsKey(id)) return
@@ -66,6 +79,7 @@ class AlarmRingtoneController(
         ringing[id] = RingingAlarm(player, cancelSafety)
 
         scheduleFadeStep(id, player, nextStepIndex = 1)
+        notifyRingingChanged()
     }
 
     fun stopRinging(id: String): Boolean {
@@ -73,11 +87,17 @@ class AlarmRingtoneController(
         runCatching { existing.player.stop() }
             .onFailure { Timber.w(it, "Failed to stop ringing for alarm $id") }
         runCatching { existing.cancelSafety() }
+        notifyRingingChanged()
         return true
     }
 
     fun stopAll() {
         ringing.keys.toList().forEach { stopRinging(it) }
+    }
+
+    private fun notifyRingingChanged() {
+        runCatching { onRingingChanged?.invoke(isRinging()) }
+            .onFailure { Timber.w(it, "onRingingChanged listener threw") }
     }
 
     private fun scheduleFadeStep(id: String, player: AlarmPlayer, nextStepIndex: Int) {

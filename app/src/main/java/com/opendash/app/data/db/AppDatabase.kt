@@ -16,9 +16,10 @@ import androidx.room.RoomDatabase
         MultiroomRejectionEntity::class,
         ShoppingListItemEntity::class,
         ReminderEntity::class,
-        AlarmEntity::class
+        AlarmEntity::class,
+        KnowledgeEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -34,4 +35,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shoppingListDao(): ShoppingListDao
     abstract fun reminderDao(): ReminderDao
     abstract fun alarmDao(): AlarmDao
+    abstract fun knowledgeDao(): KnowledgeDao
 }

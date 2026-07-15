@@ -4,16 +4,19 @@ title: Offline stack smoke test
 
 # Offline stack smoke test
 
-Step-by-step checklist for validating the fully-offline voice pipeline
-once `externalNativeBuild` is re-enabled and models are downloaded.
+Step-by-step checklist for validating the currently supported offline voice
+profile after the native/model gates are ready.
 Mirrors [real-device-smoke-test.md](real-device-smoke-test.md) but
-focuses on the Whisper STT and Piper TTS paths specifically.
+focuses on Whisper STT, Silero VAD, and the Piper readiness boundary.
 
-**Status on stock builds**: the full Kotlin scaffolding ships today,
-but `libwhisper_jni.so` + `libpiper_jni.so` are not included — the
-CMake build is commented out in `app/build.gradle.kts:28`. The steps
-below assume native builds have been re-enabled (a separate PR that's
-gated on the Piper CMake wire-up + NDK approval).
+**Current status (2026-07-14)**: `externalNativeBuild` is enabled and the
+Whisper JNI library is packaged for the arm64 standard/full builds. Whisper
+still needs real-device accuracy and latency validation. Silero VAD has a
+downloadable ONNX model and auto-upgrades the Whisper capture path when ready.
+Piper voice download/UI/Kotlin fallback exist, but `libpiper_jni.so` is not
+packaged; Piper therefore falls back to Android TTS. A fully offline spoken
+round-trip is only valid when the selected Android TTS voice is confirmed
+installed locally, or after the separate Piper native port lands.
 
 Whenever the diagnostic says **Not ready**, check
 [Settings → Advanced → Offline stack status](#step-1--check-the-diagnostic-card)
@@ -25,7 +28,7 @@ for per-gate reasons — the ✗ lines tell you which gate is failing.
 
 Required:
 - Android tablet running OpenDash with native builds enabled
-- ~250 MB free storage (tiny + amy voices)
+- ~100 MB free storage for a tiny Whisper model and optional Silero model
 - Active wifi for the initial model download
 - Grant Microphone permission if not already
 
@@ -45,9 +48,11 @@ Optional but recommended:
    ✓ Native library loaded
    ✗ Active model downloaded
    ```
-   If the native library row shows ✗, native builds aren't on — stop
-   here and fix that first (re-enable `externalNativeBuild` + rebuild
-   APK).
+   If the native library row shows ✗, stop and inspect the APK/ABI and build
+   variant. Do not infer that Piper is available from Whisper being ready.
+3. Downloading the Silero model is optional. When present, the diagnostic
+   should say it is ready and the Whisper capture path should select Silero;
+   otherwise it must explicitly say that amplitude VAD is the fallback.
 
 ---
 
@@ -79,22 +84,24 @@ Optional but recommended:
 5. Flip **Translate to English** on, say 「今何時？」 again — expect
    English transcription of the same utterance.
 
-## Step 4 — Download a Piper voice
+## Step 4 — Check the Piper boundary
 
 1. **Settings → Text-to-speech provider → Piper (offline)**
 2. The Piper voices card unfolds. Tap **Download** on
    `English (US) — Amy (medium)`.
 3. Both `.onnx` (~60 MB) and `.onnx.json` (~5 KB) land. The row flips
    to ✓ installed + Preview + Delete.
-4. Tap **Preview**. Expect to hear Amy read the sample sentence in
-   US English. On the first preview Piper loads the voice into native
-   memory — subsequent previews reuse it.
+4. Tap **Preview**. On the current build, expect Android TTS fallback unless
+   the APK contains a future `piper_jni` implementation. The preview must still
+   produce audible speech and the UI/log must make the fallback explicit.
 5. Diagnostic card's Piper section should now read:
    ```
-   Text-to-speech (Piper)   Ready
-   ✓ Native library loaded
+   Text-to-speech (Piper)   Fallback
+   ✗ Native library loaded
    ✓ Active voice downloaded
    ```
+   A future native Piper build may change this to Ready only after a physical
+   voice-quality run.
 
 ## Step 5 — Fully-offline round-trip
 
@@ -102,11 +109,11 @@ Optional but recommended:
 2. Confirm the local LLM is active (Settings → Providers → Embedded
    local model selected, model downloaded).
 3. Utter: **"Set a timer for 30 seconds"**.
-4. Expected end-to-end latency budget:
+4. Expected end-to-end latency budget (record actual values; these are targets):
    - Wake word → listening: ≤500 ms
    - Whisper transcribes: ≤1 s after speech ends
    - LLM tool-call dispatch: ≤500 ms (local Gemma)
-   - Piper synthesises + speaks confirmation: ≤1 s after LLM
+   - Selected local TTS synthesises + speaks confirmation: ≤1 s after LLM
 5. Total goal: user finishes speaking → confirmation audio starts
    in under 3 seconds with no network access.
 
@@ -116,8 +123,8 @@ Optional but recommended:
 2. Unplug the tablet and let the battery drift below 20%.
 3. The Ambient home screen should show the **Battery saver active —
    wake word paused** chip (P14.8, #472/#474). Diagnostic card still
-   shows Whisper / Piper as Ready — they're loaded, just gated off by
-   VoiceService until the device charges.
+   shows the actual Whisper/Silero/Piper gate states — they are loaded or
+   fallback-only as configured, just gated off by VoiceService until the device charges.
 4. Plug back in — chip disappears, wake-word resumes, Whisper +
    Piper still serve the next utterance.
 
@@ -132,26 +139,24 @@ Optional but recommended:
 - **No Japanese Piper voice preview until the voice downloads** —
   `ja_JP-takumi-medium` is only tested after a deliberate
   download + preview.
-- **Silero VAD pending** — amplitude VAD works for clean rooms but
-  false-positives on continuous hum (HVAC, fan). Silero ONNX lands
-  in Phase 16 once the ONNX Runtime dep is approved.
-- **Stock builds stay on Android system STT + Android TTS** — the
-  whole stack above only lights up when `externalNativeBuild` is
-  re-enabled. Until then the diagnostic card correctly reports "Not
-  ready" with the library row showing ✗.
+- **Silero VAD is available but not acoustically validated** — it can still
+  fall back to amplitude VAD if its model is absent or fails to load.
+- **Piper native TTS is not shipped** — the current provider is a safe fallback
+  wrapper. Treat “Piper selected” as a configuration choice, not proof that
+  Piper inference is running.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| Diagnostic shows ✗ on "Native library loaded" | `externalNativeBuild` is still commented out in `app/build.gradle.kts`. Re-enable, install NDK 27.0.12077973, rebuild. |
+| Diagnostic shows ✗ on "Native library loaded" | Inspect the selected APK flavor/ABI, NDK 28.2.13676358 build, and packaged `libwhisper_jni.so`; the current project configuration has `externalNativeBuild` enabled. |
 | Whisper transcribes English as Japanese or vice versa | Use the language picker to force the correct language instead of "Auto-detect". |
-| Piper Preview falls back to Android TTS | Check the card — voice must show ✓ installed. If installed but still falls back, the native lib isn't loaded (see first row). |
+| Piper Preview falls back to Android TTS | This is expected on the current build because `piper_jni` is not packaged. A downloaded voice alone does not activate native inference. |
 | Whisper capture hangs for 15 s regardless of speech | Amplitude VAD threshold may be too low for your room noise. Raise `AmplitudeVad.rmsThreshold` from the default `0.01f` — room tone > 0.01 will prevent endpoint detection. |
 | Piper sample plays at wrong pitch / speed | Sample-rate mismatch. `PiperCppBridge.sampleRate()` should return 22050 for medium voices; if it returns 0, the voice isn't loaded. |
 
 ## Related
 
-- [phase-16-native-plan.md](phase-16-native-plan.md) — design + checklists for each native engine
+- [phase-16-native-plan.md](phase-16-native-plan.md) — historical design + current native-engine status
 - [real-device-smoke-test.md](real-device-smoke-test.md) — the broader wake→STT→LLM→TTS smoke checklist
 - [latency-budgets.md](latency-budgets.md) — per-span budgets the amplitude VAD aims to hit

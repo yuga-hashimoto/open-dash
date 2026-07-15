@@ -30,7 +30,7 @@ class SwitchBotDeviceProvider(
     }
 
     override suspend fun getDeviceState(deviceId: String): DeviceState {
-        val status = apiClient.getDeviceStatus(deviceId)
+        val status = apiClient.getDeviceStatus(apiDeviceId(deviceId))
         return DeviceState(
             deviceId = deviceId,
             isOn = status["power"] == "on",
@@ -53,7 +53,7 @@ class SwitchBotDeviceProvider(
             "set_brightness" -> (command.parameters["brightness"] as? Number)?.toString() ?: "100"
             else -> "default"
         }
-        val success = apiClient.sendCommand(command.deviceId, sbCommand, parameter)
+        val success = apiClient.sendCommand(apiDeviceId(command.deviceId), sbCommand, parameter)
         return CommandResult(success)
     }
 
@@ -99,4 +99,7 @@ class SwitchBotDeviceProvider(
             else -> DeviceType.OTHER to setOf(DeviceCapability.ON_OFF)
         }
     }
+
+    private fun apiDeviceId(deviceId: String): String =
+        deviceId.removePrefix("switchbot_")
 }

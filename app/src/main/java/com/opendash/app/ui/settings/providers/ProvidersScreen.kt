@@ -20,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -50,6 +51,8 @@ fun ProvidersScreen(
     val multiroom by viewModel.multiroomState.collectAsStateWithLifecycle()
     val assistantMode by viewModel.assistantMode.collectAsStateWithLifecycle()
     val hasConfiguredApiProviders by viewModel.hasConfiguredApiProviders.collectAsStateWithLifecycle()
+    val localOnlyRouting by viewModel.localOnlyRouting.collectAsStateWithLifecycle()
+    val remoteDataDisclosureAccepted by viewModel.remoteDataDisclosureAccepted.collectAsStateWithLifecycle()
     var showAddProviderDialog by remember { mutableStateOf(false) }
 
     if (showAddProviderDialog) {
@@ -98,9 +101,56 @@ fun ProvidersScreen(
                     ProviderRow(row = row, onSelect = { viewModel.select(row.id) })
                 }
             }
-            item(key = "__multiroom__") {
+            item(key = "__remote_data__") {
+                RemoteDataCard(
+                    localOnly = localOnlyRouting,
+                    disclosureAccepted = remoteDataDisclosureAccepted,
+                    onLocalOnlyChanged = viewModel::setLocalOnly,
+                    onAcceptDisclosure = viewModel::acceptRemoteDataUse
+                )
+                Spacer(Modifier.size(8.dp))
+            }
+            item(key = "__multiroom_card__") {
                 Spacer(Modifier.size(8.dp))
                 MultiroomCard(state = multiroom)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RemoteDataCard(
+    localOnly: Boolean,
+    disclosureAccepted: Boolean,
+    onLocalOnlyChanged: (Boolean) -> Unit,
+    onAcceptDisclosure: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.providers_mode_card_title), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.size(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(stringResource(R.string.providers_mode_local))
+                Switch(checked = localOnly, onCheckedChange = onLocalOnlyChanged)
+            }
+            Text(
+                text = if (localOnly) {
+                    stringResource(R.string.provider_mode_local_description)
+                } else {
+                    stringResource(R.string.provider_mode_api_description)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (!disclosureAccepted && !localOnly) {
+                Spacer(Modifier.size(8.dp))
+                TextButton(onClick = onAcceptDisclosure) {
+                    Text(stringResource(R.string.providers_mode_api))
+                }
             }
         }
     }

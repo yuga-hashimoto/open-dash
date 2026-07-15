@@ -25,7 +25,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import android.content.Intent
+import dagger.hilt.android.EntryPointAccessors
 import com.opendash.app.R
+import com.opendash.app.di.VoiceMeasurementEntryPoint
 import com.opendash.app.service.VoiceService
 import com.opendash.app.ui.common.StatusIndicator
 import com.opendash.app.ui.common.StatusIndicatorState
@@ -35,9 +37,22 @@ import com.opendash.app.voice.diagnostics.VoiceDiagnostics
 fun VoiceHealthSection() {
     val context = LocalContext.current
     var items by remember { mutableStateOf<List<VoiceDiagnostics.DiagnosticItem>>(emptyList()) }
+    val measurementRecorder = remember(context) {
+        runCatching {
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                VoiceMeasurementEntryPoint::class.java
+            ).voiceMeasurementRecorder()
+        }.getOrNull()
+    }
+
+    fun runDiagnostics() = VoiceDiagnostics.run(
+        context = context,
+        measurementRecorder = measurementRecorder,
+    )
 
     LaunchedEffect(Unit) {
-        items = VoiceDiagnostics.run(context)
+        items = runDiagnostics()
     }
 
     Text(
@@ -59,12 +74,12 @@ fun VoiceHealthSection() {
     Column {
         for (item in items) {
             DiagnosticCard(item) {
-                items = VoiceDiagnostics.run(context)
+                items = runDiagnostics()
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
         OutlinedButton(
-            onClick = { items = VoiceDiagnostics.run(context) },
+            onClick = { items = runDiagnostics() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.voice_health_refresh), color = MaterialTheme.colorScheme.onSurface)

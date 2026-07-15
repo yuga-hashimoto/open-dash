@@ -146,4 +146,31 @@ class AlarmRingtoneControllerTest {
         assertThat(player1.stopped).isEqualTo(1)
         assertThat(player2.stopped).isEqualTo(1)
     }
+
+    @Test
+    fun `ringingIds and isRinging track live alarms`() {
+        val (ctrl, _, _) = controller()
+        assertThat(ctrl.isRinging()).isFalse()
+        assertThat(ctrl.ringingIds()).isEmpty()
+
+        ctrl.startRinging("a1")
+        assertThat(ctrl.isRinging()).isTrue()
+        assertThat(ctrl.ringingIds()).containsExactly("a1")
+
+        ctrl.stopRinging("a1")
+        assertThat(ctrl.isRinging()).isFalse()
+        assertThat(ctrl.ringingIds()).isEmpty()
+    }
+
+    @Test
+    fun `onRingingChanged fires on start and stop`() {
+        val (ctrl, _, _) = controller()
+        val events = mutableListOf<Boolean>()
+        ctrl.onRingingChanged = { events += it }
+
+        ctrl.startRinging("a1")
+        ctrl.stopRinging("a1")
+
+        assertThat(events).containsExactly(true, false).inOrder()
+    }
 }

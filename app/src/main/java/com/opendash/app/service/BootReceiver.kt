@@ -29,8 +29,20 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
-        Timber.d("Boot completed, starting VoiceService")
-        VoiceService.start(context)
+        val decision = BootPolicy.onBootCompleted()
+        Timber.d(
+            "Boot completed: startMicFgs=%s reschedule=%s",
+            decision.startMicrophoneForegroundService,
+            decision.rescheduleAlarmsRemindersRoutines,
+        )
+
+        // targetSdk 35: microphone FGS must not start from BOOT_COMPLETED.
+        // MainActivity starts VoiceService from a user-visible activity.
+        if (decision.startMicrophoneForegroundService) {
+            VoiceService.start(context)
+        }
+
+        if (!decision.rescheduleAlarmsRemindersRoutines) return
 
         // Exact alarms don't survive reboot — re-arm every persisted
         // alarm/reminder/scheduled routine. goAsync() extends the

@@ -1,6 +1,7 @@
 package com.opendash.app.device.tool
 
 import com.opendash.app.device.DeviceManager
+import com.opendash.app.device.DeviceCommandPolicy
 import com.opendash.app.device.model.DeviceCommand
 import com.opendash.app.device.model.DeviceType
 import com.opendash.app.tool.ToolCall
@@ -122,18 +123,36 @@ class DeviceToolExecutor(
     private suspend fun executeCommand(call: ToolCall): ToolResult {
         val action = call.arguments["action"] as? String
             ?: return ToolResult(call.id, false, "", "Missing action")
-        val params = call.arguments["parameters"] as? Map<String, Any?> ?: emptyMap()
+        val nestedParams = call.arguments["parameters"] as? Map<String, Any?> ?: emptyMap()
+        val params = if (call.arguments.containsKey("confirmed")) {
+            nestedParams + ("confirmed" to call.arguments["confirmed"])
+        } else nestedParams
+        val effectiveParams = if (call.arguments.containsKey(DeviceCommandPolicy.CONFIRMATION_TOKEN_KEY)) {
+            params + (DeviceCommandPolicy.CONFIRMATION_TOKEN_KEY to call.arguments[DeviceCommandPolicy.CONFIRMATION_TOKEN_KEY])
+        } else params
         val deviceId = call.arguments["device_id"] as? String
         val deviceType = call.arguments["device_type"] as? String
 
         if (!deviceId.isNullOrBlank()) {
             val result = deviceManager.executeCommand(
-                DeviceCommand(deviceId = deviceId, action = action, parameters = params)
+                DeviceCommand(deviceId = deviceId, action = action, parameters = effectiveParams)
             )
             return if (result.success) {
-                ToolResult(call.id, true, "Command $action executed on $deviceId successfully")
+                ToolResult(
+                    callId = call.id,
+                    success = true,
+                    data = "Command $action executed on $deviceId successfully",
+                    error = result.message.takeIf { !result.confirmed },
+                    confirmed = result.confirmed
+                )
             } else {
-                ToolResult(call.id, false, "", result.message ?: "Command failed")
+                ToolResult(
+                    callId = call.id,
+                    success = false,
+                    data = "",
+                    error = result.message ?: "Command failed",
+                    confirmationToken = result.confirmationToken
+                )
             }
         }
 
@@ -148,16 +167,28 @@ class DeviceToolExecutor(
                 else "No devices of type $deviceType"
                 return ToolResult(call.id, false, "", msg)
             }
-            var successes = 0
-            var failures = 0
-            for (device in targets) {
-                val r = deviceManager.executeCommand(
-                    DeviceCommand(deviceId = device.id, action = action, parameters = params)
+            val results = targets.map { device ->
+                deviceManager.executeCommand(
+                    DeviceCommand(deviceId = device.id, action = action, parameters = effectiveParams)
                 )
-                if (r.success) successes++ else failures++
             }
+            val confirmationToken = results.firstNotNullOfOrNull { it.confirmationToken }
+            val successes = results.count { it.success }
+            val failures = results.count { !it.success }
+            val unconfirmed = results.count { it.success && !it.confirmed }
             val text = "Command $action: $successes ok, $failures failed (${targets.size} ${deviceType}s)"
-            return ToolResult(call.id, successes > 0, text)
+            return ToolResult(
+                callId = call.id,
+                success = successes > 0,
+                data = text,
+                error = if (unconfirmed > 0) {
+                    "Command accepted but state not confirmed for $unconfirmed device(s)"
+                } else if (confirmationToken != null) {
+                    results.firstNotNullOfOrNull { it.message }
+                } else null,
+                confirmed = successes > 0 && failures == 0 && unconfirmed == 0,
+                confirmationToken = confirmationToken
+            )
         }
 
         return ToolResult(call.id, false, "", "Provide device_id or device_type")

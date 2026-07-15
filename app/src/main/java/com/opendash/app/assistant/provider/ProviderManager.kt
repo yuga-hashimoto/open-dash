@@ -21,13 +21,21 @@ import com.opendash.app.data.preferences.PreferenceKeys
 import com.opendash.app.data.preferences.SecurePreferences
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,9 +54,60 @@ class ProviderManager @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val modelManager = ModelManager(context)
 
+    private val _readiness = MutableStateFlow<ProviderReadiness>(ProviderReadiness.Starting)
+    val readiness: StateFlow<ProviderReadiness> = _readiness.asStateFlow()
+
+    private val initialized = AtomicBoolean(false)
+    private val initLatch = CompletableDeferred<Unit>()
+    private val readinessMutex = Mutex()
+
+    /**
+     * Idempotent, awaitable initialization. Safe to call from both
+     * [OpenDashApp.onCreate] and [MainActivity]; the second call is a no-op
+     * that just returns the same latch. [awaitReady] suspends until the
+     * first call finishes registering providers; [awaitReady] performs the
+     * availability check before allowing a voice turn.
+     */
     fun initialize() {
+        if (!initialized.compareAndSet(false, true)) return
         scope.launch {
-            migrateLegacyLocalLlmSettingIfNeeded()
+            try {
+                migrateLegacyLocalLlmSettingIfNeeded()
+                val mode = preferences.observe(PreferenceKeys.ASSISTANT_MODE).first()
+                if (mode == PreferenceKeys.MODE_API) {
+                    registerConfiguredApiProviders()
+                } else {
+                    registerEmbeddedLlm()
+                }
+                registerOpenClawIfConfigured()
+                restoreActiveProviderSelection()
+            } catch (e: Exception) {
+                Timber.e(e, "ProviderManager initialization failed")
+                _readiness.value = ProviderReadiness.Degraded(
+                    "I couldn't set up the assistant. Open Settings to configure a provider."
+                )
+            } finally {
+                initLatch.complete(Unit)
+            }
+        }
+    }
+
+    /** Suspends until [initialize] has completed (from any caller). */
+    suspend fun awaitReady() {
+        initialize()
+        initLatch.await()
+        refreshReadiness()
+    }
+
+    /**
+     * Re-checks readiness after a model download or provider setting change.
+     * If the first boot happened before a local model existed, register it now
+     * instead of requiring a process restart before the speaker can recover.
+     */
+    suspend fun refreshReadiness() = readinessMutex.withLock {
+        initialize()
+        initLatch.await()
+        if (router.availableProviders.value.isEmpty()) {
             val mode = preferences.observe(PreferenceKeys.ASSISTANT_MODE).first()
             if (mode == PreferenceKeys.MODE_API) {
                 registerConfiguredApiProviders()
@@ -58,6 +117,27 @@ class ProviderManager @Inject constructor(
             registerOpenClawIfConfigured()
             restoreActiveProviderSelection()
         }
+        updateReadiness()
+    }
+
+    private suspend fun updateReadiness() {
+        val providers = router.availableProviders.value
+        val hasUsableProvider = providers.any { provider ->
+            withTimeoutOrNull(PROVIDER_AVAILABILITY_TIMEOUT_MS) {
+                runCatching { provider.isAvailable() }.getOrDefault(false)
+            } == true
+        }
+        _readiness.value = if (hasUsableProvider) {
+            ProviderReadiness.Ready
+        } else {
+            ProviderReadiness.Degraded(
+                "No AI model is ready yet. Open Settings to download or configure one."
+            )
+        }
+    }
+
+    private companion object {
+        const val PROVIDER_AVAILABILITY_TIMEOUT_MS = 2_000L
     }
 
     private suspend fun migrateLegacyLocalLlmSettingIfNeeded() {
@@ -201,6 +281,7 @@ class ProviderManager @Inject constructor(
         val success = provider.switchModel(modelPath)
         if (success) {
             preferences.set(PreferenceKeys.EMBEDDED_LLM_ACTIVE_MODEL_PATH, modelPath)
+            refreshReadiness()
         }
         return success
     }

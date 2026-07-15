@@ -154,10 +154,9 @@ The Termux Bridge deliberately does **not**:
 
 Still open (contributions welcome):
 
-- **Spoken confirmation**: pausing the tool execution for the assistant
-  to ask *"Run this command? Say yes to continue"* before dispatching.
-  Hooks into VoicePipeline's interactive-dialog layer (not yet
-  designed).
+- **Spoken confirmation**: a hard pre-dispatch voice gate is not implemented.
+  The current switch and command allowlist are policy gates; do not describe
+  the bridge as requiring a spoken yes before execution.
 - **Per-tool audit log**: Termux commands are logged via Timber/logcat
   today; a persistent, in-app audit surface for *"what did the
   assistant run last week?"* would help power users trust the gate.

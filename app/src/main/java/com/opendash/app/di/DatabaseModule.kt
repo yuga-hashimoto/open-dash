@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.opendash.app.data.db.AlarmDao
 import com.opendash.app.data.db.AppDatabase
 import com.opendash.app.data.db.DocumentChunkDao
+import com.opendash.app.data.db.KnowledgeDao
 import com.opendash.app.data.db.MemoryDao
 import com.opendash.app.data.db.MessageDao
 import com.opendash.app.data.db.MultiroomRejectionDao
@@ -72,4 +73,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAlarmDao(db: AppDatabase): AlarmDao = db.alarmDao()
+
+    @Provides
+    fun provideKnowledgeDao(db: AppDatabase): KnowledgeDao = db.knowledgeDao()
 }

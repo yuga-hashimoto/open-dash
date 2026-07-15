@@ -1,6 +1,7 @@
 package com.opendash.app.device.provider.switchbot
 
 import com.squareup.moshi.Moshi
+import com.opendash.app.device.settings.DeviceSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -20,8 +21,19 @@ data class SwitchBotConfig(
 class SwitchBotApiClient(
     private val client: OkHttpClient,
     private val moshi: Moshi,
-    private val config: SwitchBotConfig
+    private val configProvider: suspend () -> SwitchBotConfig
 ) {
+    constructor(
+        client: OkHttpClient,
+        moshi: Moshi,
+        config: SwitchBotConfig
+    ) : this(client, moshi, { config })
+
+    constructor(
+        client: OkHttpClient,
+        moshi: Moshi,
+        settingsRepository: DeviceSettingsRepository
+    ) : this(client, moshi, { settingsRepository.snapshot().switchBot })
     companion object {
         private const val BASE_URL = "https://api.switch-bot.com/v1.1"
     }
@@ -48,6 +60,7 @@ class SwitchBotApiClient(
         parameter: String = "default",
         commandType: String = "command"
     ): Boolean = withContext(Dispatchers.IO) {
+        val config = configProvider()
         val body = moshi.adapter(Map::class.java).toJson(
             mapOf(
                 "command" to command,
@@ -59,21 +72,22 @@ class SwitchBotApiClient(
         val request = Request.Builder()
             .url("$BASE_URL/devices/$deviceId/commands")
             .post(body.toRequestBody("application/json".toMediaType()))
-            .apply { addAuthHeaders(this) }
+            .apply { addAuthHeaders(this, config) }
             .build()
 
         val response = client.newCall(request).execute()
         response.isSuccessful
     }
 
-    private fun buildRequest(url: String): Request {
+    private suspend fun buildRequest(url: String): Request {
+        val config = configProvider()
         return Request.Builder()
             .url(url)
-            .apply { addAuthHeaders(this) }
+            .apply { addAuthHeaders(this, config) }
             .build()
     }
 
-    private fun addAuthHeaders(builder: Request.Builder) {
+    private fun addAuthHeaders(builder: Request.Builder, config: SwitchBotConfig) {
         val timestamp = java.lang.System.currentTimeMillis().toString()
         val nonce = UUID.randomUUID().toString()
         val data = config.token + timestamp + nonce

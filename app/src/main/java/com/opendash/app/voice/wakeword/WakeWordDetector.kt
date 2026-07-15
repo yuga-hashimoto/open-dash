@@ -6,4 +6,5 @@ interface WakeWordDetector {
     fun start(onDetected: () -> Unit)
     fun stop()
     val isListening: StateFlow<Boolean>
+    val health: StateFlow<WakeWordHealth>
 }

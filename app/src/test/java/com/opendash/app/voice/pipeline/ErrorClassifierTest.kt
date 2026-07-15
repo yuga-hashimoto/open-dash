@@ -29,6 +29,26 @@ class ErrorClassifierTest {
     }
 
     @Test
+    fun `quiet no-match covers NO_MATCH and SPEECH_TIMEOUT only`() {
+        assertThat(classifier.isQuietNoMatch("SpeechRecognizer error: NO_MATCH")).isTrue()
+        assertThat(classifier.isQuietNoMatch("SpeechRecognizer error: SPEECH_TIMEOUT")).isTrue()
+        assertThat(classifier.isQuietNoMatch("SpeechRecognizer error: NETWORK")).isFalse()
+        assertThat(classifier.isQuietNoMatch("SpeechRecognizer error: INSUFFICIENT_PERMISSIONS")).isFalse()
+        assertThat(classifier.isQuietNoMatch("Speech recognition not available")).isFalse()
+        assertThat(classifier.isQuietNoMatch("Microphone permission is required")).isFalse()
+    }
+
+    @Test
+    fun `microphone and recognizer STT failures are actionable STT_FAILURE`() {
+        val mic = classifier.classify("Could not capture audio: permission denied")
+        assertThat(mic.category).isEqualTo(ErrorClassifier.Category.PERMISSION)
+
+        val unavailable = classifier.classify("Speech recognition not available")
+        assertThat(unavailable.category).isEqualTo(ErrorClassifier.Category.STT_FAILURE)
+        assertThat(unavailable.userSpokenMessage.lowercase()).contains("speech")
+    }
+
+    @Test
     fun `llm timeout`() {
         val r = classifier.classify("Request timed out after 30s")
         assertThat(r.category).isEqualTo(ErrorClassifier.Category.LLM_TIMEOUT)
